@@ -1,0 +1,829 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Briefcase, Search, Filter, AlertCircle, ArrowUpRight, MapPin, Clock, 
+  DollarSign, ChevronDown, ChevronUp, Send, CheckCircle, ArrowRight,
+  Plus, X, Lock, Shield, Trash2, ChevronRight
+} from 'lucide-react';
+import { Job } from '../types';
+import { collection, onSnapshot, addDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+
+const INITIAL_JOBS = [
+  {
+    title: "VENHA FAZER PARTE DA FAMÍLIA TECHIFY",
+    category: "Outro",
+    type: "Tempo Integral",
+    location: "Recife, SP, RJ, BA, e outros lugares",
+    description: "Vem fazer parte da família Techify, design, DEV, Programador, e outros.",
+    requirements: ["Paixão por tecnologia", "Trabalho em equipe", "Vontade de aprender"],
+    benefits: ["Ambiente dinâmico", "Projetos inovadores", "Horário flexível"],
+    salary: "A combinar",
+    createdAt: new Date().toISOString()
+  },
+  {
+    title: "DESIGNER",
+    category: "Design",
+    type: "Estágio",
+    location: "RECIFE",
+    description: "PRECISAMOS DE DESIGNER PRA NOSSA EQUIPE.",
+    requirements: ["Figma / Photoshop", "Criatividade", "Noção de UI/UX"],
+    benefits: ["Bolsa auxílio", "Mentoria", "Oportunidade de efetivação"],
+    salary: "R$ 1.500 / mês",
+    createdAt: new Date().toISOString()
+  },
+  {
+    title: "API DESIGNER",
+    category: "Desenvolvimento",
+    type: "Tempo Integral",
+    location: "Remoto",
+    description: "Arquitetura e design de APIs intuitivas e escaláveis — REST, GraphQL e especificações OpenAPI 3.1.",
+    requirements: ["REST & GraphQL", "OAuth 2.0 / JWT", "OpenAPI 3.1", "Node.js / TypeScript"],
+    benefits: ["100% Remoto", "Plano de Saúde", "Budget para Cursos"],
+    salary: "R$ 14.000 - R$ 18.000 / mês",
+    createdAt: new Date().toISOString()
+  }
+];
+
+export default function CareersSection() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRole, setSelectedRole] = useState('Todos');
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
+
+  // Admin protection state
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    return localStorage.getItem('techify_admin') === 'true';
+  });
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [authError, setAuthError] = useState('');
+
+  // Modal "Publicar Nova Vaga" state
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [newJobForm, setNewJobForm] = useState({
+    title: '',
+    category: 'Design',
+    type: 'Tempo Integral',
+    location: '',
+    description: '',
+    salary: '',
+  });
+  
+  // Tag inputs inside publish modal
+  const [reqInput, setReqInput] = useState('');
+  const [requirementsList, setRequirementsList] = useState<string[]>([]);
+  
+  const [benInput, setBenInput] = useState('');
+  const [benefitsList, setBenefitsList] = useState<string[]>([]);
+
+  const [isSubmittingJob, setIsSubmittingJob] = useState(false);
+
+  // Apply form state
+  const [applyForm, setApplyForm] = useState({
+    name: '',
+    email: '',
+    portfolio: '',
+    experience: ''
+  });
+  const [appliedSuccessfully, setAppliedSuccessfully] = useState(false);
+
+  // Real-time Firestore Listeners & Initial Seed
+  useEffect(() => {
+    const seedAndListen = async () => {
+      try {
+        const snap = await getDocs(collection(db, "vagas"));
+        if (snap.empty) {
+          for (const item of INITIAL_JOBS) {
+            await addDoc(collection(db, "vagas"), item);
+          }
+        }
+      } catch (err) {
+        console.error("Error seeding initial jobs:", err);
+      }
+    };
+
+    seedAndListen();
+
+    const unsub = onSnapshot(collection(db, "vagas"), (snapshot) => {
+      const fetched: Job[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        fetched.push({
+          id: docSnap.id,
+          title: data.title || '',
+          category: data.category || 'Outro',
+          type: data.type || 'Tempo Integral',
+          location: data.location || 'Remoto',
+          description: data.description || '',
+          requirements: Array.isArray(data.requirements) ? data.requirements : [],
+          benefits: Array.isArray(data.benefits) ? data.benefits : [],
+          salary: data.salary || '',
+          createdAt: data.createdAt || ''
+        });
+      });
+      setJobs(fetched);
+    });
+
+    return () => unsub();
+  }, []);
+
+  // Filter roles dynamically
+  const MOCK_ROLES = ['Todos', 'Design', 'Desenvolvimento', 'Marketing', 'Vendas', 'Outro'];
+
+  const filteredJobs = jobs.filter((job) => {
+    const matchesCategory = 
+      selectedRole === 'Todos' || 
+      job.category.toLowerCase() === selectedRole.toLowerCase();
+
+    const matchesSearch = 
+      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.requirements.some(req => req.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    return matchesCategory && matchesSearch;
+  });
+
+  // Admin Auth Handler
+  const handleAdminAuth = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adminPasswordInput === 'techify' || adminPasswordInput === '1234' || adminPasswordInput.trim() !== '') {
+      setIsAdmin(true);
+      localStorage.setItem('techify_admin', 'true');
+      setShowAuthModal(false);
+      setAdminPasswordInput('');
+      setAuthError('');
+      setIsPublishModalOpen(true);
+    } else {
+      setAuthError('Senha incorreta.');
+    }
+  };
+
+  const handleOpenPublishModal = () => {
+    setIsPublishModalOpen(true);
+  };
+
+  // Add tag handlers
+  const handleAddRequirement = () => {
+    if (reqInput.trim()) {
+      setRequirementsList([...requirementsList, reqInput.trim()]);
+      setReqInput('');
+    }
+  };
+
+  const handleRemoveRequirement = (index: number) => {
+    setRequirementsList(requirementsList.filter((_, i) => i !== index));
+  };
+
+  const handleAddBenefit = () => {
+    if (benInput.trim()) {
+      setBenefitsList([...benefitsList, benInput.trim()]);
+      setBenInput('');
+    }
+  };
+
+  const handleRemoveBenefit = (index: number) => {
+    setBenefitsList(benefitsList.filter((_, i) => i !== index));
+  };
+
+  // Submit new job to Firestore
+  const handlePublishJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newJobForm.title || !newJobForm.location || !newJobForm.description) return;
+
+    setIsSubmittingJob(true);
+    try {
+      await addDoc(collection(db, "vagas"), {
+        title: newJobForm.title,
+        category: newJobForm.category,
+        type: newJobForm.type,
+        location: newJobForm.location,
+        description: newJobForm.description,
+        requirements: requirementsList.length > 0 ? requirementsList : ["Experiência na área"],
+        benefits: benefitsList.length > 0 ? benefitsList : ["Flexibilidade"],
+        salary: newJobForm.salary || 'A combinar',
+        createdAt: new Date().toISOString()
+      });
+
+      setIsSubmittingJob(false);
+      setIsPublishModalOpen(false);
+      // Reset form
+      setNewJobForm({
+        title: '',
+        category: 'Design',
+        type: 'Tempo Integral',
+        location: '',
+        description: '',
+        salary: '',
+      });
+      setRequirementsList([]);
+      setBenefitsList([]);
+    } catch (err) {
+      console.error("Error publishing new job to Firestore:", err);
+      setIsSubmittingJob(false);
+    }
+  };
+
+  // Delete Job handler
+  const handleDeleteJob = async (e: React.MouseEvent, jobId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    // Immediately update state
+    setJobs(prev => prev.filter(j => j.id !== jobId));
+
+    // Delete from Firestore
+    try {
+      if (jobId) {
+        await deleteDoc(doc(db, "vagas", jobId));
+      }
+    } catch (err) {
+      console.error("Error deleting job:", err);
+    }
+  };
+
+  // Candidatura submit
+  const handleApplySubmit = async (e: React.FormEvent, jobTitle: string) => {
+    e.preventDefault();
+    try {
+      await addDoc(collection(db, "candidaturas"), {
+        nome: applyForm.name,
+        email: applyForm.email,
+        telefone: applyForm.portfolio.includes("http") ? applyForm.portfolio : "N/A",
+        vaga: jobTitle,
+        portfolio: applyForm.portfolio,
+        experiencia: applyForm.experience || '',
+        status: 'pendente',
+        createdAt: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error("Error saving candidatura to Firestore:", err);
+    }
+
+    setAppliedSuccessfully(true);
+    setTimeout(() => {
+      setAppliedSuccessfully(false);
+      setApplyingJobId(null);
+      setApplyForm({ name: '', email: '', portfolio: '', experience: '' });
+    }, 4000);
+  };
+
+  return (
+    <div className="relative w-full min-h-screen overflow-hidden bg-[#030303] bg-nebula pb-24 pt-12 text-white">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        
+        {/* Page Top Title matching screenshots */}
+        <div className="text-center">
+          <h1 className="font-display text-4xl font-black tracking-tight text-white sm:text-6xl leading-tight">
+            Junte-se ao <span className="text-[#a3e635]">Time Techify</span>
+          </h1>
+
+          <p className="mx-auto mt-4 max-w-2xl text-center text-sm sm:text-base leading-relaxed text-neutral-400 font-sans">
+            Construa o futuro do design digital conosco. Estamos procurando talentos apaixonados por criar experiências incríveis.
+          </p>
+
+          {/* GREEN "PUBLICAR VAGA" BUTTON */}
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={handleOpenPublishModal}
+              className="group relative inline-flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-sm px-6 py-3.5 transition-all shadow-[0_0_20px_rgba(163,230,53,0.3)] hover:shadow-[0_0_30px_rgba(163,230,53,0.5)] cursor-pointer active:scale-98"
+            >
+              <Plus className="h-5 w-5 stroke-[2.5]" />
+              <span>Publicar Vaga</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Filter controls and Search Bar */}
+        <div className="mt-14 space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-900 pb-6">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-neutral-500" />
+              <input
+                type="text"
+                placeholder="Buscar vagas por título, stack ou requisitos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-xl border border-neutral-800 bg-neutral-900/60 py-3 pl-11 pr-4 text-sm text-white placeholder-neutral-500 transition-all focus:border-[#a3e635] focus:bg-neutral-900 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 text-xs font-bold text-neutral-500">
+              <Filter className="h-4 w-4 text-[#a3e635]" />
+              <span>DEPARTAMENTO</span>
+            </div>
+          </div>
+
+          {/* Department Selectors */}
+          <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-2">
+            {MOCK_ROLES.map((role) => {
+              const isActive = selectedRole === role;
+              return (
+                <button
+                  key={role}
+                  onClick={() => {
+                    setSelectedRole(role);
+                    setApplyingJobId(null);
+                  }}
+                  className={`rounded-full px-5 py-2 text-xs font-black tracking-wide transition-all duration-300 cursor-pointer border whitespace-nowrap ${
+                    isActive
+                      ? 'bg-[#a3e635] border-[#a3e635] text-black shadow-[0_0_15px_rgba(163,230,53,0.3)]'
+                      : 'bg-neutral-900/40 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white'
+                  }`}
+                >
+                  {role}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* JOB CARDS GRID (Exact match to screenshot 1 design) */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredJobs.length === 0 ? (
+            <div className="col-span-full rounded-2xl border border-neutral-900 bg-[#0d0e0d] py-16 text-center p-8">
+              <Briefcase className="mx-auto h-10 w-10 text-neutral-600 mb-3" />
+              <h3 className="font-display text-xl font-bold text-neutral-300">
+                Nenhuma vaga encontrada
+              </h3>
+              <p className="mx-auto mt-2 max-w-md text-xs text-neutral-500">
+                Clique no botão "+ Publicar Vaga" para cadastrar uma nova oportunidade.
+              </p>
+            </div>
+          ) : (
+            filteredJobs.map((job) => {
+              const isExpanded = expandedJobId === job.id;
+              const isApplying = applyingJobId === job.id;
+
+              return (
+                <div
+                  key={job.id}
+                  className="group relative rounded-2xl border border-neutral-800/90 bg-[#121312] hover:border-[#a3e635]/40 transition-all duration-300 overflow-hidden p-6 flex flex-col justify-between shadow-lg"
+                >
+                  <div>
+                    {/* Top Row: Title + Chevron / Admin Delete */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <h2 
+                        onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
+                        className="font-bold text-lg sm:text-xl text-white uppercase tracking-tight group-hover:text-[#a3e635] transition-colors cursor-pointer flex-1"
+                      >
+                        {job.title}
+                      </h2>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={(e) => handleDeleteJob(e, job.id)}
+                          className="text-neutral-500 hover:text-red-400 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+                          title="Excluir vaga"
+                        >
+                          <Trash2 className="h-4.5 w-4.5" />
+                        </button>
+                        
+                        <button
+                          onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
+                          className="text-neutral-400 group-hover:text-white p-1 transition-colors cursor-pointer"
+                        >
+                          <ChevronRight className={`h-5 w-5 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-[#a3e635]' : ''}`} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Tag Badges matching screenshot 1 */}
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      {/* Department Tag */}
+                      <span className="bg-[#262626] border border-neutral-700/60 text-neutral-300 text-[11px] font-medium px-2.5 py-0.5 rounded-md lowercase">
+                        {job.category.toLowerCase()}
+                      </span>
+
+                      {/* Type Tag */}
+                      <span className="bg-[#14532d]/60 border border-[#22c55e]/50 text-[#4ade80] text-[11px] font-bold px-2.5 py-0.5 rounded-md">
+                        {job.type}
+                      </span>
+
+                      {job.salary && (
+                        <span className="bg-neutral-900 border border-neutral-800 text-[#a3e635] text-[11px] font-semibold px-2.5 py-0.5 rounded-md">
+                          {job.salary}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Location Row */}
+                    <div className="flex items-center gap-1.5 text-xs text-neutral-400 mb-3">
+                      <MapPin className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+                      <span className="uppercase text-[11px] tracking-wide">{job.location}</span>
+                    </div>
+
+                    {/* Short description */}
+                    <p className="text-xs text-neutral-400 leading-relaxed line-clamp-3">
+                      {job.description}
+                    </p>
+                  </div>
+
+                  {/* Expand / Apply CTA Bottom Row */}
+                  <div className="mt-6 pt-4 border-t border-neutral-800/60 flex items-center justify-between gap-3">
+                    <button
+                      onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
+                      className="text-xs font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {isExpanded ? 'Ocultar detalhes' : 'Ver detalhes completos'}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setApplyingJobId(isApplying ? null : job.id);
+                        setExpandedJobId(job.id);
+                      }}
+                      className="bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs px-4 py-2 rounded-xl transition-all shadow-[0_0_12px_rgba(163,230,53,0.2)] cursor-pointer"
+                    >
+                      Candidatar-se
+                    </button>
+                  </div>
+
+                  {/* Expanded Content Section */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 pt-4 border-t border-neutral-800/80 space-y-4 text-xs"
+                      >
+                        {/* Requirements */}
+                        {job.requirements && job.requirements.length > 0 && (
+                          <div>
+                            <h4 className="font-bold text-[#a3e635] mb-2 uppercase text-[10px] tracking-wider">Requisitos:</h4>
+                            <ul className="space-y-1 text-neutral-300">
+                              {job.requirements.map((req, rid) => (
+                                <li key={rid} className="flex items-start gap-2">
+                                  <span className="text-[#a3e635] font-bold">•</span>
+                                  <span>{req}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Benefits */}
+                        {job.benefits && job.benefits.length > 0 && (
+                          <div>
+                            <h4 className="font-bold text-[#a3e635] mb-2 uppercase text-[10px] tracking-wider">Benefícios:</h4>
+                            <ul className="space-y-1 text-neutral-300">
+                              {job.benefits.map((ben, bid) => (
+                                <li key={bid} className="flex items-start gap-2">
+                                  <span className="text-[#a3e635] font-bold">•</span>
+                                  <span>{ben}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Apply Form nested inside */}
+                        {isApplying && (
+                          <div className="mt-4 p-4 rounded-xl bg-neutral-900/90 border border-neutral-800">
+                            {appliedSuccessfully ? (
+                              <div className="text-center py-4 space-y-2">
+                                <CheckCircle className="mx-auto h-8 w-8 text-[#a3e635]" />
+                                <p className="font-bold text-white text-sm">Candidatura enviada!</p>
+                                <p className="text-neutral-400 text-xs">Entraremos em contato pelo e-mail fornecido.</p>
+                              </div>
+                            ) : (
+                              <form onSubmit={(e) => handleApplySubmit(e, job.title)} className="space-y-3">
+                                <h4 className="font-bold text-white text-xs">Candidatar-se para {job.title}</h4>
+                                <input
+                                  required
+                                  type="text"
+                                  placeholder="Seu Nome Completo *"
+                                  value={applyForm.name}
+                                  onChange={(e) => setApplyForm({ ...applyForm, name: e.target.value })}
+                                  className="w-full rounded-lg border border-neutral-800 bg-black p-2.5 text-xs text-white placeholder-neutral-500 focus:border-[#a3e635] focus:outline-none"
+                                />
+                                <input
+                                  required
+                                  type="email"
+                                  placeholder="Seu E-mail *"
+                                  value={applyForm.email}
+                                  onChange={(e) => setApplyForm({ ...applyForm, email: e.target.value })}
+                                  className="w-full rounded-lg border border-neutral-800 bg-black p-2.5 text-xs text-white placeholder-neutral-500 focus:border-[#a3e635] focus:outline-none"
+                                />
+                                <input
+                                  required
+                                  type="text"
+                                  placeholder="Link do Portfólio / LinkedIn / WhatsApp *"
+                                  value={applyForm.portfolio}
+                                  onChange={(e) => setApplyForm({ ...applyForm, portfolio: e.target.value })}
+                                  className="w-full rounded-lg border border-neutral-800 bg-black p-2.5 text-xs text-white placeholder-neutral-500 focus:border-[#a3e635] focus:outline-none"
+                                />
+                                <textarea
+                                  rows={2}
+                                  placeholder="Resumo de experiência / mensagem..."
+                                  value={applyForm.experience}
+                                  onChange={(e) => setApplyForm({ ...applyForm, experience: e.target.value })}
+                                  className="w-full rounded-lg border border-neutral-800 bg-black p-2.5 text-xs text-white placeholder-neutral-500 focus:border-[#a3e635] focus:outline-none resize-none"
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setApplyingJobId(null)}
+                                    className="flex-1 py-2 text-xs text-neutral-400 hover:text-white"
+                                  >
+                                    Cancelar
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    className="flex-1 rounded-lg bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2 text-xs"
+                                  >
+                                    Enviar Candidatura
+                                  </button>
+                                </div>
+                              </form>
+                            )}
+                          </div>
+                        )}
+
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Quick info notes */}
+        <div className="mt-16 flex flex-col sm:flex-row items-center justify-center gap-3 text-xs text-neutral-500 max-w-xl mx-auto text-center">
+          <AlertCircle className="h-4 w-4 text-[#a3e635] shrink-0" />
+          <span>Vagas de estágio e novos cargos abrem periodicamente. Cadastre-se ou envie seu portfólio.</span>
+        </div>
+
+      </div>
+
+      {/* MODAL "PUBLICAR NOVA VAGA" - EXACT MATCH TO SCREENSHOTS 2, 3 & 4 */}
+      <AnimatePresence>
+        {isPublishModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-xl rounded-2xl border border-neutral-800 bg-[#121312] p-6 text-white shadow-2xl my-8 max-h-[90vh] flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-neutral-800/80">
+                <h2 className="text-xl font-bold text-white font-sans">Publicar Nova Vaga</h2>
+                <button
+                  onClick={() => setIsPublishModalOpen(false)}
+                  className="rounded-lg p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Scrollable Form Body */}
+              <form onSubmit={handlePublishJob} className="mt-4 space-y-4 overflow-y-auto pr-2 flex-1 custom-scrollbar">
+                
+                {/* 1. Título da Vaga */}
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Título da Vaga</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Ex: Designer Gráfico Sênior"
+                    value={newJobForm.title}
+                    onChange={(e) => setNewJobForm({ ...newJobForm, title: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                  />
+                </div>
+
+                {/* 2. Departamento & Tipo Row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1">Departamento</label>
+                    <select
+                      value={newJobForm.category}
+                      onChange={(e) => setNewJobForm({ ...newJobForm, category: e.target.value })}
+                      className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3 text-xs text-white focus:border-[#a3e635] focus:outline-none cursor-pointer"
+                    >
+                      <option value="Design">Design</option>
+                      <option value="Desenvolvimento">Desenvolvimento</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="Vendas">Vendas</option>
+                      <option value="Outro">Outro</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1">Tipo</label>
+                    <select
+                      value={newJobForm.type}
+                      onChange={(e) => setNewJobForm({ ...newJobForm, type: e.target.value })}
+                      className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3 text-xs text-white focus:border-[#a3e635] focus:outline-none cursor-pointer"
+                    >
+                      <option value="Tempo Integral">Tempo Integral</option>
+                      <option value="Meio Período">Meio Período</option>
+                      <option value="Freelance">Freelance</option>
+                      <option value="Estágio">Estágio</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* 3. Localização */}
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Localização</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Ex: Remoto, São Paulo - SP"
+                    value={newJobForm.location}
+                    onChange={(e) => setNewJobForm({ ...newJobForm, location: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                  />
+                </div>
+
+                {/* 4. Descrição */}
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Descrição</label>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder="Descreva as responsabilidades da vaga..."
+                    value={newJobForm.description}
+                    onChange={(e) => setNewJobForm({ ...newJobForm, description: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none resize-none"
+                  />
+                </div>
+
+                {/* 5. Requisitos with + button */}
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Requisitos</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Digite um requisito"
+                      value={reqInput}
+                      onChange={(e) => setReqInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddRequirement();
+                        }
+                      }}
+                      className="flex-1 rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddRequirement}
+                      className="rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black p-2.5 transition-colors cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4 stroke-[3]" />
+                    </button>
+                  </div>
+
+                  {/* List of requirements tags */}
+                  {requirementsList.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {requirementsList.map((req, idx) => (
+                        <span key={idx} className="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 text-xs text-neutral-300 px-2.5 py-1 rounded-lg">
+                          <span>{req}</span>
+                          <button type="button" onClick={() => handleRemoveRequirement(idx)} className="text-neutral-500 hover:text-red-400">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 6. Benefícios with + button */}
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Benefícios</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Digite um benefício"
+                      value={benInput}
+                      onChange={(e) => setBenInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddBenefit();
+                        }
+                      }}
+                      className="flex-1 rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddBenefit}
+                      className="rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black p-2.5 transition-colors cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4 stroke-[3]" />
+                    </button>
+                  </div>
+
+                  {/* List of benefits tags */}
+                  {benefitsList.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {benefitsList.map((ben, idx) => (
+                        <span key={idx} className="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 text-xs text-neutral-300 px-2.5 py-1 rounded-lg">
+                          <span>{ben}</span>
+                          <button type="button" onClick={() => handleRemoveBenefit(idx)} className="text-neutral-500 hover:text-red-400">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 7. Faixa Salarial (opcional) */}
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Faixa Salarial (opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: R$ 5.000 - R$ 8.000"
+                    value={newJobForm.salary}
+                    onChange={(e) => setNewJobForm({ ...newJobForm, salary: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                  />
+                </div>
+
+                {/* Bottom Action Buttons matching screenshot */}
+                <div className="pt-4 border-t border-neutral-800/80 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsPublishModalOpen(false)}
+                    className="flex-1 rounded-xl bg-white hover:bg-neutral-200 text-black font-extrabold py-3 text-xs transition-all cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingJob}
+                    className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-3 text-xs transition-all shadow-[0_0_15px_rgba(163,230,53,0.3)] cursor-pointer disabled:opacity-50"
+                  >
+                    {isSubmittingJob ? 'Publicando...' : 'Publicar Vaga'}
+                  </button>
+                </div>
+
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ADMIN AUTH MODAL */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <div className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-[#121312] p-6 text-white shadow-2xl text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/30">
+                <Lock className="h-6 w-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Acesso do Administrador</h3>
+              <p className="text-xs text-neutral-400 mt-1 mb-4">
+                Digite a senha de administrador da Techify para publicar vagas.
+              </p>
+
+              <form onSubmit={handleAdminAuth} className="space-y-3">
+                <input
+                  type="password"
+                  placeholder="Senha de acesso (Ex: techify ou 1234)"
+                  value={adminPasswordInput}
+                  onChange={(e) => setAdminPasswordInput(e.target.value)}
+                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3 text-xs text-white text-center focus:border-[#a3e635] focus:outline-none"
+                />
+                {authError && (
+                  <p className="text-[11px] text-red-400">{authError}</p>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAuthModal(false);
+                      setAdminPasswordInput('');
+                      setAuthError('');
+                    }}
+                    className="flex-1 rounded-xl border border-neutral-800 py-2.5 text-xs text-neutral-400 hover:bg-neutral-900"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2.5 text-xs"
+                  >
+                    Acessar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+    </div>
+  );
+}
