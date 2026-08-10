@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Globe, Briefcase, Shield, Lock, LogOut } from 'lucide-react';
+import { Home, Globe, Briefcase, Shield, LogOut } from 'lucide-react';
 import { TechifyIcon } from './TechifyLogo';
 import { useAdminAuth } from '../lib/adminAuth';
 
@@ -28,7 +28,7 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         {/* Logo Container and Brand Name */}
         <div 
-          className="flex cursor-pointer items-center gap-3 transition-opacity hover:opacity-90"
+          className="flex cursor-pointer items-center gap-3 transition-opacity hover:opacity-90 select-none"
           onClick={() => setActiveTab('inicio')}
         >
           {/* Exact Techify icon box */}
@@ -64,16 +64,7 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
             );
           })}
 
-          {/* Discreet lock button when not logged in to access admin password prompt */}
-          {!isAdmin ? (
-            <button
-              onClick={onOpenAdminLogin}
-              className="p-2 text-neutral-600 hover:text-[#2eff00] transition-colors rounded-lg hover:bg-neutral-900/50"
-              title="Área do Administrador"
-            >
-              <Lock className="h-4 w-4" />
-            </button>
-          ) : (
+          {isAdmin && (
             <button
               onClick={() => {
                 logout();

@@ -12,7 +12,6 @@ import {
   Sparkles,
   Edit,
   Trash2,
-  Lock,
   CheckCircle,
   Image as ImageIcon,
   ArrowRight

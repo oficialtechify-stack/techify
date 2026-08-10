@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Shield, Calendar, Clock, Briefcase, Users, Handshake, 
   Mail, Phone, Instagram, CheckCircle2, XCircle, Send, 
-  Plus, Trash2, Check, RefreshCw, ExternalLink, Lock, LogOut
+  Plus, Trash2, Check, RefreshCw, ExternalLink, KeyRound, LogOut
 } from 'lucide-react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -438,16 +438,16 @@ export default function AdminPanel() {
       <div className="w-full min-h-screen bg-[#070807] text-white flex items-center justify-center p-4">
         <div className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-[#121312] p-6 shadow-2xl text-center">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/30 shadow-[0_0_20px_rgba(163,230,53,0.15)]">
-            <Lock className="h-7 w-7" />
+            <KeyRound className="h-7 w-7" />
           </div>
           <h2 className="font-display text-xl font-black text-white">Acesso do Administrador</h2>
           <p className="text-xs text-neutral-400 mt-1 mb-5">
             Área restrita. Insira a senha de administrador da Techify para desbloquear o painel.
           </p>
 
-          <form onSubmit={(e) => {
+          <form onSubmit={async (e) => {
             e.preventDefault();
-            const ok = login(passwordInput);
+            const ok = await login(passwordInput);
             if (!ok) setPasswordError('Senha incorreta.');
             else setPasswordError('');
           }} className="space-y-3">

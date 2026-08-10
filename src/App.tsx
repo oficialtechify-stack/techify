@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomeSection from './components/HomeSection';
@@ -19,6 +19,47 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>('inicio');
   const [isConsultationOpen, setIsConsultationOpen] = useState<boolean>(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState<boolean>(false);
+
+  // Secret admin trigger listeners (Ctrl+Shift+A, typing 'admin', or #admin hash)
+  useEffect(() => {
+    let keyBuffer = '';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore shortcut when user is typing inside an input/textarea
+      const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (targetTag === 'input' || targetTag === 'textarea') return;
+
+      // Shortcut: Ctrl + Shift + A or Cmd + Shift + A
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        setIsAdminLoginOpen(true);
+        return;
+      }
+
+      // Typing secret sequence 'admin'
+      keyBuffer += e.key.toLowerCase();
+      if (keyBuffer.length > 10) keyBuffer = keyBuffer.slice(-10);
+      if (keyBuffer.endsWith('admin')) {
+        setIsAdminLoginOpen(true);
+        keyBuffer = '';
+      }
+    };
+
+    const checkHash = () => {
+      if (window.location.hash === '#admin' || window.location.search.includes('admin=true')) {
+        setIsAdminLoginOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('hashchange', checkHash);
+    checkHash();
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('hashchange', checkHash);
+    };
+  }, []);
 
   // If the active tab matches any of the immersive showcases, render them full-screen
   if (activeTab === 'wandr') {

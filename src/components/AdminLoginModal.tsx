@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, X, ShieldCheck } from 'lucide-react';
+import { X, ShieldCheck, KeyRound } from 'lucide-react';
 import { useAdminAuth } from '../lib/adminAuth';
 
 interface AdminLoginModalProps {
@@ -12,24 +12,32 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess }: AdminLog
   const { login } = useAdminAuth();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password) {
       setError('Por favor, insira a senha.');
       return;
     }
 
-    const success = login(password);
-    if (success) {
-      setPassword('');
-      setError('');
-      onClose();
-      if (onSuccess) onSuccess();
-    } else {
-      setError('Senha incorreta. Tente novamente.');
+    setLoading(true);
+    try {
+      const success = await login(password);
+      if (success) {
+        setPassword('');
+        setError('');
+        onClose();
+        if (onSuccess) onSuccess();
+      } else {
+        setError('Senha incorreta. Tente novamente.');
+      }
+    } catch {
+      setError('Erro ao validar credencial.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,19 +53,19 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess }: AdminLog
         </button>
 
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/30">
-          <Lock className="h-6 w-6" />
+          <KeyRound className="h-6 w-6" />
         </div>
 
         <h3 className="text-lg font-bold text-white font-display">Acesso de Administrador</h3>
         <p className="text-xs text-neutral-400 mt-1 mb-5">
-          Digite a senha do administrador da Techify para liberar adicionar sites, vagas e o painel.
+          Painel de controle Techify. Insira sua chave de acesso.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="relative">
             <input
               type="password"
-              placeholder="Senha de acesso..."
+              placeholder="Chave de acesso..."
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -82,10 +90,11 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess }: AdminLog
             </button>
             <button
               type="submit"
-              className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2.5 text-xs cursor-pointer shadow-[0_0_15px_rgba(163,230,53,0.2)] transition-all flex items-center justify-center gap-1.5"
+              disabled={loading}
+              className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2.5 text-xs cursor-pointer shadow-[0_0_15px_rgba(163,230,53,0.2)] transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               <ShieldCheck className="h-4 w-4" />
-              <span>Entrar</span>
+              <span>{loading ? 'Verificando...' : 'Entrar'}</span>
             </button>
           </div>
         </form>

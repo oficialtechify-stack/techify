@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, MessageCircle, Instagram, Lock } from 'lucide-react';
+import { Mail, MessageCircle, Instagram } from 'lucide-react';
 import { TechifyIcon } from './TechifyLogo';
 
 interface FooterProps {
@@ -8,7 +8,7 @@ interface FooterProps {
   onOpenAdminLogin?: () => void;
 }
 
-export default function Footer({ onNavigate, onOpenConsultation, onOpenAdminLogin }: FooterProps) {
+export default function Footer({ onNavigate, onOpenConsultation }: FooterProps) {
   return (
     <footer className="border-t border-neutral-900 bg-black py-16 text-neutral-400">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -128,17 +128,6 @@ export default function Footer({ onNavigate, onOpenConsultation, onOpenAdminLogi
         {/* Bottom copyright note */}
         <div className="mt-16 border-t border-neutral-900 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-600">
           <p>© 2026 Techify. Todos os direitos reservados. Projeto inovador de alta engenharia visual.</p>
-          
-          {onOpenAdminLogin && (
-            <button
-              onClick={onOpenAdminLogin}
-              className="flex items-center gap-1 text-neutral-600 hover:text-[#2eff00] transition-colors cursor-pointer text-[11px]"
-              title="Área do Administrador"
-            >
-              <Lock className="h-3 w-3" />
-              <span>Área Restrita</span>
-            </button>
-          )}
         </div>
       </div>
     </footer>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Briefcase, Search, Filter, AlertCircle, ArrowUpRight, MapPin, Clock, 
   DollarSign, ChevronDown, ChevronUp, Send, CheckCircle, ArrowRight,
-  Plus, X, Lock, Shield, Trash2, ChevronRight
+  Plus, X, Shield, Trash2, ChevronRight
 } from 'lucide-react';
 import { Job } from '../types';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
