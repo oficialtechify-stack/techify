@@ -225,7 +225,7 @@ export default function AsmeShowcase({ onBack }: AsmeShowcaseProps) {
       {/* Social Icons footer structure */}
       <footer className="relative z-10 flex justify-center gap-4 pb-12 w-full mt-auto">
         <a
-          href="https://instagram.com"
+          href="https://www.instagram.com/techify.oficial"
           target="_blank"
           rel="noreferrer"
           aria-label="Instagram"

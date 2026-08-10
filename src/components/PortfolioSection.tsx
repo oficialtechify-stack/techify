@@ -25,9 +25,12 @@ import {
   updateDoc, 
   deleteDoc, 
   doc, 
+  getDoc,
+  setDoc,
   getDocs 
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useAdminAuth } from '../lib/adminAuth';
 
 const CATEGORIES = [
   'Todos',
@@ -42,32 +45,13 @@ const CATEGORIES = [
 
 const INITIAL_PORTFOLIO_SITES = [
   {
-    title: "KALDI",
-    category: "Landing Page",
-    description: "Landing page para clínica médica com agendamento online, telemedicina, área do paciente e sistema de prontuário eletrônico.",
-    imageUrl: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80",
-    liveUrl: "https://kaldi-demo.techify.com",
-    tags: ["React", "Landing Page", "Telemedicina"],
-    certified: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    title: "EPIC DESIGNER",
-    category: "Landing Page",
-    description: "O EPIC DESIGNER é uma empresa especializada em design gráfico para o setor gastronômico, oferecendo serviços como criação de cardápios, identidade visual única e soluções para restaurantes.",
-    imageUrl: "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80",
-    liveUrl: "https://epic-designer.techify.com",
-    tags: ["Design Gráfico", "Cardápios", "Identidade Visual"],
-    certified: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    title: "SaudeConnect",
-    category: "Corporativo",
-    description: "O site SaudeConnect é uma plataforma corporativa dedicada a otimizar o atendimento à saúde dos colaboradores, oferecendo acesso a especialidades e comparador de preços.",
-    imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80",
-    liveUrl: "https://saudeconnect.techify.com",
-    tags: ["Corporativo", "Saúde", "Plataforma"],
+    title: "Mugsy's Mugs",
+    category: "E-commerce",
+    description: "E-commerce premium e disruptivo projetado para coleções limitadas de canecas com carrinho interativo e catálogo 3D.",
+    imageUrl: "https://i.postimg.cc/1zN0rTcN/img-1.jpg",
+    liveUrl: "demo:mugsys-mugs",
+    demoId: "mugsys-mugs",
+    tags: ["E-commerce", "Carrinho Interativo", "Tailwind"],
     certified: true,
     createdAt: new Date().toISOString()
   },
@@ -76,18 +60,53 @@ const INITIAL_PORTFOLIO_SITES = [
     category: "Plataforma",
     description: "Plataforma de conteúdo e newsletter futurista com animações fluidas, reveal progressivo e streaming em tempo real.",
     imageUrl: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=800&q=80",
-    liveUrl: "https://mindloop.techify.com",
+    liveUrl: "demo:mindloop",
+    demoId: "mindloop",
     tags: ["React", "Framer Motion", "Streaming"],
     certified: true,
     createdAt: new Date().toISOString()
   },
   {
-    title: "Mugsy's Mugs",
-    category: "E-commerce",
-    description: "E-commerce premium e disruptivo projetado para coleções limitadas de canecas com carrinho interativo.",
-    imageUrl: "https://i.postimg.cc/1zN0rTcN/img-1.jpg",
-    liveUrl: "https://mugsysmugs.techify.com",
-    tags: ["E-commerce", "Carrinho Interativo", "Tailwind"],
+    title: "EPIC DESIGNER",
+    category: "Landing Page",
+    description: "Branding, design gráfico de elite, cardápios digitais e experiência cinética e interativa para o setor gastronômico.",
+    imageUrl: "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80",
+    liveUrl: "demo:yuffie",
+    demoId: "yuffie",
+    tags: ["Design Gráfico", "Cardápios", "Interface Cinética"],
+    certified: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    title: "Wandr Travel",
+    category: "Corporativo",
+    description: "Portal de viagens e expedições com física de partículas na praia, animações fluidas e mapas dinâmicos.",
+    imageUrl: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80",
+    liveUrl: "demo:wandr",
+    demoId: "wandr",
+    tags: ["Corporativo", "Viagens", "Física de Partículas"],
+    certified: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    title: "Asme AI",
+    category: "Landing Page",
+    description: "Landing page futurista com vídeo responsivo em background, captura de e-mails instantânea e tipografia Instrument Serif.",
+    imageUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
+    liveUrl: "demo:asme",
+    demoId: "asme",
+    tags: ["AI", "Landing Page", "Vídeo Reativo"],
+    certified: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    title: "ToonHub 3D",
+    category: "Plataforma",
+    description: "Galeria e vitrine 3D interativa de colecionáveis e personagens cartoon com troca dinâmica de cores e navegação por gesto/swipe.",
+    imageUrl: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80",
+    liveUrl: "demo:toonhub",
+    demoId: "toonhub",
+    tags: ["3D", "Personagens", "Navegação Swipe"],
     certified: true,
     createdAt: new Date().toISOString()
   }
@@ -105,13 +124,9 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
-  // Admin Auth State ("Somente eu posso fazer isso")
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    return localStorage.getItem('techify_admin') === 'true';
-  });
+  // Admin Auth State
+  const { isAdmin } = useAdminAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [adminPasswordInput, setAdminPasswordInput] = useState('');
-  const [authError, setAuthError] = useState('');
 
   // Add/Edit Site Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -129,15 +144,24 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
   // File input reference for photo selection directly from device gallery
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Real-time Firestore sync & Initial seed
+  // Real-time Firestore sync & Initial seed (guarded against re-seeding on deletion)
   useEffect(() => {
     const seedAndListen = async () => {
       try {
-        const snap = await getDocs(collection(db, "portfolio"));
-        if (snap.empty) {
-          for (const item of INITIAL_PORTFOLIO_SITES) {
-            await addDoc(collection(db, "portfolio"), item);
+        const seedStatusRef = doc(db, "system", "portfolio_seed_status");
+        const seedStatusSnap = await getDoc(seedStatusRef);
+        const hasSeededLocal = localStorage.getItem('techify_portfolio_seeded') === 'true';
+
+        // ONLY run seeding if database has NEVER been seeded before
+        if ((!seedStatusSnap.exists() || !seedStatusSnap.data()?.seeded) && !hasSeededLocal) {
+          const snap = await getDocs(collection(db, "portfolio"));
+          if (snap.empty) {
+            for (const item of INITIAL_PORTFOLIO_SITES) {
+              await addDoc(collection(db, "portfolio"), item);
+            }
           }
+          await setDoc(seedStatusRef, { seeded: true, timestamp: new Date().toISOString() });
+          localStorage.setItem('techify_portfolio_seeded', 'true');
         }
       } catch (err) {
         console.error("Error seeding initial portfolio sites:", err);
@@ -157,6 +181,7 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
           description: data.description || '',
           imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
           liveUrl: data.liveUrl || '',
+          demoId: data.demoId || '',
           tags: Array.isArray(data.tags) ? data.tags : [data.category || 'Site'],
           certified: data.certified !== false
         });
@@ -181,27 +206,9 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
     return matchesCategory && matchesSearch;
   });
 
-  // Handle Admin Authorization
-  const handleAdminAuth = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (adminPasswordInput === 'techify' || adminPasswordInput === '1234' || adminPasswordInput.trim() !== '') {
-      setIsAdmin(true);
-      localStorage.setItem('techify_admin', 'true');
-      setShowAuthModal(false);
-      setAdminPasswordInput('');
-      setAuthError('');
-      setIsModalOpen(true);
-    } else {
-      setAuthError('Senha incorreta.');
-    }
-  };
-
   // Open Modal for adding a new site
   const handleOpenAddModal = () => {
-    if (!isAdmin) {
-      setShowAuthModal(true);
-      return;
-    }
+    if (!isAdmin) return;
     setEditingProjectId(null);
     setTitleInput('');
     setUrlInput('');
@@ -228,6 +235,42 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
     e.stopPropagation();
     e.preventDefault();
     setProjectToDelete(proj);
+  };
+
+  // Open Site or Interactive Demo
+  const handleOpenSite = (proj: Project, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
+    // Determine target demo ID if applicable
+    let targetDemo = proj.demoId;
+    if (!targetDemo && proj.liveUrl) {
+      if (proj.liveUrl.startsWith('demo:')) {
+        targetDemo = proj.liveUrl.replace('demo:', '');
+      } else if (proj.liveUrl.includes('mugsys-mugs')) {
+        targetDemo = 'mugsys-mugs';
+      } else if (proj.liveUrl.includes('mindloop')) {
+        targetDemo = 'mindloop';
+      } else if (proj.liveUrl.includes('yuffie') || proj.liveUrl.includes('epic-designer')) {
+        targetDemo = 'yuffie';
+      } else if (proj.liveUrl.includes('wandr') || proj.liveUrl.includes('kaldi')) {
+        targetDemo = 'wandr';
+      } else if (proj.liveUrl.includes('asme')) {
+        targetDemo = 'asme';
+      } else if (proj.liveUrl.includes('toonhub')) {
+        targetDemo = 'toonhub';
+      }
+    }
+
+    if (targetDemo && onLaunchDemo) {
+      onLaunchDemo(targetDemo);
+    } else if (proj.liveUrl && (proj.liveUrl.startsWith('http://') || proj.liveUrl.startsWith('https://'))) {
+      window.open(proj.liveUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      setSelectedProject(proj);
+    }
   };
 
   // Confirm and execute delete
@@ -333,16 +376,18 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
             </p>
           </div>
 
-          {/* Green "Adicionar Site" Button matching Screenshot 1 */}
-          <div>
-            <button
-              onClick={handleOpenAddModal}
-              className="group relative inline-flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-sm px-6 py-3.5 transition-all shadow-[0_0_20px_rgba(163,230,53,0.3)] hover:shadow-[0_0_30px_rgba(163,230,53,0.5)] cursor-pointer active:scale-98"
-            >
-              <Plus className="h-5 w-5 stroke-[2.5]" />
-              <span>Adicionar Site</span>
-            </button>
-          </div>
+          {/* Green "Adicionar Site" Button (Only visible for Admin) */}
+          {isAdmin && (
+            <div>
+              <button
+                onClick={handleOpenAddModal}
+                className="group relative inline-flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-sm px-6 py-3.5 transition-all shadow-[0_0_20px_rgba(163,230,53,0.3)] hover:shadow-[0_0_30px_rgba(163,230,53,0.5)] cursor-pointer active:scale-98"
+              >
+                <Plus className="h-5 w-5 stroke-[2.5]" />
+                <span>Adicionar Site</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Filter Controls & Category Selector matching Screenshot 1 */}
@@ -419,40 +464,41 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#121312] via-transparent to-black/20" />
 
-                  {/* Quick Actions: Edit & Delete */}
-                  <div className="absolute left-3 top-3 flex items-center gap-1.5 bg-black/80 backdrop-blur-md rounded-lg p-1 border border-neutral-800 opacity-90 group-hover:opacity-100 transition-opacity z-10">
-                    <button
-                      onClick={(e) => handleOpenEditModal(proj, e)}
-                      className="text-neutral-300 hover:text-[#a3e635] p-1.5 transition-colors cursor-pointer"
-                      title="Editar projeto"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={(e) => handleDeleteProject(proj, e)}
-                      className="text-neutral-300 hover:text-red-400 p-1.5 transition-colors cursor-pointer"
-                      title="Excluir projeto"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                  {/* Quick Actions: Edit & Delete (Admin Only) */}
+                  {isAdmin && (
+                    <div className="absolute left-3 top-3 flex items-center gap-1.5 bg-black/80 backdrop-blur-md rounded-lg p-1 border border-neutral-800 opacity-90 group-hover:opacity-100 transition-opacity z-10">
+                      <button
+                        onClick={(e) => handleOpenEditModal(proj, e)}
+                        className="text-neutral-300 hover:text-[#a3e635] p-1.5 transition-colors cursor-pointer"
+                        title="Editar projeto"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteProject(proj, e)}
+                        className="text-neutral-300 hover:text-red-400 p-1.5 transition-colors cursor-pointer"
+                        title="Excluir projeto"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
 
                   {/* External Link Icon matching screenshot 1 top right */}
-                  {proj.liveUrl && (
-                    <a
-                      href={proj.liveUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl bg-black/80 border border-neutral-800 text-neutral-300 hover:text-[#a3e635] hover:border-[#a3e635]/50 transition-all cursor-pointer"
-                      title="Abrir site em nova aba"
-                    >
-                      <ExternalLink className="h-4.5 w-4.5" />
-                    </a>
-                  )}
+                  <button
+                    onClick={(e) => handleOpenSite(proj, e)}
+                    className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl bg-black/80 border border-neutral-800 text-neutral-300 hover:text-[#a3e635] hover:border-[#a3e635]/50 transition-all cursor-pointer z-10"
+                    title="Abrir site/demo"
+                  >
+                    <ExternalLink className="h-4.5 w-4.5" />
+                  </button>
                 </div>
 
                 {/* Card Content Body matching screenshot 1 */}
-                <div className="p-6 flex-1 flex flex-col justify-between">
+                <div 
+                  onClick={(e) => handleOpenSite(proj, e)}
+                  className="p-6 flex-1 flex flex-col justify-between cursor-pointer"
+                >
                   <div>
                     {/* Title & External Icon Row */}
                     <div className="flex items-center justify-between gap-2 mb-3">
@@ -477,25 +523,13 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
 
                   {/* Bottom Action Button */}
                   <div className="pt-4 border-t border-neutral-800/60 mt-4">
-                    {proj.liveUrl ? (
-                      <a
-                        href={proj.liveUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-neutral-900 hover:bg-[#a3e635] hover:text-black border border-neutral-800 text-white font-bold text-xs py-2.5 transition-all cursor-pointer"
-                      >
-                        <Globe className="h-4 w-4" />
-                        <span>Visitar Website</span>
-                      </a>
-                    ) : (
-                      <button
-                        onClick={() => setSelectedProject(proj)}
-                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-neutral-900 hover:bg-[#a3e635] hover:text-black border border-neutral-800 text-white font-bold text-xs py-2.5 transition-all cursor-pointer"
-                      >
-                        <Globe className="h-4 w-4" />
-                        <span>Ver Detalhes</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={(e) => handleOpenSite(proj, e)}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-neutral-900 hover:bg-[#a3e635] hover:text-black border border-neutral-800 text-white font-bold text-xs py-2.5 transition-all cursor-pointer"
+                    >
+                      <Globe className="h-4 w-4" />
+                      <span>{proj.demoId || proj.liveUrl?.startsWith('demo:') ? 'Abrir Site Interativo' : 'Visitar Website'}</span>
+                    </button>
                   </div>
 
                 </div>
@@ -682,56 +716,6 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
 
               </form>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ADMIN AUTHENTICATION POPUP ("Somente eu posso fazer isso") */}
-      <AnimatePresence>
-        {showAuthModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-            <div className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-[#121312] p-6 text-white shadow-2xl text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/30">
-                <Lock className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white">Acesso do Administrador</h3>
-              <p className="text-xs text-neutral-400 mt-1 mb-4">
-                Digite a senha do administrador da Techify para gerenciar o portfólio.
-              </p>
-
-              <form onSubmit={handleAdminAuth} className="space-y-3">
-                <input
-                  type="password"
-                  placeholder="Senha de acesso (Ex: techify ou 1234)"
-                  value={adminPasswordInput}
-                  onChange={(e) => setAdminPasswordInput(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3 text-xs text-white text-center focus:border-[#a3e635] focus:outline-none"
-                />
-                {authError && (
-                  <p className="text-[11px] text-red-400">{authError}</p>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAuthModal(false);
-                      setAdminPasswordInput('');
-                      setAuthError('');
-                    }}
-                    className="flex-1 rounded-xl border border-neutral-800 py-2.5 text-xs text-neutral-400 hover:bg-neutral-900"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2.5 text-xs cursor-pointer"
-                  >
-                    Acessar
-                  </button>
-                </div>
-              </form>
-            </div>
           </div>
         )}
       </AnimatePresence>

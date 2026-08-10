@@ -8,6 +8,7 @@ import {
 import { Job } from '../types';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useAdminAuth } from '../lib/adminAuth';
 
 const INITIAL_JOBS = [
   {
@@ -53,12 +54,8 @@ export default function CareersSection() {
   const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
 
   // Admin protection state
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    return localStorage.getItem('techify_admin') === 'true';
-  });
+  const { isAdmin } = useAdminAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [adminPasswordInput, setAdminPasswordInput] = useState('');
-  const [authError, setAuthError] = useState('');
 
   // Modal "Publicar Nova Vaga" state
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
@@ -145,22 +142,8 @@ export default function CareersSection() {
     return matchesCategory && matchesSearch;
   });
 
-  // Admin Auth Handler
-  const handleAdminAuth = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (adminPasswordInput === 'techify' || adminPasswordInput === '1234' || adminPasswordInput.trim() !== '') {
-      setIsAdmin(true);
-      localStorage.setItem('techify_admin', 'true');
-      setShowAuthModal(false);
-      setAdminPasswordInput('');
-      setAuthError('');
-      setIsPublishModalOpen(true);
-    } else {
-      setAuthError('Senha incorreta.');
-    }
-  };
-
   const handleOpenPublishModal = () => {
+    if (!isAdmin) return;
     setIsPublishModalOpen(true);
   };
 
@@ -283,16 +266,18 @@ export default function CareersSection() {
             Construa o futuro do design digital conosco. Estamos procurando talentos apaixonados por criar experiências incríveis.
           </p>
 
-          {/* GREEN "PUBLICAR VAGA" BUTTON */}
-          <div className="mt-8 flex justify-center">
-            <button
-              onClick={handleOpenPublishModal}
-              className="group relative inline-flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-sm px-6 py-3.5 transition-all shadow-[0_0_20px_rgba(163,230,53,0.3)] hover:shadow-[0_0_30px_rgba(163,230,53,0.5)] cursor-pointer active:scale-98"
-            >
-              <Plus className="h-5 w-5 stroke-[2.5]" />
-              <span>Publicar Vaga</span>
-            </button>
-          </div>
+          {/* GREEN "PUBLICAR VAGA" BUTTON (Admin Only) */}
+          {isAdmin && (
+            <div className="mt-8 flex justify-center">
+              <button
+                onClick={handleOpenPublishModal}
+                className="group relative inline-flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-sm px-6 py-3.5 transition-all shadow-[0_0_20px_rgba(163,230,53,0.3)] hover:shadow-[0_0_30px_rgba(163,230,53,0.5)] cursor-pointer active:scale-98"
+              >
+                <Plus className="h-5 w-5 stroke-[2.5]" />
+                <span>Publicar Vaga</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Filter controls and Search Bar */}
@@ -377,13 +362,15 @@ export default function CareersSection() {
                       </h2>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={(e) => handleDeleteJob(e, job.id)}
-                          className="text-neutral-500 hover:text-red-400 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors cursor-pointer"
-                          title="Excluir vaga"
-                        >
-                          <Trash2 className="h-4.5 w-4.5" />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={(e) => handleDeleteJob(e, job.id)}
+                            className="text-neutral-500 hover:text-red-400 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title="Excluir vaga"
+                          >
+                            <Trash2 className="h-4.5 w-4.5" />
+                          </button>
+                        )}
                         
                         <button
                           onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
@@ -774,56 +761,6 @@ export default function CareersSection() {
 
               </form>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ADMIN AUTH MODAL */}
-      <AnimatePresence>
-        {showAuthModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-            <div className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-[#121312] p-6 text-white shadow-2xl text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/30">
-                <Lock className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white">Acesso do Administrador</h3>
-              <p className="text-xs text-neutral-400 mt-1 mb-4">
-                Digite a senha de administrador da Techify para publicar vagas.
-              </p>
-
-              <form onSubmit={handleAdminAuth} className="space-y-3">
-                <input
-                  type="password"
-                  placeholder="Senha de acesso (Ex: techify ou 1234)"
-                  value={adminPasswordInput}
-                  onChange={(e) => setAdminPasswordInput(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3 text-xs text-white text-center focus:border-[#a3e635] focus:outline-none"
-                />
-                {authError && (
-                  <p className="text-[11px] text-red-400">{authError}</p>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAuthModal(false);
-                      setAdminPasswordInput('');
-                      setAuthError('');
-                    }}
-                    className="flex-1 rounded-xl border border-neutral-800 py-2.5 text-xs text-neutral-400 hover:bg-neutral-900"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2.5 text-xs"
-                  >
-                    Acessar
-                  </button>
-                </div>
-              </form>
-            </div>
           </div>
         )}
       </AnimatePresence>

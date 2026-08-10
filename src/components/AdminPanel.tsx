@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { 
   Shield, Calendar, Clock, Briefcase, Users, Handshake, 
   Mail, Phone, Instagram, CheckCircle2, XCircle, Send, 
-  Plus, Trash2, Check, RefreshCw, ExternalLink
+  Plus, Trash2, Check, RefreshCw, ExternalLink, Lock, LogOut
 } from 'lucide-react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useAdminAuth } from '../lib/adminAuth';
 
 interface ConsultaItem {
   id: string;
@@ -58,6 +59,10 @@ interface ParceiroItem {
 }
 
 export default function AdminPanel() {
+  const { isAdmin, login, logout } = useAdminAuth();
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
   const [activeTab, setActiveTab] = useState<'andamento' | 'historico' | 'candidaturas' | 'leads' | 'parceiros'>('andamento');
 
   const [consultas, setConsultas] = useState<ConsultaItem[]>([]);
@@ -428,6 +433,50 @@ export default function AdminPanel() {
     }
   };
 
+  if (!isAdmin) {
+    return (
+      <div className="w-full min-h-screen bg-[#070807] text-white flex items-center justify-center p-4">
+        <div className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-[#121312] p-6 shadow-2xl text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/30 shadow-[0_0_20px_rgba(163,230,53,0.15)]">
+            <Lock className="h-7 w-7" />
+          </div>
+          <h2 className="font-display text-xl font-black text-white">Acesso do Administrador</h2>
+          <p className="text-xs text-neutral-400 mt-1 mb-5">
+            Área restrita. Insira a senha de administrador da Techify para desbloquear o painel.
+          </p>
+
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const ok = login(passwordInput);
+            if (!ok) setPasswordError('Senha incorreta.');
+            else setPasswordError('');
+          }} className="space-y-3">
+            <input
+              type="password"
+              placeholder="Digite a senha..."
+              value={passwordInput}
+              onChange={(e) => {
+                setPasswordInput(e.target.value);
+                if (passwordError) setPasswordError('');
+              }}
+              autoFocus
+              className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-3 px-4 text-xs text-white text-center focus:border-[#a3e635] focus:outline-none font-mono tracking-wider"
+            />
+            {passwordError && (
+              <p className="text-xs text-red-400 font-medium">{passwordError}</p>
+            )}
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-3 text-xs cursor-pointer shadow-[0_0_20px_rgba(163,230,53,0.3)] transition-all"
+            >
+              Acessar Painel
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full min-h-screen bg-[#070807] text-white py-10 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -448,15 +497,26 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          {activeTab === 'leads' && (
+          <div className="flex items-center gap-3">
+            {activeTab === 'leads' && (
+              <button
+                onClick={() => setIsNewLeadModalOpen(true)}
+                className="flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs px-4 py-2.5 transition-all shadow-[0_0_12px_rgba(163,230,53,0.3)] cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Cadastrar Lead</span>
+              </button>
+            )}
+
             <button
-              onClick={() => setIsNewLeadModalOpen(true)}
-              className="flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs px-4 py-2.5 transition-all shadow-[0_0_12px_rgba(163,230,53,0.3)] cursor-pointer"
+              onClick={logout}
+              className="flex items-center gap-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold text-xs px-3.5 py-2.5 transition-all cursor-pointer"
+              title="Sair do Modo Admin"
             >
-              <Plus className="h-4 w-4" />
-              <span>Cadastrar Lead</span>
+              <LogOut className="h-4 w-4" />
+              <span>Sair do Admin</span>
             </button>
-          )}
+          </div>
         </div>
 
         {/* Tab Selection Navigation Bar */}

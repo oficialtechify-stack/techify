@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CornerDownLeft } from 'lucide-react';
 
 const CHARACTERS = [
   { name: 'MAX', src: 'https://fifth-gentle-45902158.figma.site/_components/v2/4de492f6d9cf8244ad5293233e5c6f52407d42fc/1.02464a56.png', bg: '#F4845F', panel: '#F79B7F' },
@@ -8,7 +8,11 @@ const CHARACTERS = [
   { name: 'NEO', src: 'https://fifth-gentle-45902158.figma.site/_components/v2/4de492f6d9cf8244ad5293233e5c6f52407d42fc/4.4457fbce.png', bg: '#6EB5FF', panel: '#8DC4FF' }
 ];
 
-export default function ToonHub() {
+interface ToonHubProps {
+  onBack?: () => void;
+}
+
+export default function ToonHub({ onBack }: ToonHubProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -84,6 +88,19 @@ export default function ToonHub() {
         onTouchEnd={handleTouchEnd}
         className="relative w-full h-[100vh] overflow-hidden"
       >
+        {/* Floating Exit demo helper */}
+        {onBack && (
+          <div className="absolute top-4 left-4 z-50">
+            <button
+              onClick={onBack}
+              className="rounded-full bg-black/80 backdrop-blur-md px-4 py-2 text-xs font-bold text-white hover:bg-black border border-white/20 flex items-center gap-1.5 transition-all cursor-pointer shadow-lg hover:scale-105 active:scale-95"
+            >
+              <CornerDownLeft className="h-3.5 w-3.5 text-[#2eff00]" />
+              <span>Sair da Demo</span>
+            </button>
+          </div>
+        )}
+
         {/* 1. Grain overlay */}
         <div
           style={{

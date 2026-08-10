@@ -7,6 +7,7 @@ export interface Project {
   tags: string[];
   certified: boolean;
   liveUrl?: string;
+  demoId?: string;
 }
 
 export interface Service {

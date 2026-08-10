@@ -1,13 +1,14 @@
 import React from 'react';
-import { Mail, MessageCircle, Instagram } from 'lucide-react';
+import { Mail, MessageCircle, Instagram, Lock } from 'lucide-react';
 import { TechifyIcon } from './TechifyLogo';
 
 interface FooterProps {
   onNavigate: (tab: string) => void;
   onOpenConsultation: () => void;
+  onOpenAdminLogin?: () => void;
 }
 
-export default function Footer({ onNavigate, onOpenConsultation }: FooterProps) {
+export default function Footer({ onNavigate, onOpenConsultation, onOpenAdminLogin }: FooterProps) {
   return (
     <footer className="border-t border-neutral-900 bg-black py-16 text-neutral-400">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -31,16 +32,16 @@ export default function Footer({ onNavigate, onOpenConsultation }: FooterProps) 
               Inovação digital e design de alta performance. Criamos experiências que conectam marcas a resultados de impacto mensurável.
             </p>
 
-            {/* Instagram Button matching screenshots */}
+            {/* Instagram Button matching requested link */}
             <div>
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/techify.oficial"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-full border border-brand-accent/20 bg-brand-accent/5 hover:bg-brand-accent/15 px-4 py-2 text-xs font-bold text-brand-accent transition-all duration-300"
               >
                 <Instagram className="h-4 w-4" />
-                <span>@techify.digital</span>
+                <span>@techify.oficial</span>
               </a>
             </div>
           </div>
@@ -93,7 +94,7 @@ export default function Footer({ onNavigate, onOpenConsultation }: FooterProps) 
             <div className="space-y-4">
               {/* Email Contact */}
               <a
-                href="mailto:contato@techify.com.br"
+                href="mailto:oficialtechify@gmail.com"
                 className="flex items-center gap-3 group"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900/30 text-brand-lime transition-colors group-hover:border-brand-accent/50 group-hover:bg-brand-accent/10">
@@ -101,30 +102,43 @@ export default function Footer({ onNavigate, onOpenConsultation }: FooterProps) 
                 </div>
                 <div className="text-left">
                   <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">E-mail Comercial</p>
-                  <p className="text-sm font-medium text-neutral-300 group-hover:text-white transition-colors">contato@techify.com.br</p>
+                  <p className="text-sm font-medium text-neutral-300 group-hover:text-white transition-colors">oficialtechify@gmail.com</p>
                 </div>
               </a>
 
               {/* WhatsApp Contact */}
-              <button
-                onClick={onOpenConsultation}
-                className="flex items-center gap-3 group text-left w-full"
+              <a
+                href="https://wa.me/5581995498590"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 group text-left w-full cursor-pointer"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900/30 text-brand-accent transition-colors group-hover:border-brand-accent/50 group-hover:bg-brand-accent/10">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900/30 text-[#2eff00] transition-colors group-hover:border-[#2eff00]/50 group-hover:bg-[#2eff00]/10">
                   <MessageCircle className="h-4 w-4" />
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Atendimento Imediato</p>
-                  <p className="text-sm font-medium text-neutral-300 group-hover:text-white transition-colors">Suporte via WhatsApp</p>
+                  <p className="text-sm font-medium text-neutral-300 group-hover:text-[#2eff00] transition-colors">Suporte via WhatsApp</p>
                 </div>
-              </button>
+              </a>
             </div>
           </div>
         </div>
 
         {/* Bottom copyright note */}
-        <div className="mt-16 border-t border-neutral-900 pt-8 text-center text-xs text-neutral-600">
+        <div className="mt-16 border-t border-neutral-900 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-600">
           <p>© 2026 Techify. Todos os direitos reservados. Projeto inovador de alta engenharia visual.</p>
+          
+          {onOpenAdminLogin && (
+            <button
+              onClick={onOpenAdminLogin}
+              className="flex items-center gap-1 text-neutral-600 hover:text-[#2eff00] transition-colors cursor-pointer text-[11px]"
+              title="Área do Administrador"
+            >
+              <Lock className="h-3 w-3" />
+              <span>Área Restrita</span>
+            </button>
+          )}
         </div>
       </div>
     </footer>

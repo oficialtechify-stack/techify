@@ -1,20 +1,27 @@
 import React from 'react';
-import { Home, Globe, Briefcase, Shield } from 'lucide-react';
+import { Home, Globe, Briefcase, Shield, Lock, LogOut } from 'lucide-react';
 import { TechifyIcon } from './TechifyLogo';
+import { useAdminAuth } from '../lib/adminAuth';
 
 interface HeaderProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   onOpenConsultation: () => void;
+  onOpenAdminLogin: () => void;
 }
 
-export default function Header({ activeTab, setActiveTab, onOpenConsultation }: HeaderProps) {
-  const navItems = [
+export default function Header({ activeTab, setActiveTab, onOpenConsultation, onOpenAdminLogin }: HeaderProps) {
+  const { isAdmin, logout } = useAdminAuth();
+
+  const baseNavItems = [
     { id: 'inicio', label: 'INÍCIO', icon: Home },
     { id: 'portfolio', label: 'PORTFÓLIO', icon: Globe },
     { id: 'carreiras', label: 'CARREIRAS', icon: Briefcase },
-    { id: 'admin', label: 'ADMIN', icon: Shield },
   ];
+
+  const navItems = isAdmin 
+    ? [...baseNavItems, { id: 'admin', label: 'ADMIN', icon: Shield }]
+    : baseNavItems;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-neutral-900 bg-black/75 backdrop-blur-md">
@@ -56,6 +63,29 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation }: 
               </button>
             );
           })}
+
+          {/* Discreet lock button when not logged in to access admin password prompt */}
+          {!isAdmin ? (
+            <button
+              onClick={onOpenAdminLogin}
+              className="p-2 text-neutral-600 hover:text-[#2eff00] transition-colors rounded-lg hover:bg-neutral-900/50"
+              title="Área do Administrador"
+            >
+              <Lock className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                logout();
+                if (activeTab === 'admin') setActiveTab('inicio');
+              }}
+              className="flex items-center gap-1 text-[11px] font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 rounded-lg border border-red-500/20 transition-all cursor-pointer"
+              title="Sair do Modo Admin"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Sair</span>
+            </button>
+          )}
         </nav>
 
         {/* Quick Contact Action Button on Desktop */}
@@ -71,3 +101,4 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation }: 
     </header>
   );
 }
+

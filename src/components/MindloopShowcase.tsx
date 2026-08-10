@@ -145,7 +145,7 @@ export default function MindloopShowcase({ onBack }: MindloopShowcaseProps) {
         {/* Right: Social Icons housed inside liquid-glass buttons */}
         <div className="flex items-center gap-3">
           <a
-            href="https://instagram.com"
+            href="https://www.instagram.com/techify.oficial"
             target="_blank"
             rel="noreferrer"
             className="liquid-glass w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all text-neutral-300 hover:text-white"
