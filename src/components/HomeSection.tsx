@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, useInView, animate } from 'motion/react';
 import { 
   Calendar, 
   ArrowRight, 
@@ -17,7 +17,52 @@ import {
 } from 'lucide-react';
 import { Service } from '../types';
 import { SERVICES } from '../data';
-import ToonHub from './ToonHub';
+import AnimatedGradient from './AnimatedGradient';
+import { TechifyIcon } from './TechifyLogo';
+
+interface AnimatedCounterProps {
+  targetValue: number;
+  suffix?: string;
+  label: string;
+  idx: number;
+}
+
+function AnimatedCounter({ targetValue, suffix = '', label, idx }: AnimatedCounterProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.3 });
+  const [currentValue, setCurrentValue] = useState(0);
+
+  useEffect(() => {
+    if (isInView) {
+      const controls = animate(0, targetValue, {
+        duration: 2.2,
+        ease: [0.16, 1, 0.3, 1],
+        onUpdate: (latest) => {
+          setCurrentValue(Math.floor(latest));
+        },
+      });
+      return () => controls.stop();
+    }
+  }, [isInView, targetValue]);
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.6, delay: idx * 0.15 }}
+      className="flex flex-col items-center text-center"
+    >
+      <h3 className="font-display text-5xl font-extrabold text-[#a3e635] text-glow-green sm:text-6xl tracking-tight drop-shadow-[0_0_20px_rgba(163,230,53,0.5)]">
+        {currentValue}{suffix}
+      </h3>
+      <p className="mt-2 text-xs font-semibold tracking-wider text-neutral-400 uppercase">
+        {label}
+      </p>
+    </motion.div>
+  );
+}
 
 interface HomeSectionProps {
   onNavigate: (tab: string) => void;
@@ -45,9 +90,29 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
 
   return (
     <div className="relative w-full overflow-hidden bg-black bg-nebula pb-24">
-      {/* Full-screen Dark Hero Section with Cinematic Premium background video */}
+      {/* Full-screen Dark Hero Section with Animated Gradient background */}
       <div className="relative w-full min-h-screen flex flex-col justify-center items-center overflow-hidden pb-12">
-        <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover z-0"><source src="https://res.cloudinary.com/dfonotyfb/video/upload/v1775585556/dds3_1_rqhg7x.mp4" type="video/mp4" /> </video>
+        {/* Animated Gradient Background only in this hero section */}
+        <AnimatedGradient 
+          config={{
+            preset: "custom",
+            color1: "#000000",
+            color2: "#183808",
+            color3: "#030a02",
+            rotation: -50,
+            proportion: 60,
+            scale: 0.15,
+            speed: 20,
+            distortion: 8,
+            swirl: 45,
+            swirlIterations: 8,
+            softness: 85,
+            offset: 0,
+            shape: "Checks",
+            shapeSize: 35,
+          }}
+          noise={{ opacity: 0.15 }}
+        />
         
         {/* Soft dark vignette overlay to blend with bg & improve contrast */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black z-[1] pointer-events-none" />
@@ -71,65 +136,75 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         </div>
 
         {/* Hero Section Content */}
-        <section className="relative mx-auto max-w-7xl px-4 pt-16 text-center sm:px-6 lg:px-8 z-10 w-full">
+        <section className="relative mx-auto max-w-7xl px-4 pt-8 text-center sm:px-6 lg:px-8 z-10 w-full flex flex-col items-center">
           
+          {/* Circular Techify Logo Badge */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mx-auto mb-6 flex h-28 w-28 sm:h-32 sm:w-32 items-center justify-center rounded-full border-2 border-[#a3e635] bg-black p-2 text-center ring-1 ring-[#a3e635]/20 shadow-md overflow-hidden"
+          >
+            <TechifyIcon className="h-full w-full rounded-full" />
+          </motion.div>
+
           {/* Digital Innovation Pill Badge */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-brand-accent/20 bg-brand-accent/5 px-4 py-1.5 text-xs text-brand-lime tracking-widest uppercase font-semibold text-glow-green mb-8"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#a3e635]/40 bg-[#a3e635]/10 px-4 py-1.5 text-xs text-[#a3e635] tracking-wider font-semibold mb-6"
           >
-            <Sparkles className="h-3.5 w-3.5 text-brand-accent animate-spin" style={{ animationDuration: '3s' }} />
-            <span>INOVAÇÃO DIGITAL</span>
+            <Sparkles className="h-3.5 w-3.5 text-[#a3e635]" />
+            <span>Inovação Digital</span>
           </motion.div>
 
-          {/* Main Header Title */}
+          {/* Main Header Title (From Image 1 & 2) */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="font-display text-5xl font-black tracking-tighter text-white sm:text-7xl lg:text-8xl uppercase leading-none"
+            className="font-display text-5xl font-extrabold tracking-tight text-white sm:text-7xl lg:text-8xl leading-none"
           >
-            TRANSFORME SEU <br />
-            <span className="text-brand-lime text-glow-green inline-block hover:scale-[1.02] transition-transform duration-300">
-              TECHIFY
+            Transforme Seu <br />
+            <span className="text-[#a3e635] inline-block hover:scale-[1.01] transition-transform duration-300">
+              Negócio Digital
             </span>
           </motion.h1>
 
-          {/* Taglines */}
+          {/* Taglines (From Image 1 & 2) */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="mx-auto mt-8 max-w-2xl space-y-3"
+            className="mx-auto mt-6 max-w-2xl space-y-2 text-center"
           >
             <p className="text-base text-neutral-300 sm:text-lg font-normal">
               Criamos plataformas web e identidade visual que geram resultados reais.
             </p>
-            <p className="text-md sm:text-lg font-medium text-brand-lime">
+            <p className="text-base sm:text-lg font-semibold text-[#a3e635]">
               Da ideia ao lançamento, sua visão ganha vida.
             </p>
           </motion.div>
 
-          {/* Emoji Tags Pills Carousel/List */}
+          {/* Pill Tags List from Image 2 */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.6 }}
-            className="mx-auto mt-12 flex flex-wrap justify-center gap-2 max-w-3xl"
+            className="mx-auto mt-8 flex flex-wrap justify-center gap-2.5 max-w-3xl"
           >
             {[
-              { tag: '🎨 UX/UI Design' },
-              { tag: '💻 Sistemas Web' },
-              { tag: '📈 SEO Otimizado' },
-              { tag: '🚀 Desenvolvimento' },
-              { tag: '💎 Identidade Visual' },
-              { tag: '⚡ Suporte 24/7' },
+              { tag: '🎓 Cursos Grátis' },
+              { tag: '🌐 8 Idiomas' },
+              { tag: '🤖 IA Tutora 24/7' },
+              { tag: '💆 Massagem' },
+              { tag: '💻 Programação' },
+              { tag: '🏆 Certificados' },
             ].map((item, id) => (
               <span
                 key={id}
-                className="rounded-full border border-neutral-800 bg-neutral-900/30 px-4 py-1.5 text-xs font-semibold text-neutral-300 hover:border-brand-accent/30 hover:text-white transition-all duration-350 cursor-default"
+                className="rounded-full border border-[#a3e635]/30 bg-[#a3e635]/10 px-4 py-1.5 text-xs font-semibold text-[#a3e635] hover:border-[#a3e635] hover:bg-[#a3e635]/20 transition-all duration-300 cursor-default"
               >
                 {item.tag}
               </span>
@@ -141,75 +216,71 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
-            className="mx-auto mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row max-w-lg"
+            className="mx-auto mt-10 flex flex-wrap items-center justify-center gap-4 max-w-3xl"
           >
             {/* Button 1: Consultation */}
             <button
               onClick={onOpenConsultation}
-              className="group flex w-full items-center justify-between rounded-xl bg-brand-lime hover:bg-brand-accent text-black font-extrabold text-sm px-6 py-4 transition-all duration-300 hover:scale-[1.02] shadow-[0_4px_30px_rgba(163,230,53,0.35)] block-glow-green sm:w-auto"
+              className="group flex items-center justify-between gap-3 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-sm px-6 py-3.5 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
             >
               <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
+                <Calendar className="h-4 w-4" />
                 <span>Agendar Consulta</span>
               </div>
-              <ArrowRight className="h-4 w-4 ml-8 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
             </button>
 
             {/* Button 2: Portfolio */}
             <button
               onClick={() => onNavigate('portfolio')}
-              className="flex w-full items-center justify-center rounded-xl bg-white hover:bg-neutral-100 text-black font-extrabold text-sm px-8 py-4 transition-all duration-300 hover:scale-[1.02] sm:w-auto"
+              className="flex items-center justify-center rounded-xl bg-white hover:bg-neutral-100 text-[#84cc16] font-extrabold text-sm px-7 py-3.5 transition-all duration-300 hover:scale-[1.02] cursor-pointer shadow-md"
             >
               Ver Portfólio
             </button>
           </motion.div>
 
-          {/* Scroll To Explore Mouse Indicator */}
-          <div className="mt-20 flex flex-col items-center gap-1.5 text-glow-green">
-            <span className="text-[10px] font-bold tracking-widest text-[#a3e635]">
-              ROLE PARA EXPLORAR
+          {/* Scroll To Explore Mouse Indicator (From Image 3) */}
+          <div className="mt-12 flex flex-col items-center gap-2">
+            <span className="text-[11px] font-bold tracking-wider text-[#a3e635] uppercase">
+              Role para explorar
             </span>
             <motion.div
-              animate={{ y: [0, 8, 0] }}
+              animate={{ y: [0, 6, 0] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
-              className="text-brand-lime"
+              className="w-5 h-8 rounded-full border-2 border-[#a3e635] flex items-start justify-center p-1"
             >
-              <Mouse className="h-6 w-6 stroke-1.5" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#a3e635]" />
             </motion.div>
           </div>
+
+          {/* Statistics Section with Scroll Animated Counters (From Image 3) */}
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7 }}
+            className="w-full max-w-4xl mx-auto mt-12 px-4"
+          >
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <AnimatedCounter targetValue={50} suffix="+" label="Projetos" idx={0} />
+              <AnimatedCounter targetValue={30} suffix="+" label="Clientes" idx={1} />
+              <AnimatedCounter targetValue={100} suffix="%" label="Satisfação" idx={2} />
+            </div>
+          </motion.div>
         </section>
       </div>
 
-      {/* Statistics Section */}
-      <section className="mx-auto max-w-5xl px-4 mt-24">
-        <div className="grid grid-cols-1 gap-8 rounded-2xl border border-neutral-900 bg-neutral-950/40 p-8 sm:grid-cols-3">
-          {[
-            { value: '50+', label: 'PROJETOS' },
-            { value: '30+', label: 'CLIENTES' },
-            { value: '100%', label: 'SATISFAÇÃO' },
-          ].map((stat, idx) => (
-            <div
-              key={idx}
-              className={`flex flex-col items-center text-center ${
-                idx > 0 ? 'sm:border-l sm:border-neutral-900/80 sm:pl-8' : ''
-              }`}
-            >
-              <h3 className="font-display text-5xl font-extrabold text-brand-lime text-glow-green sm:text-6xl">
-                {stat.value}
-              </h3>
-              <p className="mt-2 text-xs font-black tracking-widest text-neutral-500 uppercase">
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Services Grid (Image 3) */}
-      <section className="mx-auto max-w-7xl px-4 mt-36 sm:px-6 lg:px-8">
+      <motion.section 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7 }}
+        className="mx-auto max-w-7xl px-4 mt-36 sm:px-6 lg:px-8"
+      >
         <div className="text-center mb-16">
           <h2 className="font-display text-3xl font-black tracking-tight text-white sm:text-5xl uppercase">
-            NOSSOS <span className="text-brand-lime text-glow-green">SERVIÇOS</span>
+            NOSSOS <span className="text-brand-lime">SERVIÇOS</span>
           </h2>
           <p className="mt-3 text-xs font-black tracking-widest text-neutral-400 uppercase">
             SOLUÇÕES COMPLETAS PARA ELEVAR SUA PRESENÇA DIGITAL
@@ -217,7 +288,7 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {SERVICES.map((srv) => {
+          {SERVICES.map((srv, idx) => {
             // Icon choosing map
             let SrvIcon = Globe;
             if (srv.iconName === 'Palette') SrvIcon = Palette;
@@ -229,13 +300,17 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
             return (
               <motion.div
                 key={srv.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
                 onMouseEnter={() => setHoveredCard(srv.id)}
                 onMouseLeave={() => setHoveredCard(null)}
                 className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-800 bg-[#070707] p-8 text-left transition-all duration-300 hover:border-neutral-700 hover:translate-y-[-4px]"
               >
-                {/* Visual glowing border */}
+                {/* Visual border */}
                 {isHovered && (
-                  <div className="absolute inset-0 border border-brand-accent/30 rounded-2xl pointer-events-none border-glow-green" />
+                  <div className="absolute inset-0 border border-brand-accent/30 rounded-2xl pointer-events-none" />
                 )}
 
                 <div>
@@ -267,10 +342,16 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
             );
           })}
         </div>
-      </section>
+      </motion.section>
 
       {/* Mid Banner Section (Image 4): The design you only find here */}
-      <section className="mx-auto max-w-4xl px-4 mt-36 text-center">
+      <motion.section 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7 }}
+        className="mx-auto max-w-4xl px-4 mt-36 text-center"
+      >
         <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-accent/20 bg-brand-accent/5 px-4 py-1.5 text-xs text-brand-lime tracking-widest uppercase font-semibold mb-6">
           <Zap className="h-3 w-3 text-brand-lime" />
           <span>CONVITE PREMIUM</span>
@@ -278,7 +359,7 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
 
         <h2 className="font-display text-4xl font-black text-white uppercase tracking-tight sm:text-6xl">
           O DESIGN QUE VOCÊ <br />
-          <span className="text-brand-lime text-glow-green italic tracking-wide inline-block transform skew-x-[-4deg]">
+          <span className="text-brand-lime italic tracking-wide inline-block transform skew-x-[-4deg]">
             SÓ ENCONTRA AQUI.
           </span>
         </h2>
@@ -292,8 +373,12 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
           {premiumFeatures.map((feat, idx) => {
             const FeatIcon = feat.icon;
             return (
-              <div 
+              <motion.div 
                 key={idx}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.1 }}
                 className="flex flex-col items-center justify-center rounded-xl border border-neutral-900 bg-neutral-950/20 py-6 px-4 hover:border-neutral-800 transition-colors duration-200"
               >
                 <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-800 bg-[#0d0d0d] text-brand-lime">
@@ -302,7 +387,7 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
                 <span className="text-[9px] font-black tracking-wider text-neutral-300 uppercase text-center">
                   {feat.label}
                 </span>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -362,12 +447,7 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
             </motion.div>
           )}
         </div>
-      </section>
-
-      {/* Interactive ToonHub Figurines Carousel */}
-      <section className="mt-36 border-t border-neutral-900">
-        <ToonHub />
-      </section>
+      </motion.section>
     </div>
   );
 }

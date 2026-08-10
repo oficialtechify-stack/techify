@@ -400,9 +400,13 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
               </p>
             </div>
           ) : (
-            filteredProjects.map((proj) => (
-              <div
+            filteredProjects.map((proj, idx) => (
+              <motion.div
                 key={proj.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.5, delay: idx * 0.08 }}
                 className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-800/90 bg-[#121312] hover:border-[#a3e635]/40 transition-all duration-300 shadow-xl"
               >
                 {/* Image Header matching screenshot 1 */}
@@ -495,7 +499,7 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
                   </div>
 
                 </div>
-              </div>
+              </motion.div>
             ))
           )}
         </div>

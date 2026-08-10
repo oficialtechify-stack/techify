@@ -10,6 +10,7 @@ import MugsysMugsShowcase from './components/MugsysMugsShowcase';
 import MindloopShowcase from './components/MindloopShowcase';
 import WandrShowcase from './components/WandrShowcase';
 import AdminPanel from './components/AdminPanel';
+import AcademySection from './components/AcademySection';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('inicio');
@@ -88,6 +89,8 @@ export default function App() {
         );
       case 'carreiras':
         return <CareersSection />;
+      case 'academia':
+        return <AcademySection />;
       case 'admin':
         return <AdminPanel />;
       default:

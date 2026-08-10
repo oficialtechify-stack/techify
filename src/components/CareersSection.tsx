@@ -353,13 +353,17 @@ export default function CareersSection() {
               </p>
             </div>
           ) : (
-            filteredJobs.map((job) => {
+            filteredJobs.map((job, idx) => {
               const isExpanded = expandedJobId === job.id;
               const isApplying = applyingJobId === job.id;
 
               return (
-                <div
+                <motion.div
                   key={job.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.5, delay: idx * 0.08 }}
                   className="group relative rounded-2xl border border-neutral-800/90 bg-[#121312] hover:border-[#a3e635]/40 transition-all duration-300 overflow-hidden p-6 flex flex-col justify-between shadow-lg"
                 >
                   <div>
@@ -547,7 +551,7 @@ export default function CareersSection() {
                     )}
                   </AnimatePresence>
 
-                </div>
+                </motion.div>
               );
             })
           )}

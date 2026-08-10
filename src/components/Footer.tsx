@@ -1,5 +1,6 @@
 import React from 'react';
 import { Mail, MessageCircle, Instagram } from 'lucide-react';
+import { TechifyIcon } from './TechifyLogo';
 
 interface FooterProps {
   onNavigate: (tab: string) => void;
@@ -19,17 +20,7 @@ export default function Footer({ onNavigate, onOpenConsultation }: FooterProps) 
             >
               {/* Specialized Techify Logo Box */}
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-800 bg-[#060606] p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-black">
-                <svg viewBox="0 0 100 100" className="h-full w-full" fill="none">
-                  <path
-                    d="M15,80 C30,70 35,30 50,45 C65,60 70,25 85,15"
-                    stroke="#39FF14"
-                    strokeWidth="10"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx="50" cy="45" r="8" fill="#a3e635" />
-                  <circle cx="85" cy="15" r="8" fill="#a3e635" />
-                </svg>
+                <TechifyIcon className="h-full w-full" color="#2eff00" />
               </div>
               <span className="font-display text-xl font-black tracking-wider text-white">
                 TECHIFY
@@ -46,7 +37,7 @@ export default function Footer({ onNavigate, onOpenConsultation }: FooterProps) 
                 href="https://instagram.com"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border border-brand-accent/20 bg-brand-accent/5 hover:bg-brand-accent/15 px-4 py-2 text-xs font-bold text-brand-accent text-glow-green transition-all duration-300"
+                className="inline-flex items-center gap-2 rounded-full border border-brand-accent/20 bg-brand-accent/5 hover:bg-brand-accent/15 px-4 py-2 text-xs font-bold text-brand-accent transition-all duration-300"
               >
                 <Instagram className="h-4 w-4" />
                 <span>@techify.digital</span>

@@ -100,7 +100,7 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ type: 'spring', duration: 0.5 }}
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-neutral-800 bg-[#0a0a0a] p-6 text-white shadow-2xl block-glow-green"
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-neutral-800 bg-[#0a0a0a] p-6 text-white shadow-2xl"
           >
             {/* Background green flare */}
             <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-brand-accent/15 blur-3xl" />
@@ -124,7 +124,7 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
                 animate={{ opacity: 1, scale: 1 }}
                 className="py-12 text-center"
               >
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-accent/20 border border-brand-accent text-brand-accent text-glow-green">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-accent/20 border border-brand-accent text-brand-accent">
                   <Check className="h-7 w-7 animate-pulse" />
                 </div>
                 <h4 className="font-display text-xl font-bold text-white mb-2">Consulta Solicitada!</h4>

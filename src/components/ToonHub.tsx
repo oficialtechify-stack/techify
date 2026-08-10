@@ -40,13 +40,7 @@ export default function ToonHub() {
     }
   };
 
-  // Preload all images on mount
   useEffect(() => {
-    CHARACTERS.forEach((item) => {
-      const img = new Image();
-      img.src = item.src;
-    });
-
     // Check window width for mobility status
     const handleResize = () => {
       setIsMobile(window.innerWidth < 640);

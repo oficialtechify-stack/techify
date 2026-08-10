@@ -107,7 +107,7 @@ export default function AcademySection() {
 
           <h1 className="font-display text-4xl font-black tracking-tighter text-white sm:text-6xl uppercase leading-none">
             CONHECIMENTO <br />
-            <span className="text-brand-lime text-glow-green inline-block italic transform skew-x-[-3deg] mt-2 border-b-2 border-brand-lime pb-1">
+            <span className="text-brand-lime inline-block italic transform skew-x-[-3deg] mt-2 border-b-2 border-brand-lime pb-1">
               SEM LIMITES.
             </span>
           </h1>
