@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Shield, Calendar, Clock, Briefcase, Users, Handshake, 
   Mail, Phone, Instagram, CheckCircle2, XCircle, Send, 
-  Plus, Trash2, Check, RefreshCw, ExternalLink, KeyRound, LogOut
+  Plus, Trash2, Check, RefreshCw, ExternalLink, KeyRound, LogOut,
+  Linkedin, Globe, FileText, Download
 } from 'lucide-react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -26,8 +27,17 @@ interface CandidaturaItem {
   nome: string;
   email: string;
   telefone: string;
+  dataNascimento?: string;
   vaga: string;
+  linkedin?: string;
+  instagram?: string;
   portfolio?: string;
+  curriculo?: {
+    nomeArquivo: string;
+    tipoArquivo: string;
+    tamanho: string;
+    conteudoBase64: string;
+  };
   experiencia?: string;
   status: 'pendente' | 'aprovado' | 'recusado';
   createdAt?: string;
@@ -760,36 +770,115 @@ export default function AdminPanel() {
                     className="bg-[#131414] border border-neutral-800/80 rounded-2xl p-5 hover:border-neutral-700/80 transition-all flex flex-col justify-between shadow-lg"
                   >
                     <div>
+                      {/* Header */}
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-bold text-white text-lg font-sans">
-                          {item.nome}
-                        </h3>
-                        <span className="bg-[#1e293b] border border-[#3b82f6]/40 text-[#93c5fd] text-[11px] font-bold px-2.5 py-0.5 rounded-md">
+                        <div>
+                          <h3 className="font-bold text-white text-lg font-sans">
+                            {item.nome}
+                          </h3>
+                          {item.dataNascimento && (
+                            <p className="text-[11px] text-neutral-400 flex items-center gap-1 mt-0.5">
+                              <Calendar className="h-3 w-3 text-neutral-500" />
+                              <span>Nasc: {item.dataNascimento}</span>
+                            </p>
+                          )}
+                        </div>
+                        <span className="bg-[#1e293b] border border-[#3b82f6]/40 text-[#93c5fd] text-[11px] font-bold px-2.5 py-0.5 rounded-md shrink-0">
                           {item.vaga}
                         </span>
                       </div>
 
-                      <div className="space-y-2 text-xs text-neutral-400 mt-3">
+                      {/* Contact & Social Info */}
+                      <div className="space-y-2 text-xs text-neutral-300 mt-4">
                         <div className="flex items-center gap-2">
                           <Mail className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
-                          <span className="truncate">{item.email}</span>
+                          <a href={`mailto:${item.email}`} className="hover:underline truncate text-neutral-300">{item.email}</a>
                         </div>
+
                         {item.telefone && (
                           <div className="flex items-center gap-2">
-                            <Phone className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
-                            <span>{item.telefone}</span>
+                            <Phone className="h-3.5 w-3.5 text-[#a3e635] shrink-0" />
+                            <a 
+                              href={`https://wa.me/55${item.telefone.replace(/\D/g, '')}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-[#a3e635] hover:underline font-semibold"
+                            >
+                              {item.telefone} (WhatsApp)
+                            </a>
                           </div>
                         )}
+
+                        {/* Separate LinkedIn */}
+                        {item.linkedin && (
+                          <div className="flex items-center gap-2 pt-0.5">
+                            <Linkedin className="h-3.5 w-3.5 text-[#0a66c2] shrink-0" />
+                            <a 
+                              href={item.linkedin.startsWith('http') ? item.linkedin : `https://${item.linkedin}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-[#60a5fa] hover:underline truncate"
+                            >
+                              {item.linkedin}
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Separate Instagram */}
+                        {item.instagram && (
+                          <div className="flex items-center gap-2">
+                            <Instagram className="h-3.5 w-3.5 text-[#e1306c] shrink-0" />
+                            <a 
+                              href={item.instagram.startsWith('http') ? item.instagram : `https://instagram.com/${item.instagram.replace('@', '')}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-[#f472b6] hover:underline truncate"
+                            >
+                              {item.instagram}
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Separate Portfolio */}
                         {item.portfolio && (
-                          <div className="flex items-center gap-2 pt-1 text-brand-lime">
-                            <ExternalLink className="h-3.5 w-3.5 text-brand-lime shrink-0" />
-                            <a href={item.portfolio} target="_blank" rel="noopener noreferrer" className="hover:underline truncate">
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
+                            <a 
+                              href={item.portfolio.startsWith('http') ? item.portfolio : `https://${item.portfolio}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-neutral-300 hover:underline truncate"
+                            >
                               {item.portfolio}
                             </a>
                           </div>
                         )}
+
+                        {/* Currículo Anexado */}
+                        {item.curriculo && (
+                          <div className="bg-[#090a09] border border-[#a3e635]/30 rounded-xl p-3 mt-3 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <FileText className="h-4 w-4 text-[#a3e635] shrink-0" />
+                              <div className="min-w-0">
+                                <p className="font-bold text-white text-[11px] truncate">{item.curriculo.nomeArquivo}</p>
+                                <p className="text-[10px] text-neutral-400">{item.curriculo.tamanho}</p>
+                              </div>
+                            </div>
+                            <a
+                              href={item.curriculo.conteudoBase64}
+                              download={item.curriculo.nomeArquivo}
+                              className="bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-[11px] px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0 transition-colors"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              <span>Baixar</span>
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Experience summary */}
                         {item.experiencia && (
                           <div className="bg-[#0b0c0b] p-3 rounded-xl border border-neutral-800/60 mt-3 text-xs text-neutral-300 leading-relaxed">
+                            <p className="font-semibold text-[10px] text-neutral-500 uppercase mb-1">Resumo Profissional:</p>
                             {item.experiencia}
                           </div>
                         )}
@@ -815,6 +904,7 @@ export default function AdminPanel() {
                       <button
                         onClick={() => handleDeleteCandidatura(item.id)}
                         className="text-neutral-500 hover:text-red-400 p-1.5 transition-colors cursor-pointer"
+                        title="Excluir Candidatura"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

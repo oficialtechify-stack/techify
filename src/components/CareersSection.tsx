@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Briefcase, Search, Filter, AlertCircle, ArrowUpRight, MapPin, Clock, 
   DollarSign, ChevronDown, ChevronUp, Send, CheckCircle, ArrowRight,
-  Plus, X, Shield, Trash2, ChevronRight
+  Plus, X, Shield, Trash2, ChevronRight, Linkedin, Instagram, Globe,
+  FileText, Paperclip, Phone, Calendar, User, Mail, UploadCloud
 } from 'lucide-react';
 import { Job } from '../types';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
@@ -81,10 +82,46 @@ export default function CareersSection() {
   const [applyForm, setApplyForm] = useState({
     name: '',
     email: '',
+    telefone: '',
+    dataNascimento: '',
+    linkedin: '',
+    instagram: '',
     portfolio: '',
     experience: ''
   });
+
+  const [curriculoFile, setCurriculoFile] = useState<{
+    nomeArquivo: string;
+    tipoArquivo: string;
+    tamanho: string;
+    conteudoBase64: string;
+  } | null>(null);
+
+  const [fileError, setFileError] = useState<string>('');
   const [appliedSuccessfully, setAppliedSuccessfully] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setFileError('O arquivo de currículo deve ter no máximo 5MB.');
+      return;
+    }
+
+    setFileError('');
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setCurriculoFile({
+        nomeArquivo: file.name,
+        tipoArquivo: file.type,
+        tamanho: `${(file.size / 1024).toFixed(1)} KB`,
+        conteudoBase64: base64
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Real-time Firestore Listeners & Initial Seed
   useEffect(() => {
@@ -233,9 +270,13 @@ export default function CareersSection() {
       await addDoc(collection(db, "candidaturas"), {
         nome: applyForm.name,
         email: applyForm.email,
-        telefone: applyForm.portfolio.includes("http") ? applyForm.portfolio : "N/A",
+        telefone: applyForm.telefone,
+        dataNascimento: applyForm.dataNascimento || '',
         vaga: jobTitle,
-        portfolio: applyForm.portfolio,
+        linkedin: applyForm.linkedin || '',
+        instagram: applyForm.instagram || '',
+        portfolio: applyForm.portfolio || '',
+        curriculo: curriculoFile || null,
         experiencia: applyForm.experience || '',
         status: 'pendente',
         createdAt: new Date().toISOString()
@@ -248,7 +289,18 @@ export default function CareersSection() {
     setTimeout(() => {
       setAppliedSuccessfully(false);
       setApplyingJobId(null);
-      setApplyForm({ name: '', email: '', portfolio: '', experience: '' });
+      setApplyForm({
+        name: '',
+        email: '',
+        telefone: '',
+        dataNascimento: '',
+        linkedin: '',
+        instagram: '',
+        portfolio: '',
+        experience: ''
+      });
+      setCurriculoFile(null);
+      setFileError('');
     }, 4000);
   };
 
@@ -473,60 +525,217 @@ export default function CareersSection() {
 
                         {/* Apply Form nested inside */}
                         {isApplying && (
-                          <div className="mt-4 p-4 rounded-xl bg-neutral-900/90 border border-neutral-800">
+                          <div className="mt-4 p-5 rounded-2xl bg-[#0d0e0d] border border-neutral-800 shadow-xl">
                             {appliedSuccessfully ? (
-                              <div className="text-center py-4 space-y-2">
-                                <CheckCircle className="mx-auto h-8 w-8 text-[#a3e635]" />
-                                <p className="font-bold text-white text-sm">Candidatura enviada!</p>
-                                <p className="text-neutral-400 text-xs">Entraremos em contato pelo e-mail fornecido.</p>
+                              <div className="text-center py-6 space-y-3">
+                                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/30">
+                                  <CheckCircle className="h-6 w-6" />
+                                </div>
+                                <p className="font-bold text-white text-base font-sans">Candidatura enviada com sucesso!</p>
+                                <p className="text-neutral-400 text-xs max-w-sm mx-auto leading-relaxed">
+                                  Agradecemos pelo interesse em fazer parte do time Techify. Analisaremos suas informações e entraremos em contato.
+                                </p>
                               </div>
                             ) : (
-                              <form onSubmit={(e) => handleApplySubmit(e, job.title)} className="space-y-3">
-                                <h4 className="font-bold text-white text-xs">Candidatar-se para {job.title}</h4>
-                                <input
-                                  required
-                                  type="text"
-                                  placeholder="Seu Nome Completo *"
-                                  value={applyForm.name}
-                                  onChange={(e) => setApplyForm({ ...applyForm, name: e.target.value })}
-                                  className="w-full rounded-lg border border-neutral-800 bg-black p-2.5 text-xs text-white placeholder-neutral-500 focus:border-[#a3e635] focus:outline-none"
-                                />
-                                <input
-                                  required
-                                  type="email"
-                                  placeholder="Seu E-mail *"
-                                  value={applyForm.email}
-                                  onChange={(e) => setApplyForm({ ...applyForm, email: e.target.value })}
-                                  className="w-full rounded-lg border border-neutral-800 bg-black p-2.5 text-xs text-white placeholder-neutral-500 focus:border-[#a3e635] focus:outline-none"
-                                />
-                                <input
-                                  required
-                                  type="text"
-                                  placeholder="Link do Portfólio / LinkedIn / WhatsApp *"
-                                  value={applyForm.portfolio}
-                                  onChange={(e) => setApplyForm({ ...applyForm, portfolio: e.target.value })}
-                                  className="w-full rounded-lg border border-neutral-800 bg-black p-2.5 text-xs text-white placeholder-neutral-500 focus:border-[#a3e635] focus:outline-none"
-                                />
-                                <textarea
-                                  rows={2}
-                                  placeholder="Resumo de experiência / mensagem..."
-                                  value={applyForm.experience}
-                                  onChange={(e) => setApplyForm({ ...applyForm, experience: e.target.value })}
-                                  className="w-full rounded-lg border border-neutral-800 bg-black p-2.5 text-xs text-white placeholder-neutral-500 focus:border-[#a3e635] focus:outline-none resize-none"
-                                />
-                                <div className="flex gap-2">
+                              <form onSubmit={(e) => handleApplySubmit(e, job.title)} className="space-y-4">
+                                <div className="flex items-center justify-between pb-3 border-b border-neutral-800/80">
+                                  <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                                    <Briefcase className="h-4 w-4 text-[#a3e635]" />
+                                    <span>Candidatar-se para <span className="text-[#a3e635] font-extrabold">{job.title}</span></span>
+                                  </h4>
+                                </div>
+
+                                {/* 1. Dados Pessoais */}
+                                <div className="space-y-3">
+                                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Dados Pessoais</p>
+                                  
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {/* Nome Completo */}
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-neutral-300 mb-1">Nome Completo *</label>
+                                      <div className="relative">
+                                        <User className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
+                                        <input
+                                          required
+                                          type="text"
+                                          placeholder="Seu nome completo"
+                                          value={applyForm.name}
+                                          onChange={(e) => setApplyForm({ ...applyForm, name: e.target.value })}
+                                          className="w-full rounded-xl border border-neutral-800 bg-[#050505] py-2.5 pl-9 pr-3 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* E-mail */}
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-neutral-300 mb-1">E-mail *</label>
+                                      <div className="relative">
+                                        <Mail className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
+                                        <input
+                                          required
+                                          type="email"
+                                          placeholder="seu.email@exemplo.com"
+                                          value={applyForm.email}
+                                          onChange={(e) => setApplyForm({ ...applyForm, email: e.target.value })}
+                                          className="w-full rounded-xl border border-neutral-800 bg-[#050505] py-2.5 pl-9 pr-3 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {/* Telefone / WhatsApp * (Obrigatório) */}
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-neutral-300 mb-1">Telefone / WhatsApp *</label>
+                                      <div className="relative">
+                                        <Phone className="absolute left-3 top-3 h-4 w-4 text-[#a3e635]" />
+                                        <input
+                                          required
+                                          type="tel"
+                                          placeholder="(00) 90000-0000"
+                                          value={applyForm.telefone}
+                                          onChange={(e) => setApplyForm({ ...applyForm, telefone: e.target.value })}
+                                          className="w-full rounded-xl border border-neutral-800 bg-[#050505] py-2.5 pl-9 pr-3 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Data de Nascimento * (Escolher no calendário ou digitar) */}
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-neutral-300 mb-1">Data de Nascimento *</label>
+                                      <div className="relative">
+                                        <Calendar className="absolute left-3 top-3 h-4 w-4 text-neutral-500 pointer-events-none" />
+                                        <input
+                                          required
+                                          type="date"
+                                          value={applyForm.dataNascimento}
+                                          onChange={(e) => setApplyForm({ ...applyForm, dataNascimento: e.target.value })}
+                                          className="w-full rounded-xl border border-neutral-800 bg-[#050505] py-2.5 pl-9 pr-3 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none cursor-pointer [color-scheme:dark]"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* 2. Redes & Portfólio (Campos separados) */}
+                                <div className="space-y-3 pt-3 border-t border-neutral-800/80">
+                                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Redes & Portfólio</p>
+                                  
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    {/* LinkedIn */}
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-neutral-300 mb-1">LinkedIn</label>
+                                      <div className="relative">
+                                        <Linkedin className="absolute left-3 top-3 h-4 w-4 text-[#0a66c2]" />
+                                        <input
+                                          type="text"
+                                          placeholder="linkedin.com/in/seu-perfil"
+                                          value={applyForm.linkedin}
+                                          onChange={(e) => setApplyForm({ ...applyForm, linkedin: e.target.value })}
+                                          className="w-full rounded-xl border border-neutral-800 bg-[#050505] py-2.5 pl-9 pr-3 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Instagram */}
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-neutral-300 mb-1">Instagram</label>
+                                      <div className="relative">
+                                        <Instagram className="absolute left-3 top-3 h-4 w-4 text-[#e1306c]" />
+                                        <input
+                                          type="text"
+                                          placeholder="@seu.perfil"
+                                          value={applyForm.instagram}
+                                          onChange={(e) => setApplyForm({ ...applyForm, instagram: e.target.value })}
+                                          className="w-full rounded-xl border border-neutral-800 bg-[#050505] py-2.5 pl-9 pr-3 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Portfólio / Website */}
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-neutral-300 mb-1">Portfólio / Site</label>
+                                      <div className="relative">
+                                        <Globe className="absolute left-3 top-3 h-4 w-4 text-[#a3e635]" />
+                                        <input
+                                          type="text"
+                                          placeholder="https://seuportfolio.com"
+                                          value={applyForm.portfolio}
+                                          onChange={(e) => setApplyForm({ ...applyForm, portfolio: e.target.value })}
+                                          className="w-full rounded-xl border border-neutral-800 bg-[#050505] py-2.5 pl-9 pr-3 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* 3. Anexar Currículo */}
+                                <div className="space-y-2 pt-3 border-t border-neutral-800/80">
+                                  <label className="block text-[11px] font-semibold text-neutral-300">Anexar Currículo (PDF, DOC, DOCX)</label>
+                                  
+                                  {!curriculoFile ? (
+                                    <div className="relative border-2 border-dashed border-neutral-800 hover:border-[#a3e635]/70 bg-[#050505] hover:bg-[#090a09] transition-all rounded-xl p-4 text-center cursor-pointer group">
+                                      <input
+                                        type="file"
+                                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                                        onChange={handleFileChange}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                      />
+                                      <UploadCloud className="mx-auto h-6 w-6 text-neutral-500 group-hover:text-[#a3e635] transition-colors mb-1.5" />
+                                      <p className="text-xs font-bold text-neutral-300 group-hover:text-white transition-colors">
+                                        Clique ou arraste seu arquivo aqui
+                                      </p>
+                                      <p className="text-[10px] text-neutral-500 mt-0.5">Suporta PDF, DOC, DOCX até 5MB</p>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-between bg-[#080908] border border-[#a3e635]/40 rounded-xl p-3 text-xs">
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <FileText className="h-5 w-5 text-[#a3e635] shrink-0" />
+                                        <div className="min-w-0">
+                                          <p className="font-bold text-white truncate text-xs">{curriculoFile.nomeArquivo}</p>
+                                          <p className="text-[10px] text-neutral-400">{curriculoFile.tamanho}</p>
+                                        </div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => setCurriculoFile(null)}
+                                        className="p-1 rounded-lg hover:bg-neutral-800 text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
+                                        title="Remover arquivo"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  )}
+                                  {fileError && <p className="text-[11px] text-red-400 mt-1">{fileError}</p>}
+                                </div>
+
+                                {/* 4. Resumo de experiência */}
+                                <div className="pt-3 border-t border-neutral-800/80">
+                                  <label className="block text-[11px] font-semibold text-neutral-300 mb-1">Resumo Profissional</label>
+                                  <textarea
+                                    rows={3}
+                                    placeholder="Resuma sua trajetória, experiências recentes e motivações para esta vaga..."
+                                    value={applyForm.experience}
+                                    onChange={(e) => setApplyForm({ ...applyForm, experience: e.target.value })}
+                                    className="w-full rounded-xl border border-neutral-800 bg-[#050505] p-3 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none resize-none"
+                                  />
+                                </div>
+
+                                {/* Bottom action buttons */}
+                                <div className="flex gap-2.5 pt-2">
                                   <button
                                     type="button"
                                     onClick={() => setApplyingJobId(null)}
-                                    className="flex-1 py-2 text-xs text-neutral-400 hover:text-white"
+                                    className="flex-1 py-2.5 text-xs font-bold text-neutral-400 hover:text-white rounded-xl border border-neutral-800 hover:bg-neutral-900 transition-all cursor-pointer"
                                   >
                                     Cancelar
                                   </button>
                                   <button
                                     type="submit"
-                                    className="flex-1 rounded-lg bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2 text-xs"
+                                    className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2.5 text-xs shadow-[0_0_15px_rgba(163,230,53,0.25)] transition-all cursor-pointer flex items-center justify-center gap-2"
                                   >
-                                    Enviar Candidatura
+                                    <Send className="h-3.5 w-3.5" />
+                                    <span>Enviar Candidatura</span>
                                   </button>
                                 </div>
                               </form>
