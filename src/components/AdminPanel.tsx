@@ -268,34 +268,19 @@ export default function AdminPanel() {
           }
         }
 
+        // Clean up any fake mock candidaturas previously seeded in Firestore
         const candidaturasSnap = await getDocs(collection(db, "candidaturas"));
-        if (candidaturasSnap.empty) {
-          const initialCandidaturas = [
-            {
-              nome: "Gabriel Santos",
-              email: "gabriel.santos@gmail.com",
-              telefone: "11988882222",
-              vaga: "Engenheiro Frontend Senior",
-              portfolio: "https://github.com/gabrielsantos",
-              experiencia: "5 anos de experiência com React, TypeScript e Tailwind CSS.",
-              status: "pendente",
-              createdAt: new Date().toISOString()
-            },
-            {
-              nome: "Ana Paula Lima",
-              email: "ana.lima@design.com",
-              telefone: "21977773333",
-              vaga: "Lead Product Designer (UI/UX)",
-              portfolio: "https://behance.net/analima",
-              experiencia: "Especialista em Figma, Design Systems e testes de usabilidade.",
-              status: "pendente",
-              createdAt: new Date().toISOString()
-            }
-          ];
-          for (const item of initialCandidaturas) {
-            await addDoc(collection(db, "candidaturas"), item);
+        candidaturasSnap.forEach(async (docSnap) => {
+          const data = docSnap.data();
+          if (
+            data.email === "gabriel.santos@gmail.com" ||
+            data.email === "ana.lima@design.com" ||
+            data.nome === "Gabriel Santos" ||
+            data.nome === "Ana Paula Lima"
+          ) {
+            await deleteDoc(doc(db, "candidaturas", docSnap.id));
           }
-        }
+        });
 
         const parceirosSnap = await getDocs(collection(db, "parceiros"));
         if (parceirosSnap.empty) {
@@ -343,8 +328,16 @@ export default function AdminPanel() {
 
     const unsubCandidaturas = onSnapshot(collection(db, "candidaturas"), (snapshot) => {
       const docs: CandidaturaItem[] = [];
-      snapshot.forEach((doc) => {
-        docs.push({ id: doc.id, ...doc.data() } as CandidaturaItem);
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (
+          data.email !== "gabriel.santos@gmail.com" &&
+          data.email !== "ana.lima@design.com" &&
+          data.nome !== "Gabriel Santos" &&
+          data.nome !== "Ana Paula Lima"
+        ) {
+          docs.push({ id: docSnap.id, ...data } as CandidaturaItem);
+        }
       });
       setCandidaturas(docs);
     });
