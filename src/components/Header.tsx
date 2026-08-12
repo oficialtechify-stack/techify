@@ -41,7 +41,7 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
         </div>
 
         {/* Navigation Actions */}
-        <nav className="flex items-center gap-1.5 sm:gap-4">
+        <nav className="flex items-center gap-1 sm:gap-3">
           {navItems.map((item) => {
             const IconComponent = item.icon;
             const isActive = activeTab === item.id;
@@ -49,14 +49,14 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`relative flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold tracking-wide transition-all duration-350 sm:px-3 sm:py-2 sm:text-sm ${
+                className={`relative flex items-center gap-1 sm:gap-1.5 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-[11px] sm:text-xs font-semibold tracking-wide transition-all duration-300 cursor-pointer ${
                   isActive
-                    ? 'border border-brand-accent/30 bg-brand-accent/5 font-bold text-brand-lime'
+                    ? 'border border-brand-accent/30 bg-brand-accent/10 font-bold text-brand-lime'
                     : 'border border-transparent text-neutral-400 hover:bg-neutral-900/50 hover:text-white'
                 }`}
               >
-                <IconComponent className="h-4 w-4" />
-                <span className="hidden sm:inline">{item.label}</span>
+                <IconComponent className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                <span className="inline">{item.label}</span>
                 {isActive && (
                   <span className="absolute -bottom-[1px] left-1/4 right-1/4 h-[2px] bg-brand-accent" />
                 )}
@@ -70,11 +70,11 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
                 logout();
                 if (activeTab === 'admin') setActiveTab('inicio');
               }}
-              className="flex items-center gap-1 text-[11px] font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 rounded-lg border border-red-500/20 transition-all cursor-pointer"
+              className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-lg border border-red-500/20 transition-all cursor-pointer"
               title="Sair do Modo Admin"
             >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden md:inline">Sair</span>
+              <LogOut className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">Sair</span>
             </button>
           )}
         </nav>

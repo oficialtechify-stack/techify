@@ -330,6 +330,8 @@ export function ShaderBackground({ className }: { className?: string }) {
       space: gl.getUniformLocation(program, "u_space"),
       cursor: gl.getUniformLocation(program, "u_cursor"),
     };
+    const isMobileDevice = typeof window !== 'undefined' && (window.innerWidth < 768 || 'ontouchstart' in window);
+
     gl.uniform3fv(uni.colors, new Float32Array(UNIFORMS.colors.flat()));
     gl.uniform4f(
       uni.shape,
@@ -349,7 +351,7 @@ export function ShaderBackground({ className }: { className?: string }) {
       uni.finish,
       UNIFORMS.hue,
       UNIFORMS.vignette,
-      UNIFORMS.blur,
+      isMobileDevice ? 0.0 : UNIFORMS.blur, // Disable 5-tap blur on mobile for huge GPU gain
       UNIFORMS.grain,
     );
     gl.uniform4f(
@@ -379,6 +381,7 @@ export function ShaderBackground({ className }: { className?: string }) {
     let bounds = canvas.getBoundingClientRect();
     let raf = 0;
     let lastNow: number | null = null;
+    let lastRenderTime = 0;
     let visible = document.visibilityState === "visible";
     let inView = true;
     let disposed = false;
@@ -386,12 +389,14 @@ export function ShaderBackground({ className }: { className?: string }) {
     const timeAnimated = Math.abs(UNIFORMS.timeScale) > 0.0001;
 
     const resizeCanvas = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const isMobile = window.innerWidth < 768;
+      const maxPixels = isMobile ? 180000 : 600000;
+      const dpr = isMobile ? 0.75 : Math.min(window.devicePixelRatio || 1, 1.25);
       const rawWidth = Math.max(1, Math.round(bounds.width * dpr));
       const rawHeight = Math.max(1, Math.round(bounds.height * dpr));
       const pixelScale = Math.min(
         1,
-        Math.sqrt(2_000_000 / Math.max(1, rawWidth * rawHeight)),
+        Math.sqrt(maxPixels / Math.max(1, rawWidth * rawHeight)),
       );
       const width = Math.max(1, Math.round(rawWidth * pixelScale));
       const height = Math.max(1, Math.round(rawHeight * pixelScale));
@@ -451,10 +456,9 @@ export function ShaderBackground({ className }: { className?: string }) {
       requestRender();
     };
     window.addEventListener("resize", updateLayout);
-    if (UNIFORMS.cursorEnabled) {
+    if (UNIFORMS.cursorEnabled && !isMobileDevice) {
       window.addEventListener("pointermove", onPointerMove, { passive: true });
       window.addEventListener("pointercancel", onPointerLeave);
-      window.addEventListener("scroll", updateLayout, true);
       window.addEventListener("blur", onPointerLeave);
       document.documentElement.addEventListener("pointerleave", onPointerLeave);
     }
@@ -485,6 +489,14 @@ export function ShaderBackground({ className }: { className?: string }) {
     function render(now: number) {
       raf = 0;
       if (disposed || !visible || !inView) return;
+
+      // Throttle framerate on mobile devices (30 FPS)
+      if (isMobileDevice && now - lastRenderTime < 32) {
+        requestRender();
+        return;
+      }
+      lastRenderTime = now;
+
       const dt = lastNow === null ? 0 : Math.min((now - lastNow) / 1000, 0.1);
       lastNow = now;
       const follow = 1 - Math.exp(-12 * dt);
@@ -531,10 +543,9 @@ export function ShaderBackground({ className }: { className?: string }) {
       intersectionObserver.disconnect();
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("resize", updateLayout);
-      if (UNIFORMS.cursorEnabled) {
+      if (UNIFORMS.cursorEnabled && !isMobileDevice) {
         window.removeEventListener("pointermove", onPointerMove);
         window.removeEventListener("pointercancel", onPointerLeave);
-        window.removeEventListener("scroll", updateLayout, true);
         window.removeEventListener("blur", onPointerLeave);
         document.documentElement.removeEventListener(
           "pointerleave",

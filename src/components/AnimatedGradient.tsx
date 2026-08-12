@@ -289,12 +289,22 @@ export default function AnimatedGradient({
       u_swirlIterations: gl.getUniformLocation(program, "u_swirlIterations"),
     };
 
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || 'ontouchstart' in window);
+
     const resize = () => {
       const width = container.clientWidth;
       const height = container.clientHeight;
-      const pixelRatio = window.devicePixelRatio || 1;
-      canvas.width = width * pixelRatio;
-      canvas.height = height * pixelRatio;
+      const pixelRatio = isMobile ? Math.min(window.devicePixelRatio || 1, 0.75) : Math.min(window.devicePixelRatio || 1, 1.25);
+      const maxDim = isMobile ? 600 : 1200;
+      let targetW = width * pixelRatio;
+      let targetH = height * pixelRatio;
+      if (targetW > maxDim || targetH > maxDim) {
+        const scale = maxDim / Math.max(targetW, targetH);
+        targetW *= scale;
+        targetH *= scale;
+      }
+      canvas.width = Math.max(1, Math.round(targetW));
+      canvas.height = Math.max(1, Math.round(targetH));
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -305,8 +315,16 @@ export default function AnimatedGradient({
     resizeObserver.observe(container);
 
     startTimeRef.current = performance.now();
+    let lastTime = 0;
 
     const animate = (time: number) => {
+      // Throttle to 30fps on mobile devices
+      if (isMobile && time - lastTime < 32) {
+        frameIdRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      lastTime = time;
+
       const elapsed = (time - startTimeRef.current) / 1000;
       const speed = (params.speed / 100) * 5;
 
