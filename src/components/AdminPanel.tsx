@@ -3,11 +3,12 @@ import {
   Shield, Calendar, Clock, Briefcase, Users, Handshake, 
   Mail, Phone, Instagram, CheckCircle2, XCircle, Send, 
   Plus, Trash2, Check, RefreshCw, ExternalLink, KeyRound, LogOut,
-  Linkedin, Globe, FileText, Download
+  Linkedin, Globe, FileText, Download, Edit, X, MapPin
 } from 'lucide-react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAdminAuth } from '../lib/adminAuth';
+import { Job } from '../types';
 
 interface ConsultaItem {
   id: string;
@@ -73,12 +74,30 @@ export default function AdminPanel() {
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'andamento' | 'historico' | 'candidaturas' | 'leads' | 'parceiros'>('andamento');
+  const [activeTab, setActiveTab] = useState<'andamento' | 'historico' | 'candidaturas' | 'vagas' | 'leads' | 'parceiros'>('andamento');
 
   const [consultas, setConsultas] = useState<ConsultaItem[]>([]);
   const [candidaturas, setCandidaturas] = useState<CandidaturaItem[]>([]);
   const [leads, setLeads] = useState<LeadItem[]>([]);
   const [parceiros, setParceiros] = useState<ParceiroItem[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+
+  // Job management state in AdminPanel
+  const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
+  const [jobForm, setJobForm] = useState({
+    title: '',
+    category: 'Design',
+    type: 'Tempo Integral',
+    location: '',
+    description: '',
+    salary: '',
+  });
+  const [jobReqInput, setJobReqInput] = useState('');
+  const [jobReqList, setJobReqList] = useState<string[]>([]);
+  const [jobBenInput, setJobBenInput] = useState('');
+  const [jobBenList, setJobBenList] = useState<string[]>([]);
+  const [isSubmittingJobAdmin, setIsSubmittingJobAdmin] = useState(false);
 
   const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
   const [newLeadForm, setNewLeadForm] = useState({
@@ -346,13 +365,111 @@ export default function AdminPanel() {
       setParceiros(docs);
     });
 
+    const unsubVagas = onSnapshot(collection(db, "vagas"), (snapshot) => {
+      const docs: Job[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        docs.push({
+          id: docSnap.id,
+          title: data.title || '',
+          category: data.category || 'Outro',
+          type: data.type || 'Tempo Integral',
+          location: data.location || 'Remoto',
+          description: data.description || '',
+          requirements: Array.isArray(data.requirements) ? data.requirements : [],
+          benefits: Array.isArray(data.benefits) ? data.benefits : [],
+          salary: data.salary || '',
+          createdAt: data.createdAt || ''
+        });
+      });
+      setJobs(docs);
+    });
+
     return () => {
       unsubConsultas();
       unsubCandidaturas();
       unsubLeads();
       unsubParceiros();
+      unsubVagas();
     };
   }, []);
+
+  // Job management handlers
+  const handleOpenNewJobAdmin = () => {
+    setEditingJobId(null);
+    setJobForm({
+      title: '',
+      category: 'Design',
+      type: 'Tempo Integral',
+      location: '',
+      description: '',
+      salary: '',
+    });
+    setJobReqList([]);
+    setJobBenList([]);
+    setIsJobModalOpen(true);
+  };
+
+  const handleOpenEditJobAdmin = (job: Job) => {
+    setEditingJobId(job.id);
+    setJobForm({
+      title: job.title || '',
+      category: job.category || 'Design',
+      type: job.type || 'Tempo Integral',
+      location: job.location || '',
+      description: job.description || '',
+      salary: job.salary || '',
+    });
+    setJobReqList(job.requirements || []);
+    setJobBenList(job.benefits || []);
+    setIsJobModalOpen(true);
+  };
+
+  const handleSaveJobAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!jobForm.title || !jobForm.location || !jobForm.description) return;
+    setIsSubmittingJobAdmin(true);
+
+    try {
+      const payload = {
+        title: jobForm.title,
+        category: jobForm.category,
+        type: jobForm.type,
+        location: jobForm.location,
+        description: jobForm.description,
+        requirements: jobReqList.length > 0 ? jobReqList : ["Experiência na área"],
+        benefits: jobBenList.length > 0 ? jobBenList : ["Flexibilidade"],
+        salary: jobForm.salary || 'A combinar',
+        updatedAt: new Date().toISOString()
+      };
+
+      if (editingJobId) {
+        await updateDoc(doc(db, "vagas", editingJobId), payload);
+      } else {
+        await addDoc(collection(db, "vagas"), {
+          ...payload,
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      setIsSubmittingJobAdmin(false);
+      setIsJobModalOpen(false);
+      setEditingJobId(null);
+    } catch (err) {
+      console.error("Error saving job in AdminPanel:", err);
+      setIsSubmittingJobAdmin(false);
+    }
+  };
+
+  const handleDeleteJobAdmin = async (jobId: string) => {
+    if (window.confirm("Tem certeza que deseja excluir esta vaga?")) {
+      try {
+        await deleteDoc(doc(db, "vagas", jobId));
+      } catch (err) {
+        console.error("Error deleting job in AdminPanel:", err);
+      }
+    }
+  };
 
   // Filtered lists
   const emAndamentoList = consultas.filter(c => c.status === 'pendente');
@@ -508,6 +625,16 @@ export default function AdminPanel() {
           </div>
 
           <div className="flex items-center gap-3">
+            {activeTab === 'vagas' && (
+              <button
+                onClick={handleOpenNewJobAdmin}
+                className="flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs px-4 py-2.5 transition-all shadow-[0_0_12px_rgba(163,230,53,0.3)] cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Publicar Nova Vaga</span>
+              </button>
+            )}
+
             {activeTab === 'leads' && (
               <button
                 onClick={() => setIsNewLeadModalOpen(true)}
@@ -566,6 +693,18 @@ export default function AdminPanel() {
           >
             <Briefcase className="h-4 w-4" />
             <span>Candidaturas ({candidaturas.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('vagas')}
+            className={`px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'vagas'
+                ? 'bg-[#a3e635] text-black shadow-[0_0_12px_rgba(163,230,53,0.3)]'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <Briefcase className="h-4 w-4 text-[#a3e635]" />
+            <span>Vagas ({jobs.length})</span>
           </button>
 
           <button
@@ -917,6 +1056,96 @@ export default function AdminPanel() {
           </div>
         )}
 
+        {/* 3.5 VAGAS TAB */}
+        {activeTab === 'vagas' && (
+          <div className="mt-6">
+            {jobs.length === 0 ? (
+              <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-12 text-center text-neutral-400">
+                <Briefcase className="mx-auto h-10 w-10 text-neutral-600 mb-3" />
+                <p className="text-base font-bold text-white mb-2">Nenhuma vaga cadastrada</p>
+                <button
+                  onClick={handleOpenNewJobAdmin}
+                  className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs px-4 py-2.5 transition-all shadow-[0_0_12px_rgba(163,230,53,0.3)] cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Publicar Primeira Vaga</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {jobs.map((job) => (
+                  <div 
+                    key={job.id}
+                    className="bg-[#131414] border border-neutral-800/80 rounded-2xl p-5 hover:border-neutral-700/80 transition-all flex flex-col justify-between shadow-lg"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-bold text-white text-base uppercase font-sans tracking-tight">
+                          {job.title}
+                        </h3>
+                        <span className="bg-[#1e293b] border border-[#3b82f6]/40 text-[#93c5fd] text-[11px] font-bold px-2.5 py-0.5 rounded-md shrink-0">
+                          {job.category}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 my-3">
+                        <span className="bg-[#14532d]/60 border border-[#22c55e]/50 text-[#4ade80] text-[11px] font-bold px-2.5 py-0.5 rounded-md">
+                          {job.type}
+                        </span>
+                        <span className="bg-neutral-800 text-neutral-300 text-[11px] px-2.5 py-0.5 rounded-md flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-[#a3e635]" />
+                          <span>{job.location}</span>
+                        </span>
+                        {job.salary && (
+                          <span className="bg-neutral-800 text-neutral-300 text-[11px] px-2.5 py-0.5 rounded-md">
+                            {job.salary}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-neutral-400 line-clamp-3 leading-relaxed mb-3">
+                        {job.description}
+                      </p>
+
+                      {job.requirements && job.requirements.length > 0 && (
+                        <div className="space-y-1 my-2">
+                          <p className="text-[10px] font-bold text-neutral-500 uppercase">Requisitos:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {job.requirements.map((req, i) => (
+                              <span key={i} className="bg-neutral-900 border border-neutral-800 text-neutral-300 text-[10px] px-2 py-0.5 rounded">
+                                {req}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-neutral-800/50">
+                      <button
+                        onClick={() => handleOpenEditJobAdmin(job)}
+                        className="bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                        <span>Editar Vaga</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteJobAdmin(job.id)}
+                        className="text-neutral-500 hover:text-red-400 p-2 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+                        title="Excluir Vaga"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 4. LEADS TAB (Exact Screenshot #4 layout) */}
         {activeTab === 'leads' && (
           <div className="mt-6">
@@ -1074,7 +1303,16 @@ export default function AdminPanel() {
       {isNewLeadModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-neutral-800 bg-[#121312] p-6 text-white shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-4">Cadastrar Novo Lead</h3>
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-neutral-800/80">
+              <h3 className="text-lg font-bold text-white">Cadastrar Novo Lead</h3>
+              <button
+                type="button"
+                onClick={() => setIsNewLeadModalOpen(false)}
+                className="rounded-lg p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             
             <form onSubmit={handleCreateLead} className="space-y-4">
               <div>
@@ -1160,6 +1398,217 @@ export default function AdminPanel() {
                   className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2.5 text-xs"
                 >
                   Salvar Lead
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Job Create/Edit Modal in AdminPanel */}
+      {isJobModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-xl rounded-2xl border border-neutral-800 bg-[#121312] p-6 text-white shadow-2xl my-8 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-800/80">
+              <h3 className="text-lg font-bold text-white">
+                {editingJobId ? 'Editar Vaga' : 'Publicar Nova Vaga'}
+              </h3>
+              <button
+                onClick={() => setIsJobModalOpen(false)}
+                className="rounded-lg p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveJobAdmin} className="space-y-4 pt-4 overflow-y-auto pr-1">
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">Título da Vaga *</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ex: Engenheiro Frontend Senior"
+                  value={jobForm.title}
+                  onChange={(e) => setJobForm({ ...jobForm, title: e.target.value })}
+                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Categoria / Área</label>
+                  <select
+                    value={jobForm.category}
+                    onChange={(e) => setJobForm({ ...jobForm, category: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3 text-xs text-white focus:border-[#a3e635] focus:outline-none cursor-pointer"
+                  >
+                    <option value="Design">Design</option>
+                    <option value="Desenvolvimento">Desenvolvimento</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Vendas">Vendas</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Tipo de Contrato</label>
+                  <select
+                    value={jobForm.type}
+                    onChange={(e) => setJobForm({ ...jobForm, type: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3 text-xs text-white focus:border-[#a3e635] focus:outline-none cursor-pointer"
+                  >
+                    <option value="Tempo Integral">Tempo Integral</option>
+                    <option value="Meio Período">Meio Período</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Estágio">Estágio</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">Localização *</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ex: Remoto, São Paulo - SP"
+                  value={jobForm.location}
+                  onChange={(e) => setJobForm({ ...jobForm, location: e.target.value })}
+                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">Descrição *</label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Descreva as responsabilidades da vaga..."
+                  value={jobForm.description}
+                  onChange={(e) => setJobForm({ ...jobForm, description: e.target.value })}
+                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">Requisitos</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Digite um requisito"
+                    value={jobReqInput}
+                    onChange={(e) => setJobReqInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (jobReqInput.trim()) {
+                          setJobReqList([...jobReqList, jobReqInput.trim()]);
+                          setJobReqInput('');
+                        }
+                      }
+                    }}
+                    className="flex-1 rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (jobReqInput.trim()) {
+                        setJobReqList([...jobReqList, jobReqInput.trim()]);
+                        setJobReqInput('');
+                      }
+                    }}
+                    className="rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black p-2.5 transition-colors cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4 stroke-[3]" />
+                  </button>
+                </div>
+                {jobReqList.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {jobReqList.map((req, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 text-xs text-neutral-300 px-2.5 py-1 rounded-lg">
+                        <span>{req}</span>
+                        <button type="button" onClick={() => setJobReqList(jobReqList.filter((_, i) => i !== idx))} className="text-neutral-500 hover:text-red-400">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">Benefícios</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Digite um benefício"
+                    value={jobBenInput}
+                    onChange={(e) => setJobBenInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (jobBenInput.trim()) {
+                          setJobBenList([...jobBenList, jobBenInput.trim()]);
+                          setJobBenInput('');
+                        }
+                      }
+                    }}
+                    className="flex-1 rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (jobBenInput.trim()) {
+                        setJobBenList([...jobBenList, jobBenInput.trim()]);
+                        setJobBenInput('');
+                      }
+                    }}
+                    className="rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black p-2.5 transition-colors cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4 stroke-[3]" />
+                  </button>
+                </div>
+                {jobBenList.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {jobBenList.map((ben, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 text-xs text-neutral-300 px-2.5 py-1 rounded-lg">
+                        <span>{ben}</span>
+                        <button type="button" onClick={() => setJobBenList(jobBenList.filter((_, i) => i !== idx))} className="text-neutral-500 hover:text-red-400">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">Faixa Salarial</label>
+                <input
+                  type="text"
+                  placeholder="Ex: R$ 5.000 - R$ 8.000"
+                  value={jobForm.salary}
+                  onChange={(e) => setJobForm({ ...jobForm, salary: e.target.value })}
+                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-neutral-800/80 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsJobModalOpen(false)}
+                  className="flex-1 rounded-xl bg-white hover:bg-neutral-200 text-black font-extrabold py-3 text-xs transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingJobAdmin}
+                  className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-3 text-xs transition-all shadow-[0_0_15px_rgba(163,230,53,0.3)] cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmittingJobAdmin 
+                    ? (editingJobId ? 'Salvando...' : 'Publicando...') 
+                    : (editingJobId ? 'Salvar Alterações' : 'Publicar Vaga')
+                  }
                 </button>
               </div>
             </form>

@@ -4,12 +4,13 @@ import {
   Briefcase, Search, Filter, AlertCircle, ArrowUpRight, MapPin, Clock, 
   DollarSign, ChevronDown, ChevronUp, Send, CheckCircle, ArrowRight,
   Plus, X, Shield, Trash2, ChevronRight, Linkedin, Instagram, Globe,
-  FileText, Paperclip, Phone, Calendar, User, Mail, UploadCloud
+  FileText, Paperclip, Phone, Calendar, User, Mail, UploadCloud, Edit
 } from 'lucide-react';
 import { Job } from '../types';
-import { collection, onSnapshot, addDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAdminAuth } from '../lib/adminAuth';
+import { ShaderBackground } from './ShaderBackground';
 
 const INITIAL_JOBS = [
   {
@@ -58,8 +59,9 @@ export default function CareersSection() {
   const { isAdmin } = useAdminAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Modal "Publicar Nova Vaga" state
+  // Modal "Publicar / Editar Vaga" state
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [newJobForm, setNewJobForm] = useState({
     title: '',
     category: 'Design',
@@ -181,6 +183,35 @@ export default function CareersSection() {
 
   const handleOpenPublishModal = () => {
     if (!isAdmin) return;
+    setEditingJobId(null);
+    setNewJobForm({
+      title: '',
+      category: 'Design',
+      type: 'Tempo Integral',
+      location: '',
+      description: '',
+      salary: '',
+    });
+    setRequirementsList([]);
+    setBenefitsList([]);
+    setIsPublishModalOpen(true);
+  };
+
+  const handleOpenEditModal = (e: React.MouseEvent, job: Job) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!isAdmin) return;
+    setEditingJobId(job.id);
+    setNewJobForm({
+      title: job.title || '',
+      category: job.category || 'Design',
+      type: job.type || 'Tempo Integral',
+      location: job.location || '',
+      description: job.description || '',
+      salary: job.salary || '',
+    });
+    setRequirementsList(job.requirements || []);
+    setBenefitsList(job.benefits || []);
     setIsPublishModalOpen(true);
   };
 
@@ -207,14 +238,14 @@ export default function CareersSection() {
     setBenefitsList(benefitsList.filter((_, i) => i !== index));
   };
 
-  // Submit new job to Firestore
+  // Submit (Create or Update) job in Firestore
   const handlePublishJob = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newJobForm.title || !newJobForm.location || !newJobForm.description) return;
 
     setIsSubmittingJob(true);
     try {
-      await addDoc(collection(db, "vagas"), {
+      const payload = {
         title: newJobForm.title,
         category: newJobForm.category,
         type: newJobForm.type,
@@ -223,11 +254,21 @@ export default function CareersSection() {
         requirements: requirementsList.length > 0 ? requirementsList : ["Experiência na área"],
         benefits: benefitsList.length > 0 ? benefitsList : ["Flexibilidade"],
         salary: newJobForm.salary || 'A combinar',
-        createdAt: new Date().toISOString()
-      });
+        updatedAt: new Date().toISOString()
+      };
+
+      if (editingJobId) {
+        await updateDoc(doc(db, "vagas", editingJobId), payload);
+      } else {
+        await addDoc(collection(db, "vagas"), {
+          ...payload,
+          createdAt: new Date().toISOString()
+        });
+      }
 
       setIsSubmittingJob(false);
       setIsPublishModalOpen(false);
+      setEditingJobId(null);
       // Reset form
       setNewJobForm({
         title: '',
@@ -240,7 +281,7 @@ export default function CareersSection() {
       setRequirementsList([]);
       setBenefitsList([]);
     } catch (err) {
-      console.error("Error publishing new job to Firestore:", err);
+      console.error("Error publishing/updating job in Firestore:", err);
       setIsSubmittingJob(false);
     }
   };
@@ -305,8 +346,11 @@ export default function CareersSection() {
   };
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-[#030303] bg-nebula pb-24 pt-12 text-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="relative w-full min-h-screen overflow-hidden bg-[#030303] pb-24 pt-12 text-white">
+      {/* Dynamic Shader Background */}
+      <ShaderBackground className="absolute inset-0 z-0 opacity-80 pointer-events-none" />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
         {/* Page Top Title matching screenshots */}
         <div className="text-center">
@@ -415,13 +459,22 @@ export default function CareersSection() {
 
                       <div className="flex items-center gap-2 shrink-0">
                         {isAdmin && (
-                          <button
-                            onClick={(e) => handleDeleteJob(e, job.id)}
-                            className="text-neutral-500 hover:text-red-400 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors cursor-pointer"
-                            title="Excluir vaga"
-                          >
-                            <Trash2 className="h-4.5 w-4.5" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => handleOpenEditModal(e, job)}
+                              className="text-neutral-500 hover:text-[#a3e635] hover:bg-[#a3e635]/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+                              title="Editar vaga"
+                            >
+                              <Edit className="h-4.5 w-4.5" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteJob(e, job.id)}
+                              className="text-neutral-500 hover:text-red-400 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+                              title="Excluir vaga"
+                            >
+                              <Trash2 className="h-4.5 w-4.5" />
+                            </button>
+                          </div>
                         )}
                         
                         <button
@@ -543,6 +596,14 @@ export default function CareersSection() {
                                     <Briefcase className="h-4 w-4 text-[#a3e635]" />
                                     <span>Candidatar-se para <span className="text-[#a3e635] font-extrabold">{job.title}</span></span>
                                   </h4>
+                                  <button
+                                    type="button"
+                                    onClick={() => setApplyingJobId(null)}
+                                    className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+                                    title="Fechar formulário"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
                                 </div>
 
                                 {/* 1. Dados Pessoais */}
@@ -773,7 +834,9 @@ export default function CareersSection() {
             >
               {/* Modal Header */}
               <div className="flex items-center justify-between pb-4 border-b border-neutral-800/80">
-                <h2 className="text-xl font-bold text-white font-sans">Publicar Nova Vaga</h2>
+                <h2 className="text-xl font-bold text-white font-sans">
+                  {editingJobId ? 'Editar Vaga' : 'Publicar Nova Vaga'}
+                </h2>
                 <button
                   onClick={() => setIsPublishModalOpen(false)}
                   className="rounded-lg p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
@@ -964,7 +1027,10 @@ export default function CareersSection() {
                     disabled={isSubmittingJob}
                     className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-3 text-xs transition-all shadow-[0_0_15px_rgba(163,230,53,0.3)] cursor-pointer disabled:opacity-50"
                   >
-                    {isSubmittingJob ? 'Publicando...' : 'Publicar Vaga'}
+                    {isSubmittingJob 
+                      ? (editingJobId ? 'Salvando...' : 'Publicando...') 
+                      : (editingJobId ? 'Salvar Alterações' : 'Publicar Vaga')
+                    }
                   </button>
                 </div>
 
