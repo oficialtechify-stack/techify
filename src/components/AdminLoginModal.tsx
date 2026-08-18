@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, KeyRound } from 'lucide-react';
 import { useAdminAuth } from '../lib/adminAuth';
+import { toast } from './Toast';
 
 interface AdminLoginModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess }: AdminLog
     e.preventDefault();
     if (!password) {
       setError('Por favor, insira a senha.');
+      toast.warning('Atenção', 'Por favor, digite sua chave de acesso.');
       return;
     }
 
@@ -29,13 +31,16 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess }: AdminLog
       if (success) {
         setPassword('');
         setError('');
+        toast.success('Acesso Autorizado', 'Bem-vindo! Painel administrativo e modo de edição ativos.');
         onClose();
         if (onSuccess) onSuccess();
       } else {
         setError('Senha incorreta. Tente novamente.');
+        toast.error('Chave Incorreta', 'Credencial de administrador não autorizada.');
       }
     } catch {
       setError('Erro ao validar credencial.');
+      toast.error('Falha na Validação', 'Ocorreu um erro ao verificar sua chave de acesso.');
     } finally {
       setLoading(false);
     }

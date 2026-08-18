@@ -1,66 +1,80 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, useInView, animate } from 'motion/react';
+import { motion, AnimatePresence, useInView, animate, useScroll, useTransform } from 'motion/react';
 import { 
   Calendar, 
   ArrowRight, 
+  ArrowUpRight,
   Globe, 
   Palette, 
   Monitor, 
   Zap, 
-  Mouse, 
   Sparkles, 
   TrendingUp, 
   Trophy, 
   ShieldCheck, 
-  Box, 
-  CheckCircle
+  CheckCircle,
+  Star,
+  Layers,
+  Database,
+  BarChart3,
+  Users,
+  Check,
+  Clock,
+  Layout,
+  MessageCircle,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  Send
 } from 'lucide-react';
-import { Service } from '../types';
-import { SERVICES } from '../data';
+import { PROJECTS, SERVICES } from '../data';
 import AnimatedGradient from './AnimatedGradient';
+import { GradientWave } from './GradientWave';
+import WavyBackground from './WavyBackground';
 import { TechifyIcon } from './TechifyLogo';
+import ScrollReveal from './ScrollReveal';
+import ShowcaseCarousel from './ShowcaseCarousel';
+import TextEmergence from './TextEmergence';
+import { EditableText, EditableNumber, EditableIcon, EditableImage } from './InlineEditProvider';
 
 interface AnimatedCounterProps {
   targetValue: number;
   suffix?: string;
   label: string;
-  idx: number;
+  idx?: number;
+  id?: string;
 }
 
-function AnimatedCounter({ targetValue, suffix = '', label, idx }: AnimatedCounterProps) {
+function AnimatedCounter({ targetValue, suffix = '', label, idx = 0, id = 'stat_counter' }: AnimatedCounterProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, amount: 0.3 });
+  const isInView = useInView(ref, { once: false, amount: 0.2 });
   const [currentValue, setCurrentValue] = useState(0);
 
   useEffect(() => {
     if (isInView) {
+      setCurrentValue(0);
       const controls = animate(0, targetValue, {
-        duration: 2.2,
+        duration: 1.8,
         ease: [0.16, 1, 0.3, 1],
         onUpdate: (latest) => {
           setCurrentValue(Math.floor(latest));
         },
       });
       return () => controls.stop();
+    } else {
+      setCurrentValue(0);
     }
   }, [isInView, targetValue]);
 
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.6, delay: idx * 0.15 }}
-      className="flex flex-col items-center text-center"
-    >
-      <h3 className="font-display text-5xl font-extrabold text-[#a3e635] text-glow-green sm:text-6xl tracking-tight drop-shadow-[0_0_20px_rgba(163,230,53,0.5)]">
-        {currentValue}{suffix}
-      </h3>
-      <p className="mt-2 text-xs font-semibold tracking-wider text-neutral-400 uppercase">
-        {label}
-      </p>
-    </motion.div>
+    <div ref={ref}>
+      <EditableNumber
+        id={id}
+        defaultValue={currentValue}
+        defaultSuffix={suffix}
+        defaultLabel={label}
+      />
+    </div>
   );
 }
 
@@ -70,384 +84,1056 @@ interface HomeSectionProps {
 }
 
 export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSectionProps) {
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [interactive3D, setInteractive3D] = useState(false);
-  const [nodes, setNodes] = useState<{ x: number; y: number; s: number }[]>(() => {
-    // Generate star coordinates for a premium aesthetic
-    return Array.from({ length: 90 }, () => ({
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      s: Math.random() * 2 + 1,
-    }));
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedArticle, setSelectedArticle] = useState<number | null>(null);
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+
+  // Framer Motion Scroll Parallax Transforms
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
   });
 
-  const premiumFeatures = [
-    { label: 'ESTÉTICA FUTURISTA', icon: Zap },
-    { label: 'INTERATIVIDADE FLUIDA', icon: Sparkles },
-    { label: 'CONVERSÃO EXTREMA', icon: Trophy },
-    { label: 'UX DE ALTA PERFORMANCE', icon: ShieldCheck },
+  // Layered Parallax Transformations for deep spatial immersion
+  const yHeroOrb = useTransform(scrollYProgress, [0, 0.35], [0, 140]);
+  const yHeroRing = useTransform(scrollYProgress, [0, 0.35], [0, -90]);
+  const rotateHeroRing = useTransform(scrollYProgress, [0, 0.35], [0, 60]);
+  const scaleHeroOrb = useTransform(scrollYProgress, [0, 0.25], [1, 1.3]);
+  const opacityHeroOrb = useTransform(scrollYProgress, [0, 0.3], [0.4, 0.1]);
+
+  const yPresencaOrb = useTransform(scrollYProgress, [0.08, 0.4], [-60, 100]);
+  const yBentoOrb = useTransform(scrollYProgress, [0.15, 0.55], [80, -90]);
+  const scaleBentoOrb = useTransform(scrollYProgress, [0.15, 0.35, 0.55], [0.85, 1.15, 0.9]);
+  
+  const yServicesGlow = useTransform(scrollYProgress, [0.3, 0.7], [-80, 100]);
+  const rotateServicesGeom = useTransform(scrollYProgress, [0.3, 0.7], [0, -45]);
+
+  const yEspecialidadeGlow = useTransform(scrollYProgress, [0.45, 0.8], [90, -90]);
+  const scaleEspecialidadeGlow = useTransform(scrollYProgress, [0.45, 0.65, 0.85], [0.9, 1.25, 0.85]);
+
+  const yTestimonialsAura = useTransform(scrollYProgress, [0.6, 0.9], [-60, 80]);
+  const yCtaOrb = useTransform(scrollYProgress, [0.75, 1], [80, -50]);
+  const scaleCtaGlow = useTransform(scrollYProgress, [0.75, 0.95, 1], [0.8, 1.3, 1.1]);
+
+  // Client Brands for Marquee
+  const clientLogos = [
+    { name: 'KALDI', type: 'text' },
+    { name: 'HYPE SPORTY', type: 'text' },
+    { name: 'ASME AI', type: 'text' },
+    { name: 'MUGSYS MUGS', type: 'text' },
+    { name: 'EPIC DESIGNER', type: 'text' },
+    { name: 'AGENCYOS', type: 'text' },
+  ];
+
+  // Articles data
+  const articles = [
+    {
+      id: 1,
+      title: 'Quanto custa fazer um site para a sua empresa (e por que os orçamentos variam tanto)',
+      category: 'Sites & Estratégia',
+      readTime: '4 min de leitura',
+      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
+      summary: 'Entenda os fatores decisivos que separam um site profissional de alta conversão de templates genéricos que não trazem retorno para o seu negócio.',
+      content: 'A diferença entre um site de R$ 500 e um projeto profissional de R$ 5.000 está na engenharia de conversão: velocidade de carregamento, SEO estruturado para aparecer nas buscas locais do Google, integração direta com WhatsApp e painel de controle intuitivo.'
+    },
+    {
+      id: 2,
+      title: 'Seu negócio não aparece no Google? Veja o que está acontecendo',
+      category: 'SEO & Tráfego',
+      readTime: '5 min de leitura',
+      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+      summary: 'Descubra os 3 principais erros técnicos que impedem empresas locais de serem indexadas na primeira página das pesquisas do Google.',
+      content: 'Quando um cliente busca pelo seu serviço no bairro ou cidade, o algoritmo prioriza sites rápidos, cadastros verificados no Google Meu Negócio e páginas otimizadas para dispositivos móveis com dados estruturados Schema.org.'
+    },
+    {
+      id: 3,
+      title: 'Planilha ou sistema de gestão: quando a planilha começa a custar caro',
+      category: 'Sistemas & Gestão',
+      readTime: '3 min de leitura',
+      image: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=800&q=80',
+      summary: 'Como a perda de dados, erros manuais de faturamento e retrabalho na digitação de pedidos sabotam a margem de lucro de pequenas e médias empresas.',
+      content: 'Planilhas funcionam bem no primeiro mês, mas rapidamente se tornam gargalos: falta de controle de estoque em tempo real, cálculos manuais de mensalidades e risco de perda acidental de arquivos podem custar milhares de reais todo mês.'
+    }
+  ];
+
+  // Testimonials data
+  const testimonials = [
+    {
+      quote: "A Techify entendeu o problema do nosso negócio com extrema rapidez e entregou um sistema robusto e veloz, sem enrolação.",
+      author: "Rodrigo Mendonça",
+      role: "Fundador & CEO, InovaLog Tech",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+      company: "InovaLog"
+    },
+    {
+      quote: "Comunicação direta e entrega impecável do briefing ao lançamento. Nossas conversões no WhatsApp subiram mais de 40% na primeira semana.",
+      author: "Camila Guimarães",
+      role: "Diretora de Marketing, Sempre Mais",
+      avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80",
+      company: "Sempre Mais"
+    },
+    {
+      quote: "Simplificaram uma demanda complexa de automação de faturamento e entregaram uma plataforma intuitiva que nosso time usa diariamente sem erros.",
+      author: "Lucas Silveira",
+      role: "Diretor de Operações, Genesis Group",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+      company: "Genesis"
+    }
   ];
 
   return (
-    <div className="relative w-full overflow-hidden bg-black bg-nebula pb-24">
-      {/* Full-screen Dark Hero Section with Animated Gradient background */}
-      <div className="relative w-full min-h-screen flex flex-col justify-center items-center overflow-hidden pb-12">
-        {/* Animated Gradient Background only in this hero section */}
-        <AnimatedGradient 
-          config={{
-            preset: "custom",
-            color1: "#000000",
-            color2: "#183808",
-            color3: "#030a02",
-            rotation: -50,
-            proportion: 60,
-            scale: 0.15,
-            speed: 20,
-            distortion: 8,
-            swirl: 45,
-            swirlIterations: 8,
-            softness: 85,
-            offset: 0,
-            shape: "Checks",
-            shapeSize: 35,
-          }}
-          noise={{ opacity: 0.15 }}
-        />
+    <div ref={containerRef} className="relative w-full overflow-hidden bg-black text-white selection:bg-[#22c55e]/30 selection:text-white">
+      
+      {/* Global Background Parallax Ambient Glow Blobs */}
+      <motion.div 
+        style={{ y: yHeroOrb, scale: scaleHeroOrb, opacity: opacityHeroOrb }}
+        className="pointer-events-none fixed -top-40 left-1/2 -translate-x-1/2 w-[750px] h-[500px] rounded-full bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.18),transparent_70%)] blur-[90px] z-0"
+      />
+      <motion.div 
+        style={{ y: yBentoOrb, scale: scaleBentoOrb }}
+        className="pointer-events-none absolute top-[28%] -right-32 w-[550px] h-[550px] rounded-full bg-[radial-gradient(circle_at_center,rgba(74,222,128,0.08),transparent_70%)] blur-[100px] z-0"
+      />
+      <motion.div 
+        style={{ y: yEspecialidadeGlow, scale: scaleEspecialidadeGlow }}
+        className="pointer-events-none absolute top-[58%] -left-32 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.07),transparent_70%)] blur-[110px] z-0"
+      />
+      <motion.div 
+        style={{ y: yCtaOrb, scale: scaleCtaGlow }}
+        className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 w-[800px] h-[450px] rounded-full bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.12),transparent_70%)] blur-[120px] z-0"
+      />
+      
+      {/* ========================================================================= */}
+      {/* 1. HERO SECTION (Wavy Background WebGL Effect)                            */}
+      {/* ========================================================================= */}
+      <WavyBackground className="min-h-[92vh] flex flex-col justify-between items-center pt-12 pb-16 bg-[#000000]">
         
-        {/* Soft dark vignette overlay to blend with bg & improve contrast */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black z-[1] pointer-events-none" />
+        {/* Deep Space Background with Starfield & Parallax Layers */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          <motion.div 
+            style={{ y: yHeroOrb }}
+            className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(34,197,94,0.12),transparent_70%)]" 
+          />
+          {/* Subtle Parallax Grid Lines */}
+          <motion.div 
+            style={{ y: yHeroRing }}
+            className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:4rem_4rem]" 
+          />
 
-        {/* Background Starry Pixels */}
-        <div className="absolute inset-0 pointer-events-none opacity-40 z-0">
-          {nodes.map((star, idx) => (
-            <div
-              key={idx}
-              className="absolute rounded-full bg-white animate-pulse"
-              style={{
-                left: `${star.x}%`,
-                top: `${star.y}%`,
-                width: `${star.s}px`,
-                height: `${star.s}px`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${Math.random() * 4 + 2}s`,
-              }}
-            />
-          ))}
+          {/* Floating Parallax Cyber Ring */}
+          <motion.div
+            style={{ y: yHeroRing, rotate: rotateHeroRing }}
+            className="pointer-events-none absolute -top-16 left-8 sm:left-24 w-72 h-72 rounded-full border border-[#22c55e]/15 opacity-30 [border-dasharray:8px]"
+          />
+          <motion.div
+            style={{ y: yHeroOrb, rotate: rotateServicesGeom }}
+            className="pointer-events-none absolute top-32 right-10 sm:right-32 w-48 h-48 rounded-full border border-[#4ade80]/10 opacity-20"
+          />
         </div>
 
-        {/* Hero Section Content */}
-        <section className="relative mx-auto max-w-7xl px-4 pt-8 text-center sm:px-6 lg:px-8 z-10 w-full flex flex-col items-center">
+        {/* Hero Header & Copy */}
+        <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center pt-8">
           
-          {/* Circular Techify Logo Badge */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="mx-auto mb-6 flex h-28 w-28 sm:h-32 sm:w-32 items-center justify-center rounded-full border-2 border-[#a3e635] bg-black p-2 text-center ring-1 ring-[#a3e635]/20 shadow-md overflow-hidden"
-          >
-            <TechifyIcon className="h-full w-full rounded-full" />
-          </motion.div>
-
-          {/* Digital Innovation Pill Badge */}
-          <motion.div
+          {/* Static Badge */}
+          <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#a3e635]/40 bg-[#a3e635]/10 px-4 py-1.5 text-xs text-[#a3e635] tracking-wider font-semibold mb-6"
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 backdrop-blur-md px-4 py-1.5 text-xs font-semibold text-[#4ade80] shadow-[0_0_20px_rgba(34,197,94,0.15)] mb-6"
           >
-            <Sparkles className="h-3.5 w-3.5 text-[#a3e635]" />
-            <span>Inovação Digital</span>
+            <EditableIcon id="hero_badge_icon" defaultName="Sparkles" className="h-3.5 w-3.5 text-[#22c55e]" />
+            <EditableText id="hero_badge_text" defaultText="Inovação Digital & Performance" title="Selo do Hero" />
           </motion.div>
 
-          {/* Main Header Title (From Image 1 & 2) */}
+          {/* Main Headline */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="font-display text-5xl font-extrabold tracking-tight text-white sm:text-7xl lg:text-8xl leading-none"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl"
           >
-            Transforme Seu <br />
-            <span className="text-[#a3e635] inline-block hover:scale-[1.01] transition-transform duration-300">
-              Negócio Digital
+            <EditableText id="hero_title_1" defaultText="Transforme Seu" title="Título Hero Linha 1" /> <br />
+            <span className="text-[#22c55e] drop-shadow-[0_0_35px_rgba(34,197,94,0.35)]">
+              <EditableText id="hero_title_2" defaultText="Negócio Digital" title="Título Hero Linha 2" />
             </span>
           </motion.h1>
 
-          {/* Taglines (From Image 1 & 2) */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mx-auto mt-6 max-w-2xl space-y-2 text-center"
+          {/* Stable Subtitle */}
+          <motion.p
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="max-w-2xl text-base sm:text-lg text-neutral-300 leading-relaxed font-normal mt-5"
           >
-            <p className="text-base text-neutral-300 sm:text-lg font-normal">
-              Criamos plataformas web e identidade visual que geram resultados reais.
-            </p>
-            <p className="text-base sm:text-lg font-semibold text-[#a3e635]">
-              Da ideia ao lançamento, sua visão ganha vida.
-            </p>
-          </motion.div>
+            <EditableText
+              id="hero_description_main"
+              defaultText="Criamos plataformas web e identidade visual que geram resultados reais. Da ideia ao lançamento, sua visão ganha vida."
+              title="Descrição do Hero"
+              isMultiline={true}
+            />
+          </motion.p>
 
-          {/* Pill Tags List from Image 2 */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mx-auto mt-8 flex flex-wrap justify-center gap-2.5 max-w-3xl"
-          >
-            {[
-              { tag: '🎓 Cursos Grátis' },
-              { tag: '🌐 8 Idiomas' },
-              { tag: '🤖 IA Tutora 24/7' },
-              { tag: '💆 Massagem' },
-              { tag: '💻 Programação' },
-              { tag: '🏆 Certificados' },
-            ].map((item, id) => (
-              <span
-                key={id}
-                className="rounded-full border border-[#a3e635]/30 bg-[#a3e635]/10 px-4 py-1.5 text-xs font-semibold text-[#a3e635] hover:border-[#a3e635] hover:bg-[#a3e635]/20 transition-all duration-300 cursor-default"
-              >
-                {item.tag}
-              </span>
-            ))}
-          </motion.div>
-
-          {/* Action Buttons Grid */}
-          <motion.div
+          {/* Dual Action Buttons */}
+          <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="mx-auto mt-10 flex flex-wrap items-center justify-center gap-4 max-w-3xl"
+            transition={{ duration: 0.7, delay: 0.3 }}
+            className="mt-8 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
           >
-            {/* Button 1: Consultation */}
-            <button
-              onClick={onOpenConsultation}
-              className="group flex items-center justify-between gap-3 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-sm px-6 py-3.5 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>Agendar Consulta</span>
-              </div>
-              <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
-            </button>
-
-            {/* Button 2: Portfolio */}
             <button
               onClick={() => onNavigate('portfolio')}
-              className="flex items-center justify-center rounded-xl bg-white hover:bg-neutral-100 text-[#84cc16] font-extrabold text-sm px-7 py-3.5 transition-all duration-300 hover:scale-[1.02] cursor-pointer shadow-md"
+              className="w-full sm:w-auto rounded-full border border-neutral-800 bg-neutral-900/80 hover:bg-neutral-800/90 px-6 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-neutral-200 transition-all cursor-pointer"
             >
-              Ver Portfólio
+              VER O QUE JÁ FIZEMOS
+            </button>
+
+            <button
+              onClick={onOpenConsultation}
+              className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-7 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_25px_rgba(34,197,94,0.35)] cursor-pointer"
+            >
+              <span>FALAR COM ENGENHEIRO</span>
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </div>
             </button>
           </motion.div>
-
-          {/* Scroll To Explore Mouse Indicator (From Image 3) */}
-          <div className="mt-12 flex flex-col items-center gap-2">
-            <span className="text-[11px] font-bold tracking-wider text-[#a3e635] uppercase">
-              Role para explorar
-            </span>
-            <motion.div
-              animate={{ y: [0, 6, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="w-5 h-8 rounded-full border-2 border-[#a3e635] flex items-start justify-center p-1"
-            >
-              <div className="w-1.5 h-1.5 rounded-full bg-[#a3e635]" />
-            </motion.div>
-          </div>
-
-          {/* Statistics Section with Scroll Animated Counters (From Image 3) */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.7 }}
-            className="w-full max-w-4xl mx-auto mt-12 px-4"
-          >
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <AnimatedCounter targetValue={50} suffix="+" label="Projetos" idx={0} />
-              <AnimatedCounter targetValue={30} suffix="+" label="Clientes" idx={1} />
-              <AnimatedCounter targetValue={100} suffix="%" label="Satisfação" idx={2} />
-            </div>
-          </motion.div>
-        </section>
-      </div>
-
-      {/* Services Grid (Image 3) */}
-      <motion.section 
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.2 }}
-        transition={{ duration: 0.7 }}
-        className="mx-auto max-w-7xl px-4 mt-36 sm:px-6 lg:px-8"
-      >
-        <div className="text-center mb-16">
-          <h2 className="font-display text-3xl font-black tracking-tight text-white sm:text-5xl uppercase">
-            NOSSOS <span className="text-brand-lime">SERVIÇOS</span>
-          </h2>
-          <p className="mt-3 text-xs font-black tracking-widest text-neutral-400 uppercase">
-            SOLUÇÕES COMPLETAS PARA ELEVAR SUA PRESENÇA DIGITAL
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {SERVICES.map((srv, idx) => {
-            // Icon choosing map
-            let SrvIcon = Globe;
-            if (srv.iconName === 'Palette') SrvIcon = Palette;
-            else if (srv.iconName === 'Monitor') SrvIcon = Monitor;
-            else if (srv.iconName === 'Zap') SrvIcon = Zap;
+        {/* Rating Footer */}
+        <div className="relative z-10 mt-12 flex flex-col items-center gap-1.5">
+          <span className="text-xs font-semibold text-neutral-300 tracking-wide">
+            4.9/5 em satisfação de clientes
+          </span>
+          <div className="flex items-center gap-1">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="h-4 w-4 fill-[#facc15] text-[#facc15]" />
+            ))}
+          </div>
+        </div>
+      </WavyBackground>
 
-            const isHovered = hoveredCard === srv.id;
 
-            return (
-              <motion.div
-                key={srv.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                onMouseEnter={() => setHoveredCard(srv.id)}
-                onMouseLeave={() => setHoveredCard(null)}
-                className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-800 bg-[#070707] p-8 text-left transition-all duration-300 hover:border-neutral-700 hover:translate-y-[-4px]"
+      {/* ========================================================================= */}
+      {/* 2. LOGO MARQUEE / CLIENTS CAROUSEL (Infinite Seamless Flow)               */}
+      {/* ========================================================================= */}
+      <ScrollReveal threshold={0.1} duration={0.8} yOffset={20}>
+        <section className="relative w-full border-y border-neutral-900/90 bg-[#050705]/90 py-7 sm:py-8 overflow-hidden select-none">
+          {/* Subtle edge gradient fade masks */}
+          <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-28 bg-gradient-to-r from-[#030303] via-[#030303]/90 to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-28 bg-gradient-to-l from-[#030303] via-[#030303]/90 to-transparent z-10 pointer-events-none" />
+
+          {/* Continuous Infinite Marquee Track */}
+          <div className="flex animate-marquee items-center gap-12 sm:gap-16 hover:[animation-play-state:paused]">
+            {[...clientLogos, ...clientLogos, ...clientLogos, ...clientLogos].map((logo, idx) => (
+              <div 
+                key={idx} 
+                className="flex items-center gap-3 text-neutral-400/80 hover:text-white transition-all duration-300 cursor-default select-none shrink-0 group"
               >
-                {/* Visual border */}
-                {isHovered && (
-                  <div className="absolute inset-0 border border-brand-accent/30 rounded-2xl pointer-events-none" />
-                )}
+                <div className="h-2 w-2 rounded-full bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.8)] group-hover:scale-125 transition-transform" />
+                <span className="text-sm sm:text-base font-black tracking-[0.2em] uppercase font-display text-neutral-300 group-hover:text-white group-hover:text-glow-green transition-all">
+                  {logo.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </ScrollReveal>
 
-                <div>
-                  {/* Rounded icon block matching screenshots */}
-                  <div 
-                    className="mb-8 flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-900/60"
-                    style={{ color: srv.color }}
-                  >
-                    <SrvIcon className="h-6 w-6" />
+      {/* ========================================================================= */}
+      {/* 2.1 PRESENÇA NO GOOGLE & CONVERSÃO (Destaque Estratégico Fixo)            */}
+      {/* ========================================================================= */}
+      <section className="relative w-full py-16 sm:py-24 bg-gradient-to-b from-black via-[#060f07]/60 to-black border-b border-neutral-900/80 overflow-hidden">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
+          <ScrollReveal delay={0.05} yOffset={24} threshold={0.2}>
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 backdrop-blur-md px-4 py-1.5 text-xs font-semibold text-[#4ade80] shadow-[0_0_20px_rgba(34,197,94,0.15)] mb-6">
+              <TrendingUp className="h-3.5 w-3.5 text-[#22c55e]" />
+              <span>Presença & Conversão</span>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.15} yOffset={30} threshold={0.2}>
+            {/* Heading */}
+            <h2 className="font-display text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl">
+              Seu concorrente aparece no Google. <br />
+              <span className="text-neutral-400 font-bold">
+                E o seu negócio?
+              </span>
+            </h2>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.25} yOffset={25} threshold={0.2}>
+            {/* Text description */}
+            <p className="max-w-3xl text-base sm:text-lg text-neutral-300 leading-relaxed font-normal mt-6">
+              Se o cliente não encontra a sua empresa na internet, ele compra de quem ele encontra. A <strong className="text-white font-semibold">Techify</strong> faz o site, o sistema de gestão e a estratégia que colocam o seu negócio na frente.
+            </p>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.35} yOffset={20} threshold={0.2}>
+            {/* CTA */}
+            <div className="mt-8">
+              <button
+                onClick={onOpenConsultation}
+                className="group relative inline-flex items-center justify-center gap-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-8 py-4 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_25px_rgba(34,197,94,0.3)] cursor-pointer"
+              >
+                <span>QUERO APARECER PRIMEIRO</span>
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </div>
+              </button>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+
+      {/* ========================================================================= */}
+      {/* 3. SOBRE NÓS / BENTO STATS SECTION                                       */}
+      {/* ========================================================================= */}
+      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Section Header Tag */}
+        <ScrollReveal threshold={0.15} blur={16} yOffset={25}>
+          <div className="flex flex-col items-center text-center mb-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-6 shadow-[0_0_15px_rgba(34,197,94,0.15)]">
+              <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e] animate-pulse" />
+              <span>Sobre nós</span>
+            </div>
+
+            <TextEmergence as="h2" blur={16} yOffset={24} className="font-display text-3xl sm:text-5xl md:text-6xl font-extrabold text-white max-w-3xl leading-[1.15] tracking-tight">
+              A empresa que resolve o que trava o seu negócio{' '}
+              <span className="text-neutral-400">com site, sistema e anúncios.</span>
+            </TextEmergence>
+          </div>
+        </ScrollReveal>
+
+        {/* 4-Card Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          
+          {/* Card 1: 120+ Deliveries (Large Dark Card) */}
+          <ScrollReveal delay={0.05} yOffset={35} className="md:col-span-2">
+            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-[#090b09] p-8 flex flex-col justify-between min-h-[300px] h-full hover:border-[#22c55e]/40 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-800 bg-black p-1.5">
+                    <TechifyIcon className="h-full w-full" />
                   </div>
+                  <span className="font-display text-base font-bold text-white">TECHIFY</span>
+                </div>
+                <div className="h-9 w-9 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-[#22c55e]">
+                  <BarChart3 className="h-5 w-5" />
+                </div>
+              </div>
 
-                  <h3 className="font-display text-lg font-black tracking-wider text-white mb-4">
-                    {srv.title}
-                  </h3>
+              <div className="mt-12">
+                <AnimatedCounter id="bento_stat_1" targetValue={120} suffix="+" label="Sites, sistemas e campanhas já entregues e no ar com alta conversão." />
+              </div>
 
-                  <p className="text-sm leading-relaxed text-neutral-400">
-                    {srv.description}
+              <div className="absolute right-0 bottom-0 w-64 h-64 bg-[radial-gradient(circle_at_bottom_right,rgba(34,197,94,0.12),transparent_70%)] pointer-events-none" />
+            </div>
+          </ScrollReveal>
+
+          {/* Card 2: 100% Prazo Cumprido */}
+          <ScrollReveal delay={0.15} yOffset={35}>
+            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-950 p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              <div>
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                  <EditableText id="bento_card2_tag" defaultText="Prazo combinado é prazo cumprido" title="Tag Prazo" />
+                </p>
+                <div className="mt-3">
+                  <AnimatedCounter id="bento_stat_2" targetValue={100} suffix="%" label="" />
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-neutral-900">
+                <div className="flex -space-x-2 mb-3">
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-8 w-8 rounded-full border-2 border-black object-cover" />
+                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-8 w-8 rounded-full border-2 border-black object-cover" />
+                  <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-8 w-8 rounded-full border-2 border-black object-cover" />
+                </div>
+                <p className="text-xs italic text-neutral-400 leading-relaxed">
+                  <EditableText
+                    id="bento_card2_quote"
+                    defaultText="“O time da Techify entregou nosso produto com qualidade e no prazo. Comunicação clara do início ao fim.”"
+                    title="Depoimento Prazo"
+                    isMultiline={true}
+                  />
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Card 3: 40+ Sites e Sistemas no Ar (Green Accent Card) */}
+          <ScrollReveal delay={0.25} yOffset={35}>
+            <div className="relative overflow-hidden rounded-3xl border border-[#22c55e]/40 bg-[#06240d] p-8 flex flex-col justify-between text-white h-full shadow-[0_0_25px_rgba(34,197,94,0.15)]">
+              <div>
+                <p className="text-xs font-semibold text-[#86efac] uppercase tracking-wider">
+                  <EditableText id="bento_card3_tag" defaultText="Sites e sistemas no ar" title="Tag Sistemas" />
+                </p>
+                <div className="mt-3 text-4xl sm:text-5xl font-black text-white">
+                  <AnimatedCounter id="bento_stat_3" targetValue={40} suffix="+" label="" />
+                </div>
+              </div>
+
+              <p className="mt-8 text-xs font-medium text-[#bbf7d0] leading-relaxed">
+                <EditableText
+                  id="bento_card3_desc"
+                  defaultText="No ar, funcionando e com suporte técnico garantido depois da entrega."
+                  title="Descrição Sistemas no Ar"
+                />
+              </p>
+            </div>
+          </ScrollReveal>
+
+          {/* Card 4: 100+ Empresas Atendidas */}
+          <ScrollReveal delay={0.3} yOffset={35} className="md:col-span-3 lg:col-span-4">
+            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-[#050505] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-[#22c55e]/40 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-[#0a1a0c] border border-[#22c55e]/30 flex items-center justify-center text-[#22c55e]">
+                  <Users className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-white">
+                    <EditableText id="bento_card4_title" defaultText="Empresas e Empreendedores Atendidos" title="Título Empresas Atendidas" />
+                  </h4>
+                  <p className="text-xs text-neutral-400">
+                    <EditableText id="bento_card4_desc" defaultText="Atendimento em todo o Brasil com software de alta performance" title="Subtítulo Empresas Atendidas" />
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <AnimatedCounter id="bento_stat_4" targetValue={100} suffix="+" label="" />
+              </div>
+            </div>
+          </ScrollReveal>
+
+        </div>
+      </section>
+
+
+      {/* ========================================================================= */}
+      {/* 4. SERVIÇOS (GradientWave WebGL Background + 3 Detailed Solution Cards)   */}
+      {/* ========================================================================= */}
+      <section className="relative w-full overflow-hidden py-24 sm:py-32">
+        {/* Animated WebGL Gradient Wave Background with Parallax Shift */}
+        <motion.div style={{ y: yServicesGlow }} className="absolute inset-0 z-0">
+          <GradientWave 
+            colors={["#011205", "#03280c", "#0d4d1a", "#021c07"]}
+            className="opacity-95 h-[130%]"
+            noiseSpeed={0.00001}
+            deform={{ incline: 0.35, noiseAmp: 280, noiseFlow: 4 }}
+          />
+        </motion.div>
+        
+        {/* Parallax Floating Tech Shapes in Background */}
+        <motion.div 
+          style={{ y: yServicesGlow, rotate: rotateServicesGeom }}
+          className="pointer-events-none absolute -top-12 -right-12 w-64 h-64 rounded-3xl border border-[#22c55e]/20 bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.1),transparent_70%)] blur-sm z-[2]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black pointer-events-none z-[1]" />
+
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          
+          <ScrollReveal threshold={0.2}>
+            <div className="flex flex-col items-center text-center mb-16">
+              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-black/80 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-6">
+                <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
+                <span>Serviços</span>
+              </div>
+
+              <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-white max-w-3xl leading-tight">
+                Está perdendo cliente por qual desses três?
+              </h2>
+
+              <p className="mt-4 max-w-2xl text-sm sm:text-base text-neutral-300 leading-relaxed font-normal">
+                Sem site, o cliente não te acha. Sem sistema, você perde tempo e dinheiro no controle manual. Sem anúncio, ninguém sabe que a sua empresa existe. A Techify resolve os três.
+              </p>
+
+              <button
+                onClick={onOpenConsultation}
+                className="mt-8 group inline-flex items-center gap-2 rounded-full bg-black hover:bg-neutral-900 border border-neutral-700 px-6 py-3 text-xs font-bold text-white transition-all cursor-pointer"
+              >
+                <span>QUERO APARECER PRIMEIRO</span>
+                <ArrowUpRight className="h-4 w-4 text-[#22c55e] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </button>
+            </div>
+          </ScrollReveal>
+
+          {/* 3 Solution Cards matching reference image */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            {/* Service 1: Sites */}
+            <ScrollReveal delay={0.1} yOffset={40}>
+              <div className="group rounded-3xl border border-neutral-800 bg-[#080d08]/90 backdrop-blur-md p-6 sm:p-8 flex flex-col justify-between hover:border-[#22c55e]/50 transition-all shadow-xl h-full">
+                <div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#132b17] text-[#4ade80] mb-6">
+                    <Globe className="h-6 w-6" />
+                  </div>
+                  
+                  <h3 className="font-display text-xl font-black text-white mb-2">Sites & Landing Pages</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed mb-6">
+                    Seu cliente procura no celular e não te encontra. Fazemos o site que aparece no Google, abre instantaneamente e vira pedidos diretos no seu WhatsApp.
                   </p>
                 </div>
 
-                {/* Tag Footer inside cards matching screenshots */}
-                <div className="mt-8 pt-4 border-t border-neutral-900 flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-brand-lime" />
-                  <span className="text-[10px] font-black tracking-widest text-neutral-500 uppercase">
-                    TECHIFY CORE
-                  </span>
+                <div className="rounded-2xl overflow-hidden border border-neutral-800/80 bg-neutral-950 h-44">
+                  <img 
+                    src="https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=600&q=80" 
+                    alt="Sites" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                 </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </motion.section>
-
-      {/* Mid Banner Section (Image 4): The design you only find here */}
-      <motion.section 
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.2 }}
-        transition={{ duration: 0.7 }}
-        className="mx-auto max-w-4xl px-4 mt-36 text-center"
-      >
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-accent/20 bg-brand-accent/5 px-4 py-1.5 text-xs text-brand-lime tracking-widest uppercase font-semibold mb-6">
-          <Zap className="h-3 w-3 text-brand-lime" />
-          <span>CONVITE PREMIUM</span>
-        </div>
-
-        <h2 className="font-display text-4xl font-black text-white uppercase tracking-tight sm:text-6xl">
-          O DESIGN QUE VOCÊ <br />
-          <span className="text-brand-lime italic tracking-wide inline-block transform skew-x-[-4deg]">
-            SÓ ENCONTRA AQUI.
-          </span>
-        </h2>
-
-        <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-neutral-400 sm:text-lg">
-          Assim como um supercarro, um site de alta performance precisa de harmonia entre o que se vê e o que está por baixo. Na <strong className="text-white">Techify</strong>, unimos interfaces que encantam com uma engenharia de código que converte visitantes em lucros reais.
-        </p>
-
-        {/* Feature grid with custom designs (Image 5) */}
-        <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4">
-          {premiumFeatures.map((feat, idx) => {
-            const FeatIcon = feat.icon;
-            return (
-              <motion.div 
-                key={idx}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
-                className="flex flex-col items-center justify-center rounded-xl border border-neutral-900 bg-neutral-950/20 py-6 px-4 hover:border-neutral-800 transition-colors duration-200"
-              >
-                <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-800 bg-[#0d0d0d] text-brand-lime">
-                  <FeatIcon className="h-4 w-4" />
-                </div>
-                <span className="text-[9px] font-black tracking-wider text-neutral-300 uppercase text-center">
-                  {feat.label}
-                </span>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Interactive 3D Experience Simulated Button with dynamic background */}
-        <div className="mt-16 flex flex-col items-center justify-center">
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setInteractive3D(!interactive3D)}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-blue-500 to-emerald-400 p-[2px] transition-all duration-300 shadow-[0_0_40px_rgba(124,58,237,0.25)] hover:shadow-[0_0_50px_rgba(57,255,20,0.35)]"
-          >
-            <div className="rounded-2xl bg-neutral-950 px-10 py-5 text-white flex items-center gap-3">
-              <Box className="h-5 w-5 text-brand-lime animate-spin" style={{ animationDuration: '4s' }} />
-              <span className="font-display font-black tracking-widest text-sm uppercase">
-                {interactive3D ? 'DESATIVAR MÓDULO 3D' : 'EXPERIÊNCIA 3D'}
-              </span>
-            </div>
-          </motion.button>
-
-          {/* Interactive physics particles panel when 3D is active */}
-          {interactive3D && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="w-full max-w-2xl mt-8 rounded-2xl border border-brand-accent/20 bg-neutral-950/80 p-6 shadow-inner text-left"
-            >
-              <div className="flex items-center gap-2 mb-4 text-brand-lime">
-                <Sparkles className="h-5 w-5" />
-                <h4 className="font-display text-sm font-bold uppercase tracking-wider">Câmera Vetorial Reconectada</h4>
               </div>
-              <p className="text-gray-400 text-xs leading-relaxed mb-4">
-                Interaja com o renderizados de pós-processamento da Techify Core. Os nós refletem gravitação de cursor em tempo real operando em WebGL2:
-              </p>
-              
-              {/* Actual interactive vector canvas element */}
-              <div className="relative h-44 rounded-lg bg-[#0e0e0e] border border-neutral-900 flex items-center justify-center overflow-hidden cursor-crosshair">
-                <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:16px_16px]" />
-                <div className="flex gap-4">
-                  {[1, 2, 3, 4, 5, 6].map((node) => (
-                    <motion.div
-                      key={node}
-                      animate={{ 
-                        height: [20, 60, 10, 40, 20],
-                        opacity: [0.5, 1, 0.5]
-                      }}
-                      transition={{ repeat: Infinity, duration: 2 * node, ease: 'easeInOut' }}
-                      className="w-2.5 rounded-full bg-brand-accent"
-                    />
+            </ScrollReveal>
+
+            {/* Service 2: Sistemas */}
+            <ScrollReveal delay={0.2} yOffset={40}>
+              <div className="group rounded-3xl border border-neutral-800 bg-[#080d08]/90 backdrop-blur-md p-6 sm:p-8 flex flex-col justify-between hover:border-[#22c55e]/50 transition-all shadow-xl h-full">
+                <div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#132b17] text-[#4ade80] mb-6">
+                    <Database className="h-6 w-6" />
+                  </div>
+                  
+                  <h3 className="font-display text-xl font-black text-white mb-2">Sistemas de Gestão</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed mb-6">
+                    Controlar venda, estoque e mensalidade no caderno ou na planilha custa caro e dá erro. Criamos o sistema sob medida exatamente do jeito que o seu negócio funciona.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl overflow-hidden border border-neutral-800/80 bg-neutral-950 h-44">
+                  <img 
+                    src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=600&q=80" 
+                    alt="Sistemas" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+              </div>
+            </ScrollReveal>
+
+            {/* Service 3: Marketing */}
+            <ScrollReveal delay={0.3} yOffset={40}>
+              <div className="group rounded-3xl border border-neutral-800 bg-[#080d08]/90 backdrop-blur-md p-6 sm:p-8 flex flex-col justify-between hover:border-[#22c55e]/50 transition-all shadow-xl h-full">
+                <div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#132b17] text-[#4ade80] mb-6">
+                    <Zap className="h-6 w-6" />
+                  </div>
+                  
+                  <h3 className="font-display text-xl font-black text-white mb-2">Marketing & Anúncios</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed mb-6">
+                    Impulsionar post aleatório não traz cliente pagante. Cuidamos dos seus anúncios no Google e no Instagram para o seu telefone tocar toda semana com clientes prontos para comprar.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl overflow-hidden border border-neutral-800/80 bg-neutral-950 h-44">
+                  <img 
+                    src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80" 
+                    alt="Marketing" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+              </div>
+            </ScrollReveal>
+
+          </div>
+        </div>
+      </section>
+
+
+      {/* ========================================================================= */}
+      {/* 4.1 PORTFÓLIO / PROJETOS ENTREGUES CTA                                    */}
+      {/* ========================================================================= */}
+      <section className="relative w-full py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ScrollReveal threshold={0.15}>
+          <div className="relative overflow-hidden rounded-3xl border border-neutral-800/80 bg-gradient-to-b from-[#080d08] via-neutral-950 to-black p-8 sm:p-14 text-center flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.6)]">
+            
+            {/* Ambient Radial Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[250px] bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.12),transparent_70%)] blur-[70px] pointer-events-none" />
+
+            <div className="relative z-10 inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-1.5 text-xs font-bold text-[#4ade80] mb-5 shadow-[0_0_15px_rgba(34,197,94,0.15)]">
+              <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
+              <span>Nossos Trabalhos & Projetos</span>
+            </div>
+
+            <h2 className="relative z-10 font-display text-3xl sm:text-5xl font-extrabold text-white max-w-3xl leading-tight">
+              Conheça nossos cases e entregas reais <br />
+              <span className="text-[#22c55e] drop-shadow-[0_0_25px_rgba(34,197,94,0.3)]">feitas sob medida para cada cliente.</span>
+            </h2>
+
+            <p className="relative z-10 mt-4 max-w-2xl text-sm sm:text-base text-neutral-400 leading-relaxed font-normal">
+              Explore nossa galeria completa com lojas virtuais, identidades visuais de luxo, plataformas web e sistemas desenvolvidos pela Techify.
+            </p>
+
+            <div className="relative z-10 mt-8">
+              <button
+                onClick={() => onNavigate('portfolio')}
+                className="group relative inline-flex items-center justify-center gap-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-8 py-4 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:shadow-[0_0_40px_rgba(34,197,94,0.6)] cursor-pointer"
+              >
+                <span>ACESSAR PORTFÓLIO COMPLETO</span>
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                  <ArrowUpRight className="h-4 w-4" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </ScrollReveal>
+      </section>
+
+
+      {/* ========================================================================= */}
+      {/* 5. ESPECIALIDADE (Interactive 2x2 Bento Cards)                            */}
+      {/* ========================================================================= */}
+      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <ScrollReveal threshold={0.2}>
+          <div className="flex flex-col items-center text-center mb-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-6">
+              <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
+              <span>Especialidade</span>
+            </div>
+
+            <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-white max-w-3xl leading-tight">
+              Cansado de contratar um profissional para cada coisa?
+            </h2>
+
+            <p className="mt-4 max-w-2xl text-sm sm:text-base text-neutral-400 leading-relaxed font-normal">
+              Um faz o site, outro some com a senha, um terceiro cuida do anúncio e ninguém se entende. Na Techify é um time completo, do começo ao fim, com alguém de prontidão para te atender.
+            </p>
+          </div>
+        </ScrollReveal>
+
+        {/* 2x2 Interactive Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          {/* Bento 1: Menos trabalho na mão (Mockup financeiro animado) */}
+          <ScrollReveal delay={0.1} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              {/* Interactive Billing Card Mockup */}
+              <div className="rounded-2xl border border-neutral-800/80 bg-neutral-950 p-5 mb-8 shadow-inner">
+                <div className="flex items-center justify-between text-xs text-neutral-400 mb-2">
+                  <span>Cobrança mensal automatizada</span>
+                  <span className="text-[#22c55e] font-bold">R$ 4.900 / R$ 10.000</span>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full h-2 rounded-full bg-neutral-900 overflow-hidden mb-5">
+                  <div className="h-full bg-gradient-to-r from-[#22c55e] to-[#4ade80] rounded-full w-[49%]" />
+                </div>
+
+                {/* List of automated entries */}
+                <div className="space-y-2.5">
+                  {[
+                    { name: 'Plano Pro Anual', date: 'Hoje às 14:32', val: 'R$ 1.200' },
+                    { name: 'Licença Corporativa', date: 'Ontem às 18:10', val: 'R$ 2.450' },
+                    { name: 'Manutenção Mensal', date: '12 de Agosto', val: 'R$ 850' },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800/50 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-lg bg-[#22c55e]/10 text-[#22c55e] flex items-center justify-center">
+                          <Check className="h-3.5 w-3.5" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white">{item.name}</p>
+                          <p className="text-[10px] text-neutral-500">{item.date}</p>
+                        </div>
+                      </div>
+                      <span className="font-bold text-[#4ade80]">{item.val}</span>
+                    </div>
                   ))}
                 </div>
-                <div className="absolute bottom-2 right-3 text-[9px] font-mono text-neutral-600">
-                  FPS: 60.0 // RENDERER: VULKAN_MAPPED
+              </div>
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Menos trabalho na mão</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Tarefa repetida no manual consome o dia do seu time. Automatizamos processos para sobrar tempo para o que realmente importa: vender.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Bento 2: Site e loja virtual (Bar chart + Badge) */}
+          <ScrollReveal delay={0.2} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              {/* Visual Growth Chart */}
+              <div className="rounded-2xl border border-neutral-800/80 bg-neutral-950 p-6 mb-8 flex flex-col justify-between min-h-[220px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white">Você sabe de onde vem cada venda?</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#22c55e]/20 text-[#4ade80] font-bold">
+                    +142% conversão
+                  </span>
+                </div>
+
+                {/* Bar Growth Visualization */}
+                <div className="flex items-end justify-between gap-2 h-28 pt-4">
+                  {[
+                    { year: '2021', h: '25%' },
+                    { year: '2022', h: '40%' },
+                    { year: '2023', h: '60%' },
+                    { year: '2024', h: '78%' },
+                    { year: '2025', h: '95%' },
+                    { year: '2026', h: '100%', active: true },
+                  ].map((bar, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                      <div 
+                        style={{ height: bar.h }} 
+                        className={`w-full rounded-md transition-all ${
+                          bar.active 
+                            ? 'bg-[#22c55e] shadow-[0_0_12px_#22c55e]' 
+                            : 'bg-neutral-800 hover:bg-neutral-700'
+                        }`} 
+                      />
+                      <span className={`text-[10px] ${bar.active ? 'text-[#4ade80] font-bold' : 'text-neutral-500'}`}>
+                        {bar.year}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 text-[11px] font-medium text-neutral-400 bg-neutral-900/50 p-2 rounded-lg border border-neutral-800/50">
+                  Estratégia, Design e Tecnologia de ponta unificados.
                 </div>
               </div>
-            </motion.div>
-          )}
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Site e loja virtual</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Sites e e-commerces que carregam instantaneamente em qualquer celular e aguentam o crescimento acelerado do seu negócio sem travar.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Bento 3: Sistema de gestão (Live Stats + Marquee Badges) */}
+          <ScrollReveal delay={0.1} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              <div className="rounded-2xl border border-neutral-800/80 bg-neutral-950 p-5 mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs text-neutral-400 font-medium">Desempenho Geral</p>
+                    <p className="text-3xl font-black text-white mt-1">+49% <span className="text-xs text-[#4ade80] font-bold">+2.5% semana</span></p>
+                  </div>
+                  <div className="h-10 w-10 rounded-xl bg-[#22c55e]/10 text-[#22c55e] flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5" />
+                  </div>
+                </div>
+
+                {/* Tag Badges Carousel */}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {[
+                    'Preço fechado',
+                    'Prazo por escrito',
+                    'Suporte pós-entrega',
+                    'Sem fidelidade',
+                    'Aparece no Google',
+                    'Sem dor de cabeça'
+                  ].map((tag, idx) => (
+                    <span key={idx} className="rounded-full bg-neutral-900 border border-neutral-800 px-3 py-1 text-[10px] font-semibold text-neutral-300">
+                      ✓ {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Sistema de gestão sob medida</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Estoque, vendas, mensalidades e clientes num lugar só, feito exatamente sob medida para as necessidades do seu negócio.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Bento 4: Anúncios que trazem cliente (Radar Orbit com Leads) */}
+          <ScrollReveal delay={0.2} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              {/* Orbital Radar Visual */}
+              <div className="relative h-52 rounded-2xl border border-neutral-800/80 bg-neutral-950 p-4 mb-8 flex items-center justify-center overflow-hidden">
+                {/* Concentric Rings */}
+                <div className="absolute w-44 h-44 rounded-full border border-neutral-800/60" />
+                <div className="absolute w-28 h-28 rounded-full border border-[#22c55e]/20" />
+                
+                {/* Center Logo */}
+                <div className="relative z-10 h-12 w-12 rounded-full bg-black border border-[#22c55e] p-2 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.4)]">
+                  <TechifyIcon className="h-full w-full" />
+                </div>
+
+                {/* Floating Lead Pills */}
+                <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-neutral-900/90 border border-neutral-800 px-2.5 py-1 rounded-full text-[10px] font-medium text-white shadow-lg animate-bounce" style={{ animationDuration: '3s' }}>
+                  <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
+                  <span>Alexandre H. <strong className="text-[#4ade80]">+6%</strong></span>
+                </div>
+
+                <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-neutral-900/90 border border-neutral-800 px-2.5 py-1 rounded-full text-[10px] font-medium text-white shadow-lg animate-bounce" style={{ animationDuration: '4s' }}>
+                  <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
+                  <span>Raimundo P. <strong className="text-[#4ade80]">+4.5%</strong></span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Anúncio que traz cliente</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Anúncios estratégicos no Google e Instagram para o cliente certo achar sua empresa exatamente na hora em que está buscando comprar.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
         </div>
-      </motion.section>
+      </section>
+
+
+      {/* ========================================================================= */}
+      {/* 6. DEPOIMENTOS (TESTIMONIALS)                                             */}
+      {/* ========================================================================= */}
+      <section className="relative w-full py-20 bg-neutral-950/60 border-y border-neutral-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <ScrollReveal threshold={0.2}>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-black px-3.5 py-1 text-xs font-bold text-neutral-300 mb-4">
+                  <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
+                  <span>Depoimentos</span>
+                </div>
+                <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-white">
+                  O que dizem sobre nós?
+                </h2>
+                <p className="text-sm text-neutral-400 mt-2">
+                  Histórias reais de quem acelerou seu negócio com a Techify.
+                </p>
+              </div>
+
+              {/* Navigation buttons */}
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setCurrentTestimonial((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1))}
+                  className="h-10 w-10 rounded-full border border-neutral-800 bg-neutral-900 flex items-center justify-center text-neutral-300 hover:text-white hover:border-neutral-700 transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button 
+                  onClick={() => setCurrentTestimonial((prev) => (prev === testimonials.length - 1 ? 0 : prev + 1))}
+                  className="h-10 w-10 rounded-full border border-neutral-800 bg-neutral-900 flex items-center justify-center text-neutral-300 hover:text-white hover:border-neutral-700 transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {testimonials.map((testi, idx) => (
+              <ScrollReveal key={idx} delay={idx * 0.12} yOffset={30}>
+                <div 
+                  className={`rounded-3xl border p-8 flex flex-col justify-between transition-all h-full ${
+                    idx === currentTestimonial 
+                      ? 'border-[#22c55e]/50 bg-[#061709] shadow-[0_0_30px_rgba(34,197,94,0.15)]' 
+                      : 'border-neutral-800 bg-[#0a0a0a]'
+                  }`}
+                >
+                  <div className="mb-6">
+                    <div className="flex items-center gap-1 text-[#facc15] mb-4">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-current" />
+                      ))}
+                    </div>
+                    <p className="text-sm sm:text-base text-neutral-200 leading-relaxed italic">
+                      "{testi.quote}"
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-6 border-t border-neutral-800/80">
+                    <img src={testi.avatar} alt={testi.author} className="h-10 w-10 rounded-full object-cover border border-neutral-700" />
+                    <div>
+                      <h4 className="text-sm font-bold text-white">{testi.author}</h4>
+                      <p className="text-xs text-neutral-400">{testi.role}</p>
+                    </div>
+                  </div>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+
+      {/* ========================================================================= */}
+      {/* 7. BLOG & ARTIGOS / DÚVIDAS DOS DONOS DE NEGÓCIO                         */}
+      {/* ========================================================================= */}
+      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ScrollReveal threshold={0.2}>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-16 gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-4">
+                <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
+                <span>Blog e artigos</span>
+              </div>
+              <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-white leading-tight">
+                As dúvidas que todo dono de negócio tem
+              </h2>
+              <p className="text-sm sm:text-base text-neutral-400 mt-2">
+                Respostas diretas sobre site, sistema e anúncios, sem termos técnicos complicados.
+              </p>
+            </div>
+
+            <button
+              onClick={() => onNavigate('carreiras')}
+              className="w-fit rounded-full border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 px-6 py-3 text-xs font-bold text-white transition-colors cursor-pointer shrink-0"
+            >
+              VER TODOS OS ARTIGOS
+            </button>
+          </div>
+        </ScrollReveal>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {articles.map((art, idx) => (
+            <ScrollReveal key={art.id} delay={idx * 0.12} yOffset={35}>
+              <motion.div
+                whileHover={{ y: -6 }}
+                onClick={() => setSelectedArticle(art.id)}
+                className="group rounded-3xl border border-neutral-800 bg-[#080808] overflow-hidden flex flex-col justify-between cursor-pointer hover:border-neutral-700 transition-all shadow-lg h-full"
+              >
+                <div className="relative h-48 w-full overflow-hidden bg-neutral-900">
+                  <img src={art.image} alt={art.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <span className="absolute top-3 left-3 rounded-md bg-black/80 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-[#4ade80] border border-[#22c55e]/30">
+                    {art.category}
+                  </span>
+                </div>
+
+                <div className="p-6 flex flex-col justify-between flex-1">
+                  <div>
+                    <h3 className="font-display text-base sm:text-lg font-bold text-white group-hover:text-[#4ade80] transition-colors leading-snug mb-3">
+                      {art.title}
+                    </h3>
+                    <p className="text-xs text-neutral-400 leading-relaxed line-clamp-3">
+                      {art.summary}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-neutral-900 flex items-center justify-between text-xs text-neutral-500">
+                    <span>{art.readTime}</span>
+                    <span className="text-[#4ade80] font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                      Ler artigo <ChevronRight className="h-3 w-3" />
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            </ScrollReveal>
+          ))}
+        </div>
+
+        {/* Modal for Article Reading */}
+        {selectedArticle !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="relative w-full max-w-2xl rounded-3xl border border-neutral-800 bg-[#0a0a0a] p-6 sm:p-8 text-left shadow-2xl">
+              {(() => {
+                const article = articles.find(a => a.id === selectedArticle);
+                if (!article) return null;
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="rounded-md bg-[#22c55e]/10 border border-[#22c55e]/30 px-2.5 py-1 text-xs font-bold text-[#4ade80]">
+                        {article.category}
+                      </span>
+                      <button 
+                        onClick={() => setSelectedArticle(null)}
+                        className="text-neutral-400 hover:text-white text-sm font-bold cursor-pointer"
+                      >
+                        Fechar ✕
+                      </button>
+                    </div>
+
+                    <h3 className="font-display text-2xl font-bold text-white mb-4">
+                      {article.title}
+                    </h3>
+
+                    <div className="h-48 w-full rounded-2xl overflow-hidden mb-6">
+                      <img src={article.image} alt={article.title} className="h-full w-full object-cover" />
+                    </div>
+
+                    <p className="text-sm text-neutral-300 leading-relaxed mb-6 font-normal">
+                      {article.content}
+                    </p>
+
+                    <div className="pt-4 border-t border-neutral-800 flex justify-end">
+                      <button
+                        onClick={() => {
+                          setSelectedArticle(null);
+                          onOpenConsultation();
+                        }}
+                        className="rounded-full bg-[#22c55e] px-6 py-2.5 text-xs font-bold text-black hover:bg-[#16a34a] transition-colors cursor-pointer"
+                      >
+                        Falar com Engenheiro Techify
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+      </section>
+
+
+      {/* ========================================================================= */}
+      {/* 8. HIGH-IMPACT FINAL CTA BANNER (Enquanto você decide...)                 */}
+      {/* ========================================================================= */}
+      <section className="relative w-full py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <ScrollReveal threshold={0.2} duration={0.8} yOffset={35}>
+          <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-gradient-to-b from-[#08170c] via-[#040a06] to-black p-8 sm:p-16 text-center flex flex-col items-center">
+            
+            {/* Subtle Glow Background */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#22c55e]/15 blur-[120px] pointer-events-none" />
+
+            {/* Client Avatars */}
+            <div className="relative z-10 flex items-center gap-3 mb-6">
+              <div className="flex -space-x-2">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-7 w-7 rounded-full border-2 border-black object-cover" />
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-7 w-7 rounded-full border-2 border-black object-cover" />
+                <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-7 w-7 rounded-full border-2 border-black object-cover" />
+              </div>
+              <span className="text-xs font-semibold text-neutral-300">
+                Empresas que confiam na Techify
+              </span>
+            </div>
+
+            {/* Headline */}
+            <h2 className="relative z-10 font-display text-3xl sm:text-5xl md:text-6xl font-extrabold text-white max-w-3xl leading-[1.1] tracking-tight">
+              Enquanto você decide, <br />
+              <span className="text-[#4ade80]">o cliente compra do concorrente</span>
+            </h2>
+
+            <p className="relative z-10 mt-6 max-w-2xl text-sm sm:text-base text-neutral-300 leading-relaxed font-normal">
+              Cada dia sem site e sem anúncio é venda indo para outro. A gente coloca o seu negócio na frente, com preço fechado antes de começar e prazo combinado por escrito.
+            </p>
+
+            <div className="relative z-10 mt-10">
+              <button
+                onClick={onOpenConsultation}
+                className="group inline-flex items-center gap-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-8 py-4 text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] cursor-pointer"
+              >
+                <span>QUERO APARECER PRIMEIRO</span>
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                  <ArrowUpRight className="h-4 w-4" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* Floating Instant WhatsApp Button in bottom corner */}
+      <a
+        href="https://wa.me/5581995498590?text=Ol%C3%A1,%20gostaria%20de%20um%20or%C3%A7amento%20com%20a%20Techify!"
+        target="_blank"
+        rel="noreferrer"
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#22c55e] text-black shadow-[0_0_25px_rgba(34,197,94,0.5)] hover:scale-110 transition-all cursor-pointer"
+        aria-label="Falar no WhatsApp"
+      >
+        <MessageCircle className="h-7 w-7" />
+      </a>
+
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react';
 import { 
   Search, 
   Globe, 
@@ -17,6 +17,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { Project } from '../types';
+import GlassButton, { GlassEffect } from './GlassButton';
 import { 
   collection, 
   onSnapshot, 
@@ -30,6 +31,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAdminAuth } from '../lib/adminAuth';
+import { INITIAL_PORTFOLIO_SITES, PORTFOLIO_PRESET_IMAGES } from '../data/portfolioData';
+import { compressImageFile } from '../lib/imageUtils';
 
 const CATEGORIES = [
   'Todos',
@@ -42,82 +45,54 @@ const CATEGORIES = [
   'Outro'
 ];
 
-const INITIAL_PORTFOLIO_SITES = [
-  {
-    title: "Mugsy's Mugs",
-    category: "E-commerce",
-    description: "E-commerce premium e disruptivo projetado para coleções limitadas de canecas com carrinho interativo e catálogo 3D.",
-    imageUrl: "https://i.postimg.cc/1zN0rTcN/img-1.jpg",
-    liveUrl: "demo:mugsys-mugs",
-    demoId: "mugsys-mugs",
-    tags: ["E-commerce", "Carrinho Interativo", "Tailwind"],
-    certified: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    title: "Mindloop Hub",
-    category: "Plataforma",
-    description: "Plataforma de conteúdo e newsletter futurista com animações fluidas, reveal progressivo e streaming em tempo real.",
-    imageUrl: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=800&q=80",
-    liveUrl: "demo:mindloop",
-    demoId: "mindloop",
-    tags: ["React", "Framer Motion", "Streaming"],
-    certified: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    title: "EPIC DESIGNER",
-    category: "Landing Page",
-    description: "Branding, design gráfico de elite, cardápios digitais e experiência cinética e interativa para o setor gastronômico.",
-    imageUrl: "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80",
-    liveUrl: "demo:yuffie",
-    demoId: "yuffie",
-    tags: ["Design Gráfico", "Cardápios", "Interface Cinética"],
-    certified: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    title: "Wandr Travel",
-    category: "Corporativo",
-    description: "Portal de viagens e expedições com física de partículas na praia, animações fluidas e mapas dinâmicos.",
-    imageUrl: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80",
-    liveUrl: "demo:wandr",
-    demoId: "wandr",
-    tags: ["Corporativo", "Viagens", "Física de Partículas"],
-    certified: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    title: "Asme AI",
-    category: "Landing Page",
-    description: "Landing page futurista com vídeo responsivo em background, captura de e-mails instantânea e tipografia Instrument Serif.",
-    imageUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-    liveUrl: "demo:asme",
-    demoId: "asme",
-    tags: ["AI", "Landing Page", "Vídeo Reativo"],
-    certified: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    title: "ToonHub 3D",
-    category: "Plataforma",
-    description: "Galeria e vitrine 3D interativa de colecionáveis e personagens cartoon com troca dinâmica de cores e navegação por gesto/swipe.",
-    imageUrl: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80",
-    liveUrl: "demo:toonhub",
-    demoId: "toonhub",
-    tags: ["3D", "Personagens", "Navegação Swipe"],
-    certified: true,
-    createdAt: new Date().toISOString()
-  }
-];
-
 interface PortfolioSectionProps {
   onBackToHome?: () => void;
   onLaunchDemo?: (projectId: string) => void;
 }
 
+// Helper function to guarantee secure HTTPS protocol on all external links
+const formatHttpsUrl = (url?: string): string => {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('demo:')) return trimmed;
+  if (trimmed.startsWith('http://')) {
+    return trimmed.replace(/^http:\/\//i, 'https://');
+  }
+  if (!trimmed.startsWith('https://') && !trimmed.startsWith('mailto:') && !trimmed.startsWith('tel:') && !trimmed.startsWith('#')) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
+};
+
 export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps) {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [projects, setProjects] = useState<Project[]>(() => INITIAL_PORTFOLIO_SITES.map((item, idx) => ({
+    id: `initial-${idx}`,
+    title: item.title,
+    category: item.category,
+    description: item.description,
+    imageUrl: item.imageUrl,
+    liveUrl: item.liveUrl,
+    demoId: item.demoId,
+    tags: item.tags,
+    certified: item.certified
+  })));
+
+  // Framer Motion Scroll Parallax Transforms
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
+
+  const yOrbTopRight = useTransform(scrollYProgress, [0, 1], [-60, 220]);
+  const yOrbMidLeft = useTransform(scrollYProgress, [0, 1], [100, -200]);
+  const yOrbBottomRight = useTransform(scrollYProgress, [0, 1], [-40, 160]);
+  const rotateTechRing = useTransform(scrollYProgress, [0, 1], [0, 55]);
+  const rotateTechRing2 = useTransform(scrollYProgress, [0, 1], [0, -45]);
+  const scaleOrb = useTransform(scrollYProgress, [0, 0.5, 1], [0.85, 1.2, 0.95]);
+  const opacityOrb = useTransform(scrollYProgress, [0, 0.5, 1], [0.2, 0.35, 0.2]);
+
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -143,31 +118,27 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
   // File input reference for photo selection directly from device gallery
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Real-time Firestore sync & Initial seed (guarded against re-seeding on deletion)
+  // Real-time Firestore sync for Portfolio
   useEffect(() => {
-    const seedAndListen = async () => {
+    // Only seed once if portfolio collection is totally empty
+    const checkAndSeedInitialPortfolio = async () => {
       try {
-        const seedStatusRef = doc(db, "system", "portfolio_seed_status");
-        const seedStatusSnap = await getDoc(seedStatusRef);
-        const hasSeededLocal = localStorage.getItem('techify_portfolio_seeded') === 'true';
-
-        // ONLY run seeding if database has NEVER been seeded before
-        if ((!seedStatusSnap.exists() || !seedStatusSnap.data()?.seeded) && !hasSeededLocal) {
-          const snap = await getDocs(collection(db, "portfolio"));
-          if (snap.empty) {
-            for (const item of INITIAL_PORTFOLIO_SITES) {
-              await addDoc(collection(db, "portfolio"), item);
-            }
+        const snap = await getDocs(collection(db, "portfolio"));
+        if (snap.empty) {
+          for (const item of INITIAL_PORTFOLIO_SITES) {
+            const docId = item.id || (item.demoId || item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+            await setDoc(doc(db, "portfolio", docId), {
+              ...item,
+              createdAt: item.createdAt || new Date().toISOString()
+            });
           }
-          await setDoc(seedStatusRef, { seeded: true, timestamp: new Date().toISOString() });
-          localStorage.setItem('techify_portfolio_seeded', 'true');
         }
       } catch (err) {
-        console.error("Error seeding initial portfolio sites:", err);
+        console.warn("Portfolio initial seed check:", err);
       }
     };
 
-    seedAndListen();
+    checkAndSeedInitialPortfolio();
 
     const unsub = onSnapshot(collection(db, "portfolio"), (snapshot) => {
       const fetched: Project[] = [];
@@ -176,19 +147,44 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
         fetched.push({
           id: docSnap.id,
           title: data.title || '',
-          category: data.category || 'Outro',
+          category: data.category || 'Landing Page',
           description: data.description || '',
           imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
           liveUrl: data.liveUrl || '',
-          demoId: data.demoId || '',
+          demoId: data.demoId || (data.liveUrl?.startsWith('demo:') ? data.liveUrl.replace('demo:', '') : ''),
           tags: Array.isArray(data.tags) ? data.tags : [data.category || 'Site'],
           certified: data.certified !== false
         });
       });
+
       setProjects(fetched);
+    }, (err) => {
+      console.warn('Firestore portfolio listener offline/error:', err.message);
     });
 
-    return () => unsub();
+    const handleLocalUpdate = (e: Event) => {
+      try {
+        const customEvt = e as CustomEvent<{ id: string; imageUrl: string; title?: string }>;
+        const detail = customEvt.detail;
+        if (detail && detail.imageUrl) {
+          setProjects(prev => prev.map(p => {
+            if (p.id === detail.id || (detail.title && p.title.toLowerCase() === detail.title.toLowerCase()) || (p.demoId && p.demoId === detail.id)) {
+              return { ...p, imageUrl: detail.imageUrl };
+            }
+            return p;
+          }));
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    };
+
+    window.addEventListener('techify-portfolio-updated', handleLocalUpdate);
+
+    return () => {
+      unsub();
+      window.removeEventListener('techify-portfolio-updated', handleLocalUpdate);
+    };
   }, []);
 
   // Filter projects by search and category
@@ -265,8 +261,13 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
 
     if (targetDemo && onLaunchDemo) {
       onLaunchDemo(targetDemo);
-    } else if (proj.liveUrl && (proj.liveUrl.startsWith('http://') || proj.liveUrl.startsWith('https://'))) {
-      window.open(proj.liveUrl, '_blank', 'noopener,noreferrer');
+    } else if (proj.liveUrl) {
+      const secureUrl = formatHttpsUrl(proj.liveUrl);
+      if (secureUrl.startsWith('https://') || secureUrl.startsWith('http://')) {
+        window.open(secureUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        setSelectedProject(proj);
+      }
     } else {
       setSelectedProject(proj);
     }
@@ -282,6 +283,18 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
     if (selectedProject?.id === targetId) {
       setSelectedProject(null);
     }
+
+    // Clean local cache
+    try {
+      const cached = JSON.parse(localStorage.getItem('techify_custom_portfolio_images') || '{}');
+      delete cached[targetId];
+      delete cached[projectToDelete.title];
+      if (projectToDelete.demoId) delete cached[projectToDelete.demoId];
+      localStorage.setItem('techify_custom_portfolio_images', JSON.stringify(cached));
+    } catch (e) {
+      console.warn('Cache clean error:', e);
+    }
+
     setProjectToDelete(null);
 
     // Delete from Firestore
@@ -294,17 +307,23 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
     }
   };
 
-  // Handle Photo selection directly from Device Gallery / File Explorer
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Photo selection directly from Device Gallery / File Explorer with smart compression
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setImageUrlInput(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedDataUrl = await compressImageFile(file);
+        setImageUrlInput(compressedDataUrl);
+      } catch (err) {
+        console.error("Error compressing selected image file:", err);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            setImageUrlInput(reader.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -326,30 +345,34 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
     setIsSaving(true);
     const finalImage = imageUrlInput.trim() || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80';
     const finalDescription = descriptionInput.trim() || `${titleInput} é um projeto desenvolvido com excelência visual e código limpo.`;
+    const finalLiveUrl = formatHttpsUrl(urlInput);
 
     try {
-      if (editingProjectId) {
-        // Update existing project
-        await updateDoc(doc(db, "portfolio", editingProjectId), {
-          title: titleInput.trim(),
-          category: categoryInput,
-          description: finalDescription,
-          imageUrl: finalImage,
-          liveUrl: urlInput.trim(),
-          tags: [categoryInput, "Web Design", "Techify"]
-        });
-      } else {
-        // Create new project
-        await addDoc(collection(db, "portfolio"), {
-          title: titleInput.trim(),
-          category: categoryInput,
-          description: finalDescription,
-          imageUrl: finalImage,
-          liveUrl: urlInput.trim(),
-          tags: [categoryInput, "Web Design", "Techify"],
-          certified: true,
-          createdAt: new Date().toISOString()
-        });
+      const targetDocId = editingProjectId && !editingProjectId.startsWith('initial-fallback-') && !editingProjectId.startsWith('initial-')
+        ? editingProjectId
+        : (titleInput.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+
+      await setDoc(doc(db, "portfolio", targetDocId), {
+        title: titleInput.trim(),
+        category: categoryInput,
+        description: finalDescription,
+        imageUrl: finalImage,
+        liveUrl: finalLiveUrl,
+        tags: [categoryInput, "Web Design", "Techify"],
+        certified: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      try {
+        const cached = JSON.parse(localStorage.getItem('techify_custom_portfolio_images') || '{}');
+        cached[targetDocId] = finalImage;
+        cached[titleInput.trim()] = finalImage;
+        localStorage.setItem('techify_custom_portfolio_images', JSON.stringify(cached));
+        window.dispatchEvent(new CustomEvent('techify-portfolio-updated', {
+          detail: { id: targetDocId, title: titleInput.trim(), imageUrl: finalImage }
+        }));
+      } catch (cacheErr) {
+        console.warn(cacheErr);
       }
 
       setIsSaving(false);
@@ -361,11 +384,40 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
   };
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-[#030303] bg-nebula pb-24 pt-12 text-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div ref={containerRef} className="relative w-full min-h-screen overflow-hidden bg-[#030303] bg-nebula pb-24 pt-12 text-white">
+      {/* Background Parallax Ambient Aura & Geometric Accents */}
+      <motion.div 
+        style={{ y: yOrbTopRight, scale: scaleOrb, opacity: opacityOrb }}
+        className="pointer-events-none absolute -top-24 right-[-10%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(163,230,53,0.18),transparent_70%)] blur-[100px] z-0"
+      />
+      <motion.div 
+        style={{ y: yOrbMidLeft }}
+        className="pointer-events-none absolute top-[35%] left-[-15%] w-[550px] h-[550px] rounded-full bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.12),transparent_70%)] blur-[120px] z-0"
+      />
+      <motion.div 
+        style={{ y: yOrbBottomRight }}
+        className="pointer-events-none absolute bottom-10 right-[-5%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.12),transparent_70%)] blur-[100px] z-0"
+      />
+
+      {/* Floating Parallax Cyber Rings */}
+      <motion.div
+        style={{ y: yOrbTopRight, rotate: rotateTechRing }}
+        className="pointer-events-none absolute top-12 right-12 sm:right-36 w-64 h-64 rounded-full border border-[#a3e635]/15 opacity-30 [border-dasharray:10px] z-0"
+      />
+      <motion.div
+        style={{ y: yOrbMidLeft, rotate: rotateTechRing2 }}
+        className="pointer-events-none absolute top-[45%] left-8 sm:left-24 w-80 h-80 rounded-full border border-purple-500/15 opacity-25 [border-dasharray:12px] z-0"
+      />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
-        {/* Header matching Screenshot 1 */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-6 border-b border-neutral-900">
+        {/* Header matching Screenshot 1 with Entrance Motion */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-6 border-b border-neutral-900"
+        >
           <div>
             <h1 className="font-display text-4xl font-extrabold tracking-tight text-white sm:text-5xl leading-tight">
               Portfólio de <span className="text-[#a3e635]">Sites</span>
@@ -377,20 +429,31 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
 
           {/* Green "Adicionar Site" Button (Only visible for Admin) */}
           {isAdmin && (
-            <div>
-              <button
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+            >
+              <GlassButton
                 onClick={handleOpenAddModal}
-                className="group relative inline-flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-sm px-6 py-3.5 transition-all shadow-[0_0_20px_rgba(163,230,53,0.3)] hover:shadow-[0_0_30px_rgba(163,230,53,0.5)] cursor-pointer active:scale-98"
+                variant="lime"
+                size="md"
+                className="rounded-xl px-6 py-3.5 text-sm font-extrabold"
               >
                 <Plus className="h-5 w-5 stroke-[2.5]" />
                 <span>Adicionar Site</span>
-              </button>
-            </div>
+              </GlassButton>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
 
-        {/* Filter Controls & Category Selector matching Screenshot 1 */}
-        <div className="mt-8 space-y-4">
+        {/* Filter Controls & Category Selector with Entrance Motion */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-8 space-y-4"
+        >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             {/* Search Input Bar */}
             <div className="relative flex-1 max-w-md">
@@ -415,21 +478,20 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
             {CATEGORIES.map((cat) => {
               const isActive = selectedCategory === cat;
               return (
-                <button
+                <GlassEffect
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`rounded-full px-4 py-2 text-xs font-bold transition-all duration-200 cursor-pointer border whitespace-nowrap ${
-                    isActive
-                      ? 'bg-[#a3e635] border-[#a3e635] text-black shadow-[0_0_15px_rgba(163,230,53,0.3)]'
-                      : 'bg-neutral-900/40 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white'
+                  variant={isActive ? "lime" : "dark"}
+                  className={`rounded-full px-4 py-2 text-xs font-bold cursor-pointer whitespace-nowrap ${
+                    isActive ? "text-[#a3e635]" : "text-neutral-400 hover:text-white"
                   }`}
                 >
                   {cat}
-                </button>
+                </GlassEffect>
               );
             })}
           </div>
-        </div>
+        </motion.div>
 
         {/* PROJECTS GRID MATCHING SCREENSHOT 1 */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -447,10 +509,10 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
             filteredProjects.map((proj, idx) => (
               <motion.div
                 key={proj.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.5, delay: idx * 0.08 }}
+                initial={{ opacity: 0, y: 30, filter: 'blur(10px)', scale: 0.97 }}
+                whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
+                viewport={{ once: false, amount: 0.12 }}
+                transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
                 className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-800/90 bg-[#121312] hover:border-[#a3e635]/40 transition-all duration-300 shadow-xl"
               >
                 {/* Image Header matching screenshot 1 */}
@@ -522,13 +584,15 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
 
                   {/* Bottom Action Button */}
                   <div className="pt-4 border-t border-neutral-800/60 mt-4">
-                    <button
+                    <GlassButton
                       onClick={(e) => handleOpenSite(proj, e)}
-                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-neutral-900 hover:bg-[#a3e635] hover:text-black border border-neutral-800 text-white font-bold text-xs py-2.5 transition-all cursor-pointer"
+                      variant="dark"
+                      size="sm"
+                      className="w-full rounded-xl py-2.5 text-xs font-bold text-white hover:text-[#a3e635]"
                     >
                       <Globe className="h-4 w-4" />
                       <span>{proj.demoId || proj.liveUrl?.startsWith('demo:') ? 'Abrir Site Interativo' : 'Visitar Website'}</span>
-                    </button>
+                    </GlassButton>
                   </div>
 
                 </div>
@@ -771,9 +835,9 @@ export default function PortfolioSection({ onLaunchDemo }: PortfolioSectionProps
                   </button>
                   {selectedProject.liveUrl && (
                     <a
-                      href={selectedProject.liveUrl}
+                      href={formatHttpsUrl(selectedProject.liveUrl)}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs py-2.5"
                     >
                       <ExternalLink className="h-4 w-4" />

@@ -3,12 +3,26 @@ import {
   Shield, Calendar, Clock, Briefcase, Users, Handshake, 
   Mail, Phone, Instagram, CheckCircle2, XCircle, Send, 
   Plus, Trash2, Check, RefreshCw, ExternalLink, KeyRound, LogOut,
-  Linkedin, Globe, FileText, Download, Edit, X, MapPin
+  Linkedin, Globe, FileText, Download, Edit, X, MapPin, UserCheck, UserPlus, Award,
+  Copy, CheckCheck, FileSpreadsheet, Inbox, AtSign, Search, Sparkles,
+  Image as ImageIcon
 } from 'lucide-react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAdminAuth } from '../lib/adminAuth';
-import { Job } from '../types';
+import { Job, Project } from '../types';
+import AdminPortfolioTab from './AdminPortfolioTab';
+import AdminSiteEditorTab from './AdminSiteEditorTab';
+import { INITIAL_PORTFOLIO_SITES } from '../data/portfolioData';
+import { toast } from './Toast';
+
+export interface NewsletterItem {
+  id: string;
+  email: string;
+  origem?: string;
+  status: 'ativo' | 'descadastrado';
+  createdAt?: string;
+}
 
 interface ConsultaItem {
   id: string;
@@ -44,6 +58,29 @@ interface CandidaturaItem {
   createdAt?: string;
 }
 
+export interface ContratadoItem {
+  id: string;
+  nome: string;
+  cargo: string;
+  tipoContratacao: string; // 'Estagiário', 'Freelancer', 'CLT', 'PJ', etc.
+  vagaOrigem?: string;
+  email: string;
+  telefone?: string;
+  linkedin?: string;
+  instagram?: string;
+  portfolio?: string;
+  curriculo?: {
+    nomeArquivo: string;
+    tipoArquivo: string;
+    tamanho: string;
+    conteudoBase64: string;
+  };
+  experiencia?: string;
+  dataContratacao: string;
+  createdAt?: string;
+  candidaturaId?: string;
+}
+
 interface LeadItem {
   id: string;
   nome: string;
@@ -74,13 +111,42 @@ export default function AdminPanel() {
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'andamento' | 'historico' | 'candidaturas' | 'vagas' | 'leads' | 'parceiros'>('andamento');
+  const [activeTab, setActiveTab] = useState<'andamento' | 'historico' | 'candidaturas' | 'contratados' | 'vagas' | 'leads' | 'parceiros' | 'newsletter' | 'portfolio' | 'site_editor'>('andamento');
 
   const [consultas, setConsultas] = useState<ConsultaItem[]>([]);
   const [candidaturas, setCandidaturas] = useState<CandidaturaItem[]>([]);
+  const [contratados, setContratados] = useState<ContratadoItem[]>([]);
   const [leads, setLeads] = useState<LeadItem[]>([]);
   const [parceiros, setParceiros] = useState<ParceiroItem[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [newsletterEmails, setNewsletterEmails] = useState<NewsletterItem[]>([]);
+  const [portfolioProjects, setPortfolioProjects] = useState<Project[]>([]);
+  const [newsletterSearch, setNewsletterSearch] = useState('');
+  const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
+  const [allCopied, setAllCopied] = useState(false);
+
+  // Modal para aprovar e contratar candidato
+  const [isHireModalOpen, setIsHireModalOpen] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState<CandidaturaItem | null>(null);
+  const [hireForm, setHireForm] = useState({
+    cargo: '',
+    tipoContratacao: 'Estagiário',
+    observacoes: '',
+  });
+  const [isSubmittingHire, setIsSubmittingHire] = useState(false);
+
+  // Modal para adicionar contratado direto
+  const [isManualHireModalOpen, setIsManualHireModalOpen] = useState(false);
+  const [manualHireForm, setManualHireForm] = useState({
+    nome: '',
+    cargo: '',
+    tipoContratacao: 'Estagiário',
+    email: '',
+    telefone: '',
+    linkedin: '',
+    instagram: '',
+    resumo: '',
+  });
 
   // Job management state in AdminPanel
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
@@ -117,8 +183,8 @@ export default function AdminPanel() {
         if (consultasSnap.empty) {
           const initialConsultas = [
             {
-              nome: "Lucas",
-              email: "rickmarketing81@gmail.com",
+              nome: "Lucas Mendes",
+              email: "lucas.mendes@gmail.com",
               whatsapp: "81995498590",
               servico: "Design Gráfico",
               status: "pendente",
@@ -128,8 +194,8 @@ export default function AdminPanel() {
               createdAt: "2026-08-12T14:00:00Z"
             },
             {
-              nome: "maros henrique gomes barbosa",
-              email: "aigerakabane81983521523@gmail.com",
+              nome: "Gabriel Santos",
+              email: "gabriel.santos@gmail.com",
               whatsapp: "453456345345",
               servico: "Branding",
               status: "pendente",
@@ -150,8 +216,8 @@ export default function AdminPanel() {
               createdAt: "2026-08-18T16:00:00Z"
             },
             {
-              nome: "MARCOS HENRIQUE GOMES BARBOSA",
-              email: "aigerakabane81983521523@gmail.com",
+              nome: "Cliente Corporativo Techify",
+              email: "oficialtechify@gmail.com",
               whatsapp: "81998352152",
               servico: "Criação de Sites",
               status: "concluido",
@@ -161,8 +227,8 @@ export default function AdminPanel() {
               createdAt: "2026-04-02T09:00:00Z"
             },
             {
-              nome: "marcos henrique",
-              email: "rickmarketing81@gmail.com",
+              nome: "Techify Parcerias",
+              email: "oficialtechify@gmail.com",
               whatsapp: "81995498590",
               servico: "Criação de Sites",
               status: "concluido",
@@ -170,28 +236,6 @@ export default function AdminPanel() {
               horario: "15:00",
               resumo: "Portal e-commerce.",
               createdAt: "2025-11-15T15:00:00Z"
-            },
-            {
-              nome: "marcos henrique",
-              email: "rickmarketing81@gmail.com",
-              whatsapp: "81995498590",
-              servico: "Criação de Sites",
-              status: "concluido",
-              data: "13/11/2025",
-              horario: "11:00",
-              resumo: "Otimização de velocidade.",
-              createdAt: "2025-11-13T11:00:00Z"
-            },
-            {
-              nome: "marcos henrique",
-              email: "rickmarketing81@gmail.com",
-              whatsapp: "81995498590",
-              servico: "Branding",
-              status: "recusado",
-              data: "13/11/2025",
-              horario: "14:00",
-              resumo: "Escopo fora do orçamento.",
-              createdAt: "2025-11-13T14:00:00Z"
             }
           ];
           for (const item of initialConsultas) {
@@ -324,7 +368,7 @@ export default function AdminPanel() {
         docs.push({ id: doc.id, ...doc.data() } as ConsultaItem);
       });
       setConsultas(docs);
-    });
+    }, (err) => console.warn('Firestore consultas offline/error:', err.message));
 
     const unsubCandidaturas = onSnapshot(collection(db, "candidaturas"), (snapshot) => {
       const docs: CandidaturaItem[] = [];
@@ -340,7 +384,7 @@ export default function AdminPanel() {
         }
       });
       setCandidaturas(docs);
-    });
+    }, (err) => console.warn('Firestore candidaturas offline/error:', err.message));
 
     const unsubLeads = onSnapshot(collection(db, "leads"), (snapshot) => {
       const docs: LeadItem[] = [];
@@ -348,7 +392,7 @@ export default function AdminPanel() {
         docs.push({ id: doc.id, ...doc.data() } as LeadItem);
       });
       setLeads(docs);
-    });
+    }, (err) => console.warn('Firestore leads offline/error:', err.message));
 
     const unsubParceiros = onSnapshot(collection(db, "parceiros"), (snapshot) => {
       const docs: ParceiroItem[] = [];
@@ -356,7 +400,15 @@ export default function AdminPanel() {
         docs.push({ id: doc.id, ...doc.data() } as ParceiroItem);
       });
       setParceiros(docs);
-    });
+    }, (err) => console.warn('Firestore parceiros offline/error:', err.message));
+
+    const unsubContratados = onSnapshot(collection(db, "contratados"), (snapshot) => {
+      const docs: ContratadoItem[] = [];
+      snapshot.forEach((docSnap) => {
+        docs.push({ id: docSnap.id, ...docSnap.data() } as ContratadoItem);
+      });
+      setContratados(docs);
+    }, (err) => console.warn('Firestore contratados offline/error:', err.message));
 
     const unsubVagas = onSnapshot(collection(db, "vagas"), (snapshot) => {
       const docs: Job[] = [];
@@ -376,14 +428,50 @@ export default function AdminPanel() {
         });
       });
       setJobs(docs);
-    });
+    }, (err) => console.warn('Firestore vagas offline/error:', err.message));
+
+    const unsubNewsletter = onSnapshot(collection(db, "newsletter"), (snapshot) => {
+      const docs: NewsletterItem[] = [];
+      snapshot.forEach((docSnap) => {
+        docs.push({ id: docSnap.id, ...docSnap.data() } as NewsletterItem);
+      });
+      docs.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
+      setNewsletterEmails(docs);
+    }, (err) => console.warn('Firestore newsletter offline/error:', err.message));
+
+    const unsubPortfolio = onSnapshot(collection(db, "portfolio"), (snapshot) => {
+      const fetched: Project[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        fetched.push({
+          id: docSnap.id,
+          title: data.title || '',
+          category: data.category || 'Landing Page',
+          description: data.description || '',
+          imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
+          liveUrl: data.liveUrl || '',
+          demoId: data.demoId || '',
+          tags: Array.isArray(data.tags) ? data.tags : [data.category || 'Site'],
+          certified: data.certified !== false
+        });
+      });
+
+      setPortfolioProjects(fetched);
+    }, (err) => console.warn('Firestore portfolio offline/error:', err.message));
 
     return () => {
       unsubConsultas();
       unsubCandidaturas();
       unsubLeads();
       unsubParceiros();
+      unsubContratados();
       unsubVagas();
+      unsubNewsletter();
+      unsubPortfolio();
     };
   }, []);
 
@@ -420,7 +508,10 @@ export default function AdminPanel() {
 
   const handleSaveJobAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!jobForm.title || !jobForm.location || !jobForm.description) return;
+    if (!jobForm.title || !jobForm.location || !jobForm.description) {
+      toast.warning('Campos Obrigatórios', 'Preencha o título, localização e descrição da vaga.');
+      return;
+    }
     setIsSubmittingJobAdmin(true);
 
     try {
@@ -438,11 +529,13 @@ export default function AdminPanel() {
 
       if (editingJobId) {
         await updateDoc(doc(db, "vagas", editingJobId), payload);
+        toast.success('Vaga Atualizada', `A oportunidade "${jobForm.title}" foi editada com sucesso.`);
       } else {
         await addDoc(collection(db, "vagas"), {
           ...payload,
           createdAt: new Date().toISOString()
         });
+        toast.success('Vaga Publicada', `A oportunidade "${jobForm.title}" agora está visível no site.`);
       }
 
       setIsSubmittingJobAdmin(false);
@@ -450,6 +543,7 @@ export default function AdminPanel() {
       setEditingJobId(null);
     } catch (err) {
       console.error("Error saving job in AdminPanel:", err);
+      toast.error('Erro ao Salvar Vaga', 'Ocorreu uma falha ao salvar a oportunidade.');
       setIsSubmittingJobAdmin(false);
     }
   };
@@ -458,8 +552,10 @@ export default function AdminPanel() {
     if (window.confirm("Tem certeza que deseja excluir esta vaga?")) {
       try {
         await deleteDoc(doc(db, "vagas", jobId));
+        toast.info('Vaga Removida', 'A oportunidade de carreira foi excluída do sistema.');
       } catch (err) {
         console.error("Error deleting job in AdminPanel:", err);
+        toast.error('Erro ao Excluir', 'Não foi possível remover a vaga.');
       }
     }
   };
@@ -472,32 +568,154 @@ export default function AdminPanel() {
   const handleUpdateConsultaStatus = async (id: string, newStatus: 'concluido' | 'recusado') => {
     try {
       await updateDoc(doc(db, "consultas", id), { status: newStatus });
+      if (newStatus === 'concluido') {
+        toast.success('Consulta Concluída', 'O atendimento foi marcado como concluído e movido ao histórico.');
+      } else {
+        toast.info('Consulta Recusada', 'O status do atendimento foi alterado.');
+      }
     } catch (err) {
       console.error("Error updating consulta status:", err);
+      toast.error('Erro ao Atualizar', 'Não foi possível atualizar o status da consulta.');
     }
   };
 
   const handleDeleteConsulta = async (id: string) => {
     try {
       await deleteDoc(doc(db, "consultas", id));
+      toast.info('Consulta Excluída', 'O registro foi removido com sucesso.');
     } catch (err) {
       console.error("Error deleting consulta:", err);
+      toast.error('Erro ao Excluir', 'Não foi possível remover a consulta.');
     }
   };
 
   const handleUpdateCandidaturaStatus = async (id: string, newStatus: 'aprovado' | 'recusado') => {
     try {
       await updateDoc(doc(db, "candidaturas", id), { status: newStatus });
+      toast.success('Candidatura Atualizada', `O candidato foi marcado como ${newStatus}.`);
     } catch (err) {
       console.error("Error updating candidatura status:", err);
+      toast.error('Erro ao Atualizar', 'Não foi possível atualizar a candidatura.');
+    }
+  };
+
+  const handleOpenHireModal = (candidate: CandidaturaItem) => {
+    setSelectedCandidate(candidate);
+    setHireForm({
+      cargo: candidate.vaga || 'Designer / Programador',
+      tipoContratacao: 'Estagiário',
+      observacoes: candidate.experiencia || ''
+    });
+    setIsHireModalOpen(true);
+  };
+
+  const handleConfirmHire = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCandidate) return;
+
+    setIsSubmittingHire(true);
+    try {
+      const dataAtual = new Date().toLocaleDateString('pt-BR');
+      
+      // 1. Grava no banco de dados na coleção 'contratados'
+      await addDoc(collection(db, 'contratados'), {
+        nome: selectedCandidate.nome,
+        cargo: hireForm.cargo || selectedCandidate.vaga || 'Profissional Techify',
+        tipoContratacao: hireForm.tipoContratacao || 'Estagiário',
+        vagaOrigem: selectedCandidate.vaga || '',
+        email: selectedCandidate.email,
+        telefone: selectedCandidate.telefone || '',
+        linkedin: selectedCandidate.linkedin || '',
+        instagram: selectedCandidate.instagram || '',
+        portfolio: selectedCandidate.portfolio || '',
+        curriculo: selectedCandidate.curriculo || null,
+        experiencia: hireForm.observacoes || selectedCandidate.experiencia || '',
+        dataContratacao: dataAtual,
+        createdAt: new Date().toISOString(),
+        candidaturaId: selectedCandidate.id
+      });
+
+      // 2. Atualiza status da candidatura para 'aprovado'
+      await updateDoc(doc(db, 'candidaturas', selectedCandidate.id), {
+        status: 'aprovado'
+      });
+
+      toast.success('Contratação Confirmada', `${selectedCandidate.nome} foi aprovado(a) e adicionado(a) à equipe.`);
+      setIsHireModalOpen(false);
+      setSelectedCandidate(null);
+      setActiveTab('contratados');
+    } catch (err) {
+      console.error('Erro ao aprovar e contratar candidato:', err);
+      toast.error('Erro na Contratação', 'Não foi possível registrar o profissional contratado.');
+    } finally {
+      setIsSubmittingHire(false);
+    }
+  };
+
+  const handleOpenManualHire = () => {
+    setManualHireForm({
+      nome: '',
+      cargo: '',
+      tipoContratacao: 'Estagiário',
+      email: '',
+      telefone: '',
+      linkedin: '',
+      instagram: '',
+      resumo: '',
+    });
+    setIsManualHireModalOpen(true);
+  };
+
+  const handleConfirmManualHire = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualHireForm.nome || !manualHireForm.cargo) {
+      toast.warning('Campos Obrigatórios', 'Informe o nome e o cargo do colaborador.');
+      return;
+    }
+
+    try {
+      const dataAtual = new Date().toLocaleDateString('pt-BR');
+      await addDoc(collection(db, 'contratados'), {
+        nome: manualHireForm.nome,
+        cargo: manualHireForm.cargo,
+        tipoContratacao: manualHireForm.tipoContratacao || 'Estagiário',
+        vagaOrigem: manualHireForm.cargo,
+        email: manualHireForm.email || '',
+        telefone: manualHireForm.telefone || '',
+        linkedin: manualHireForm.linkedin || '',
+        instagram: manualHireForm.instagram || '',
+        experiencia: manualHireForm.resumo || '',
+        dataContratacao: dataAtual,
+        createdAt: new Date().toISOString(),
+      });
+      toast.success('Contratado Adicionado', `${manualHireForm.nome} foi cadastrado com sucesso.`);
+      setIsManualHireModalOpen(false);
+      setActiveTab('contratados');
+    } catch (err) {
+      console.error('Erro ao cadastrar contratado manual:', err);
+      toast.error('Erro ao Cadastrar', 'Não foi possível salvar o colaborador.');
+    }
+  };
+
+  const handleDeleteContratado = async (id: string) => {
+    if (window.confirm('Deseja remover este profissional da lista de contratados?')) {
+      try {
+        await deleteDoc(doc(db, 'contratados', id));
+        toast.info('Colaborador Removido', 'O registro foi excluído da lista de contratados.');
+      } catch (err) {
+        console.error('Erro ao remover contratado:', err);
+        toast.error('Erro ao Excluir', 'Não foi possível remover o registro.');
+      }
     }
   };
 
   const handleDeleteCandidatura = async (id: string) => {
     try {
       await deleteDoc(doc(db, "candidaturas", id));
+      toast.info('Candidatura Removida', 'A ficha do candidato foi excluída.');
     } catch (err) {
       console.error("Error deleting candidatura:", err);
+      toast.error('Erro ao Excluir', 'Não foi possível excluir a candidatura.');
     }
   };
 
@@ -507,31 +725,87 @@ export default function AdminPanel() {
         emailsEnviados: (lead.emailsEnviados || 0) + 1,
         dataEnvio: new Date().toLocaleDateString('pt-BR')
       });
-      window.location.href = `mailto:${lead.email}?subject=Atendimento Techify&body=Olá ${lead.nome}, entramos em contato sobre o seu projeto...`;
+      toast.info('Abrindo E-mail', `Iniciando mensagem para ${lead.nome}...`);
+      const companyEmail = "oficialtechify@gmail.com";
+      const subject = encodeURIComponent(`Atendimento Techify - Projeto ${lead.interesses || 'Digital'}`);
+      const body = encodeURIComponent(`Olá ${lead.nome},\n\nEntramos em contato através da Techify em relação ao seu projeto de ${lead.interesses || 'solução digital'}.\n\nCaso tenha dúvidas, você pode nos responder através do e-mail oficial da empresa (${companyEmail}) ou pelo WhatsApp comercial.\n\nAtenciosamente,\nEquipe Techify\nE-mail Oficial: ${companyEmail}`);
+      window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
     } catch (err) {
       console.error("Error sending email to lead:", err);
+      toast.error('Erro ao Registrar', 'Não foi possível registrar o envio do e-mail.');
     }
   };
 
   const handleDeleteLead = async (id: string) => {
     try {
       await deleteDoc(doc(db, "leads", id));
+      toast.info('Lead Removido', 'O contato de oportunidade foi excluído.');
     } catch (err) {
       console.error("Error deleting lead:", err);
+      toast.error('Erro ao Excluir', 'Não foi possível remover o lead.');
     }
   };
 
   const handleDeleteParceiro = async (id: string) => {
     try {
       await deleteDoc(doc(db, "parceiros", id));
+      toast.info('Parceiro Removido', 'A solicitação de parceria foi excluída.');
     } catch (err) {
       console.error("Error deleting parceiro:", err);
+      toast.error('Erro ao Excluir', 'Não foi possível remover o parceiro.');
     }
+  };
+
+  const handleDeleteNewsletter = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "newsletter", id));
+      toast.info('Inscrição Removida', 'O e-mail foi descadastrado da newsletter.');
+    } catch (err) {
+      console.error("Error deleting newsletter subscriber:", err);
+      toast.error('Erro ao Excluir', 'Não foi possível descadastrar o e-mail.');
+    }
+  };
+
+  const handleCopyEmail = (email: string, id: string) => {
+    navigator.clipboard.writeText(email);
+    setCopiedEmailId(id);
+    toast.success('E-mail Copiado', `${email} copiado para a área de transferência.`);
+    setTimeout(() => setCopiedEmailId(null), 2500);
+  };
+
+  const handleCopyAllNewsletterEmails = () => {
+    if (newsletterEmails.length === 0) return;
+    const list = newsletterEmails.map(item => item.email).join(', ');
+    navigator.clipboard.writeText(list);
+    setAllCopied(true);
+    toast.success('Lista Copiada', `${newsletterEmails.length} e-mails copiados para a área de transferência.`);
+    setTimeout(() => setAllCopied(false), 3000);
+  };
+
+  const handleExportNewsletterCSV = () => {
+    if (newsletterEmails.length === 0) return;
+    const header = "Email,Origem,Status,Data de Cadastro\n";
+    const rows = newsletterEmails.map(item => {
+      const dataFormatted = item.createdAt ? new Date(item.createdAt).toLocaleString('pt-BR') : 'N/A';
+      return `"${item.email}","${item.origem || 'Rodapé'}","${item.status || 'ativo'}","${dataFormatted}"`;
+    }).join("\n");
+    const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `newsletter_techify_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Exportação Concluída', 'Arquivo CSV gerado e descarregado com sucesso.');
   };
 
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newLeadForm.nome || !newLeadForm.email) return;
+    if (!newLeadForm.nome || !newLeadForm.email) {
+      toast.warning('Campos Obrigatórios', 'Preencha o nome e o e-mail do lead.');
+      return;
+    }
 
     try {
       await addDoc(collection(db, "leads"), {
@@ -546,10 +820,12 @@ export default function AdminPanel() {
         dataEnvio: new Date().toLocaleDateString('pt-BR'),
         createdAt: new Date().toISOString()
       });
+      toast.success('Lead Cadastrado', `Lead "${newLeadForm.nome}" adicionado com sucesso.`);
       setIsNewLeadModalOpen(false);
       setNewLeadForm({ nome: '', segmento: 'Roupas', email: '', telefone: '', instagram: '', interesses: 'Site' });
     } catch (err) {
       console.error("Error adding new lead:", err);
+      toast.error('Erro ao Cadastrar', 'Não foi possível cadastrar o lead.');
     }
   };
 
@@ -568,8 +844,13 @@ export default function AdminPanel() {
           <form onSubmit={async (e) => {
             e.preventDefault();
             const ok = await login(passwordInput);
-            if (!ok) setPasswordError('Senha incorreta.');
-            else setPasswordError('');
+            if (!ok) {
+              setPasswordError('Senha incorreta.');
+              toast.error('Chave Incorreta', 'Senha de administrador não confere.');
+            } else {
+              setPasswordError('');
+              toast.success('Acesso Liberado', 'Bem-vindo ao painel administrativo da Techify.');
+            }
           }} className="space-y-3">
             <input
               type="password"
@@ -618,6 +899,16 @@ export default function AdminPanel() {
           </div>
 
           <div className="flex items-center gap-3">
+            {activeTab === 'contratados' && (
+              <button
+                onClick={handleOpenManualHire}
+                className="flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs px-4 py-2.5 transition-all shadow-[0_0_12px_rgba(163,230,53,0.3)] cursor-pointer"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>Adicionar Contratado</span>
+              </button>
+            )}
+
             {activeTab === 'vagas' && (
               <button
                 onClick={handleOpenNewJobAdmin}
@@ -639,7 +930,10 @@ export default function AdminPanel() {
             )}
 
             <button
-              onClick={logout}
+              onClick={() => {
+                logout();
+                toast.info('Sessão Finalizada', 'Você encerrou o acesso administrativo com segurança.');
+              }}
               className="flex items-center gap-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold text-xs px-3.5 py-2.5 transition-all cursor-pointer"
               title="Sair do Modo Admin"
             >
@@ -689,6 +983,18 @@ export default function AdminPanel() {
           </button>
 
           <button
+            onClick={() => setActiveTab('contratados')}
+            className={`px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'contratados'
+                ? 'bg-[#a3e635] text-black shadow-[0_0_12px_rgba(163,230,53,0.3)]'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <UserCheck className="h-4 w-4 text-[#a3e635]" />
+            <span>Contratados ({contratados.length})</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('vagas')}
             className={`px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'vagas'
@@ -722,6 +1028,42 @@ export default function AdminPanel() {
           >
             <Handshake className="h-4 w-4" />
             <span>Parceiros ({parceiros.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('newsletter')}
+            className={`px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'newsletter'
+                ? 'bg-[#a3e635] text-black shadow-[0_0_12px_rgba(163,230,53,0.3)]'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <Mail className="h-4 w-4" />
+            <span>Newsletter ({newsletterEmails.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('portfolio')}
+            className={`px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'portfolio'
+                ? 'bg-[#a3e635] text-black shadow-[0_0_12px_rgba(163,230,53,0.3)]'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <ImageIcon className="h-4 w-4" />
+            <span>Portfólio & Imagens ({portfolioProjects.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('site_editor')}
+            className={`px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'site_editor'
+                ? 'bg-[#a3e635] text-black shadow-[0_0_12px_rgba(163,230,53,0.3)]'
+                : 'text-[#a3e635] hover:text-white hover:bg-[#a3e635]/10 border border-[#a3e635]/30'
+            }`}
+          >
+            <Sparkles className="h-4 w-4 text-[#a3e635]" />
+            <span>Editor do Site (Equipe & Textos)</span>
           </button>
 
         </div>
@@ -764,7 +1106,12 @@ export default function AdminPanel() {
                       <div className="space-y-2 text-xs text-neutral-300">
                         <div className="flex items-center gap-2 text-neutral-400">
                           <Mail className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
-                          <span className="truncate">{item.email}</span>
+                          <a 
+                            href={`mailto:${item.email}?subject=${encodeURIComponent("Atendimento Techify - Consulta Agendada")}&body=${encodeURIComponent("Olá " + item.nome + ",\n\nEntramos em contato através da Techify em relação à sua solicitação de " + item.servico + ".\n\nAtenciosamente,\nEquipe Techify\nE-mail oficial: oficialtechify@gmail.com")}`}
+                            className="hover:underline truncate text-neutral-300"
+                          >
+                            {item.email}
+                          </a>
                         </div>
                         <div className="flex items-center gap-2 text-neutral-400">
                           <Phone className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
@@ -924,7 +1271,12 @@ export default function AdminPanel() {
                       <div className="space-y-2 text-xs text-neutral-300 mt-4">
                         <div className="flex items-center gap-2">
                           <Mail className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
-                          <a href={`mailto:${item.email}`} className="hover:underline truncate text-neutral-300">{item.email}</a>
+                          <a 
+                            href={`mailto:${item.email}?subject=${encodeURIComponent("Seleção Techify - Vaga de " + item.vaga)}&body=${encodeURIComponent("Olá " + item.nome + ",\n\nAgradecemos seu interesse em fazer parte da equipe Techify para a vaga de " + item.vaga + ".\n\nAtenciosamente,\nEquipe de RH - Techify\nE-mail oficial: oficialtechify@gmail.com")}`} 
+                            className="hover:underline truncate text-neutral-300"
+                          >
+                            {item.email}
+                          </a>
                         </div>
 
                         {item.telefone && (
@@ -1020,16 +1372,23 @@ export default function AdminPanel() {
                     <div className="flex items-center justify-between pt-4 mt-4 border-t border-neutral-800/50">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleUpdateCandidaturaStatus(item.id, 'aprovado')}
-                          className="bg-[#22c55e] hover:bg-[#16a34a] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                          onClick={() => handleOpenHireModal(item)}
+                          className="bg-[#22c55e] hover:bg-[#16a34a] text-white px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_12px_rgba(34,197,94,0.3)]"
                         >
-                          Aprovar
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>{item.status === 'aprovado' ? 'Aprovado (Ver Contratado)' : 'Aprovar'}</span>
                         </button>
+
                         <button
                           onClick={() => handleUpdateCandidaturaStatus(item.id, 'recusado')}
-                          className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                            item.status === 'recusado'
+                              ? 'bg-red-500/20 border border-red-500/40 text-red-400'
+                              : 'bg-[#ef4444] hover:bg-[#dc2626] text-white'
+                          }`}
                         >
-                          Recusar
+                          <XCircle className="h-4 w-4" />
+                          <span>Recusar</span>
                         </button>
                       </div>
 
@@ -1044,6 +1403,178 @@ export default function AdminPanel() {
 
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CONTRATADOS TAB */}
+        {activeTab === 'contratados' && (
+          <div className="mt-6">
+            {contratados.length === 0 ? (
+              <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-12 text-center text-neutral-400">
+                <UserCheck className="mx-auto h-10 w-10 text-neutral-600 mb-3" />
+                <p className="text-base font-bold text-white">Nenhum profissional contratado ainda</p>
+                <p className="text-xs text-neutral-500 mt-1 mb-4">Aprove candidaturas na aba "Candidaturas" para mover profissionais para cá, ou adicione manualmente.</p>
+                <button
+                  onClick={handleOpenManualHire}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs px-4 py-2.5 transition-all cursor-pointer shadow-[0_0_12px_rgba(163,230,53,0.3)]"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Adicionar Primeiro Contratado</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {contratados.map((item) => {
+                  const isEstagio = item.tipoContratacao?.toLowerCase().includes('estag') || item.tipoContratacao?.toLowerCase().includes('estagiário');
+                  const isFreela = item.tipoContratacao?.toLowerCase().includes('freel');
+                  const isCLT = item.tipoContratacao?.toLowerCase().includes('clt');
+                  
+                  let badgeStyle = 'bg-neutral-800 text-neutral-300 border-neutral-700';
+                  if (isEstagio) badgeStyle = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30';
+                  else if (isFreela) badgeStyle = 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+                  else if (isCLT) badgeStyle = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+                  else badgeStyle = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+
+                  return (
+                    <div 
+                      key={item.id}
+                      className="bg-[#131414] border border-neutral-800/80 rounded-2xl p-5 hover:border-neutral-700/80 transition-all flex flex-col justify-between shadow-lg relative overflow-hidden"
+                    >
+                      {/* Top highlight bar */}
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#a3e635] via-emerald-400 to-cyan-400" />
+
+                      <div>
+                        {/* Header with Name & Badges */}
+                        <div className="flex items-start justify-between gap-2 mt-1">
+                          <div>
+                            <h3 className="font-bold text-white text-lg font-sans">
+                              {item.nome}
+                            </h3>
+                            <p className="text-xs font-bold text-[#a3e635] mt-0.5 flex items-center gap-1">
+                              <Award className="h-3.5 w-3.5 shrink-0" />
+                              <span>{item.cargo}</span>
+                            </p>
+                          </div>
+                          <span className={`border text-[11px] font-extrabold px-2.5 py-1 rounded-lg shrink-0 ${badgeStyle}`}>
+                            {item.tipoContratacao}
+                          </span>
+                        </div>
+
+                        {/* Origem da vaga & Data de contratação */}
+                        <div className="flex items-center justify-between text-[11px] text-neutral-400 mt-3 pt-2 border-t border-neutral-800/40">
+                          {item.vagaOrigem && (
+                            <span className="truncate">Vaga: <strong className="text-neutral-300">{item.vagaOrigem}</strong></span>
+                          )}
+                          {item.dataContratacao && (
+                            <span className="text-neutral-500 shrink-0">Início: {item.dataContratacao}</span>
+                          )}
+                        </div>
+
+                        {/* Contact details */}
+                        <div className="space-y-2 text-xs text-neutral-300 mt-3">
+                          {item.email && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+                              <a 
+                                href={`mailto:${item.email}?subject=${encodeURIComponent("Techify - Comunicação Interna")}&body=${encodeURIComponent("Olá " + item.nome + ",\n\nEntramos em contato sobre as demandas da sua função (" + item.cargo + ").\n\nAtenciosamente,\nEquipe Techify")}`} 
+                                className="hover:underline truncate text-neutral-300"
+                              >
+                                {item.email}
+                              </a>
+                            </div>
+                          )}
+
+                          {item.telefone && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-3.5 w-3.5 text-[#a3e635] shrink-0" />
+                              <a 
+                                href={`https://wa.me/55${item.telefone.replace(/\D/g, '')}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-[#a3e635] hover:underline font-semibold"
+                              >
+                                {item.telefone} (WhatsApp)
+                              </a>
+                            </div>
+                          )}
+
+                          {item.linkedin && (
+                            <div className="flex items-center gap-2 pt-0.5">
+                              <Linkedin className="h-3.5 w-3.5 text-[#0a66c2] shrink-0" />
+                              <a 
+                                href={item.linkedin.startsWith('http') ? item.linkedin : `https://${item.linkedin}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-[#60a5fa] hover:underline truncate"
+                              >
+                                {item.linkedin}
+                              </a>
+                            </div>
+                          )}
+
+                          {item.instagram && (
+                            <div className="flex items-center gap-2">
+                              <Instagram className="h-3.5 w-3.5 text-[#e1306c] shrink-0" />
+                              <a 
+                                href={item.instagram.startsWith('http') ? item.instagram : `https://instagram.com/${item.instagram.replace('@', '')}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-[#f472b6] hover:underline truncate"
+                              >
+                                {item.instagram}
+                              </a>
+                            </div>
+                          )}
+
+                          {item.curriculo && (
+                            <div className="bg-[#090a09] border border-[#a3e635]/30 rounded-xl p-3 mt-3 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <FileText className="h-4 w-4 text-[#a3e635] shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="font-bold text-white text-[11px] truncate">{item.curriculo.nomeArquivo}</p>
+                                  <p className="text-[10px] text-neutral-400">{item.curriculo.tamanho}</p>
+                                </div>
+                              </div>
+                              <a
+                                href={item.curriculo.conteudoBase64}
+                                download={item.curriculo.nomeArquivo}
+                                className="bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-[11px] px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0 transition-colors"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                                <span>Baixar</span>
+                              </a>
+                            </div>
+                          )}
+
+                          {item.experiencia && (
+                            <div className="bg-[#0b0c0b] p-3 rounded-xl border border-neutral-800/60 mt-3 text-xs text-neutral-300 leading-relaxed">
+                              <p className="font-semibold text-[10px] text-neutral-500 uppercase mb-1">Anotações / Experiência:</p>
+                              {item.experiencia}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-4 mt-4 border-t border-neutral-800/50">
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Ativo no Time
+                        </span>
+
+                        <button
+                          onClick={() => handleDeleteContratado(item.id)}
+                          className="text-neutral-500 hover:text-red-400 p-1.5 transition-colors cursor-pointer"
+                          title="Remover do Time de Contratados"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1271,7 +1802,12 @@ export default function AdminPanel() {
                       <div className="space-y-2 text-xs text-neutral-400 mt-3">
                         <div className="flex items-center gap-2">
                           <Mail className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
-                          <span>{item.email}</span>
+                          <a 
+                            href={`mailto:${item.email}?subject=${encodeURIComponent("Parceria Techify - " + item.empresa)}&body=${encodeURIComponent("Olá " + item.nome + ",\n\nEntramos em contato através da Techify em relação à nossa parceria corporativa.\n\nAtenciosamente,\nEquipe Techify\nE-mail oficial: oficialtechify@gmail.com")}`}
+                            className="hover:underline truncate text-neutral-300"
+                          >
+                            {item.email}
+                          </a>
                         </div>
                         <div className="flex items-center gap-2">
                           <Phone className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
@@ -1288,6 +1824,212 @@ export default function AdminPanel() {
               </div>
             )}
           </div>
+        )}
+
+        {/* 8. NEWSLETTER / E-MAILS TAB */}
+        {activeTab === 'newsletter' && (
+          <div className="mt-6 space-y-6">
+            
+            {/* Header Metrics & Quick Actions Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-4 flex items-center justify-between shadow-md">
+                <div>
+                  <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Total de Inscritos</p>
+                  <p className="text-2xl font-black text-white mt-0.5">{newsletterEmails.length}</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/20">
+                  <AtSign className="h-5 w-5" />
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-4 flex items-center justify-between shadow-md">
+                <div>
+                  <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Status da Lista</p>
+                  <p className="text-2xl font-black text-emerald-400 mt-0.5">100% Ativos</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-4 flex items-center justify-between shadow-md">
+                <div>
+                  <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Último Cadastro</p>
+                  <p className="text-xs font-semibold text-neutral-200 mt-1 truncate max-w-[150px]">
+                    {newsletterEmails.length > 0 && newsletterEmails[0].createdAt 
+                      ? new Date(newsletterEmails[0].createdAt).toLocaleDateString('pt-BR') 
+                      : 'Nenhum ainda'}
+                  </p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-800 text-neutral-300">
+                  <Clock className="h-5 w-5" />
+                </div>
+              </div>
+            </div>
+
+            {/* Search & Export Toolbar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#121312] border border-neutral-800/80 rounded-2xl p-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+                <input
+                  type="text"
+                  placeholder="Buscar por e-mail ou origem..."
+                  value={newsletterSearch}
+                  onChange={(e) => setNewsletterSearch(e.target.value)}
+                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900/90 pl-10 pr-4 py-2 text-xs text-white placeholder-neutral-500 focus:border-[#a3e635] focus:outline-none transition-colors"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCopyAllNewsletterEmails}
+                  disabled={newsletterEmails.length === 0}
+                  className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                    allCopied
+                      ? 'border-[#a3e635] bg-[#a3e635] text-black shadow-[0_0_15px_rgba(163,230,53,0.3)]'
+                      : 'border-neutral-700 bg-neutral-800/80 text-neutral-200 hover:border-[#a3e635] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed'
+                  }`}
+                  title="Copiar todos os e-mails separados por vírgula"
+                >
+                  {allCopied ? (
+                    <>
+                      <CheckCheck className="h-4 w-4 text-black" />
+                      <span>Copiados!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 text-[#a3e635]" />
+                      <span>Copiar Todos</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleExportNewsletterCSV}
+                  disabled={newsletterEmails.length === 0}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-neutral-700 bg-neutral-800/80 hover:border-emerald-500 px-3.5 py-2 text-xs font-bold text-neutral-200 hover:text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Baixar lista em formato Excel / CSV"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                  <span>Exportar CSV</span>
+                </button>
+
+                {newsletterEmails.length > 0 && (
+                  <a
+                    href={`mailto:?bcc=${encodeURIComponent(newsletterEmails.map(i => i.email).join(','))}&subject=${encodeURIComponent("Novidades Exclusivas Techify")}&body=${encodeURIComponent("Olá,\n\nTemos novidades exclusivas para você diretamente da Techify!\n\nAtenciosamente,\nEquipe Techify\noficialtechify@gmail.com")}`}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] px-4 py-2 text-xs font-black text-black transition-all shadow-[0_0_15px_rgba(163,230,53,0.2)] cursor-pointer"
+                    title="Abrir cliente de e-mail com todos os inscritos em Cco"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    <span>Disparar Campanha</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* List / Table of Subscribers */}
+            {newsletterEmails.length === 0 ? (
+              <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-12 text-center text-neutral-400 shadow-md">
+                <Inbox className="mx-auto h-10 w-10 text-neutral-600 mb-3" />
+                <p className="text-base font-bold text-white">Nenhum e-mail de newsletter cadastrado ainda</p>
+                <p className="text-xs text-neutral-500 mt-1">
+                  Quando os visitantes digitarem o e-mail no campo do rodapé e clicarem em "Enviar", eles serão salvos aqui automaticamente em tempo real.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-neutral-800 bg-[#121312] overflow-hidden shadow-lg">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-neutral-300">
+                    <thead className="border-b border-neutral-800 bg-[#0e0f0e] text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                      <tr>
+                        <th scope="col" className="px-5 py-3.5">E-mail do Assinante</th>
+                        <th scope="col" className="px-5 py-3.5">Origem</th>
+                        <th scope="col" className="px-5 py-3.5">Data de Inscrição</th>
+                        <th scope="col" className="px-5 py-3.5">Status</th>
+                        <th scope="col" className="px-5 py-3.5 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800/60">
+                      {newsletterEmails
+                        .filter(item => 
+                          !newsletterSearch || 
+                          item.email.toLowerCase().includes(newsletterSearch.toLowerCase()) ||
+                          (item.origem && item.origem.toLowerCase().includes(newsletterSearch.toLowerCase()))
+                        )
+                        .map((item) => (
+                          <tr key={item.id} className="hover:bg-neutral-900/50 transition-colors group">
+                            <td className="px-5 py-4 font-medium text-white flex items-center gap-2">
+                              <Mail className="h-4 w-4 text-[#a3e635] shrink-0" />
+                              <span className="font-mono text-xs">{item.email}</span>
+                            </td>
+                            <td className="px-5 py-4 text-neutral-400">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-neutral-900 border border-neutral-800 text-[11px] text-neutral-300">
+                                {item.origem || 'Rodapé - Site'}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-neutral-400">
+                              {item.createdAt ? new Date(item.createdAt).toLocaleString('pt-BR') : 'N/A'}
+                            </td>
+                            <td className="px-5 py-4">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400 border border-emerald-500/20">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                {item.status || 'Ativo'}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => handleCopyEmail(item.email, item.id)}
+                                  className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                                    copiedEmailId === item.id 
+                                      ? 'border-[#a3e635] bg-[#a3e635]/20 text-[#a3e635]' 
+                                      : 'border-neutral-800 bg-neutral-900 text-neutral-400 hover:text-white hover:border-neutral-700'
+                                  }`}
+                                  title="Copiar e-mail"
+                                >
+                                  {copiedEmailId === item.id ? (
+                                    <CheckCheck className="h-3.5 w-3.5 text-[#a3e635]" />
+                                  ) : (
+                                    <Copy className="h-3.5 w-3.5" />
+                                  )}
+                                </button>
+
+                                <a
+                                  href={`mailto:${item.email}?subject=${encodeURIComponent("Contato Techify")}&body=${encodeURIComponent("Olá,\n\nEntramos em contato através da Techify.\n\nAtenciosamente,\nEquipe Techify\noficialtechify@gmail.com")}`}
+                                  className="p-1.5 rounded-lg border border-neutral-800 bg-neutral-900 text-neutral-400 hover:text-[#a3e635] hover:border-neutral-700 transition-all"
+                                  title="Enviar e-mail direto"
+                                >
+                                  <Send className="h-3.5 w-3.5" />
+                                </a>
+
+                                <button
+                                  onClick={() => handleDeleteNewsletter(item.id)}
+                                  className="p-1.5 rounded-lg border border-neutral-800 bg-neutral-900 text-neutral-500 hover:text-red-400 hover:border-red-500/30 transition-all cursor-pointer"
+                                  title="Excluir da lista"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {/* 8. PORTFOLIO & IMAGES TAB */}
+        {activeTab === 'portfolio' && (
+          <AdminPortfolioTab portfolioProjects={portfolioProjects} />
+        )}
+
+        {/* 9. SITE CONTENT & TEAM EDITOR TAB */}
+        {activeTab === 'site_editor' && (
+          <AdminSiteEditorTab />
         )}
 
       </div>
@@ -1602,6 +2344,248 @@ export default function AdminPanel() {
                     ? (editingJobId ? 'Salvando...' : 'Publicando...') 
                     : (editingJobId ? 'Salvar Alterações' : 'Publicar Vaga')
                   }
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: APROVAR E CONTRATAR CANDIDATO */}
+      {isHireModalOpen && selectedCandidate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#121312] border border-neutral-800 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
+            <button
+              onClick={() => setIsHireModalOpen(false)}
+              className="absolute top-4 right-4 text-neutral-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="p-2 rounded-xl bg-[#22c55e]/10 border border-[#22c55e]/30 text-[#4ade80]">
+                <UserCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg text-white">Contratar Profissional</h3>
+                <p className="text-xs text-neutral-400">Aprovar e adicionar ao banco de contratados</p>
+              </div>
+            </div>
+
+            <div className="bg-[#1a1c1a] border border-neutral-800 rounded-xl p-3 my-4">
+              <p className="text-xs font-bold text-white">{selectedCandidate.nome}</p>
+              <p className="text-[11px] text-neutral-400 mt-0.5">{selectedCandidate.email} • Vaga originária: <span className="text-[#a3e635] font-semibold">{selectedCandidate.vaga}</span></p>
+            </div>
+
+            <form onSubmit={handleConfirmHire} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                  Nome do Cargo / Função *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Designer UI/UX, Estagiário de Dev, Freelancer..."
+                  value={hireForm.cargo}
+                  onChange={(e) => setHireForm({ ...hireForm, cargo: e.target.value })}
+                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                  Tipo de Contratação *
+                </label>
+                <select
+                  value={hireForm.tipoContratacao}
+                  onChange={(e) => setHireForm({ ...hireForm, tipoContratacao: e.target.value })}
+                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white focus:border-[#a3e635] focus:outline-none"
+                >
+                  <option value="Estagiário">Estagiário</option>
+                  <option value="Freelancer">Freelancer</option>
+                  <option value="CLT">CLT</option>
+                  <option value="PJ">PJ</option>
+                  <option value="Temporário">Temporário</option>
+                  <option value="Trainee">Trainee</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                  Observações / Anotações
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Anotações internas sobre a contratação..."
+                  value={hireForm.observacoes}
+                  onChange={(e) => setHireForm({ ...hireForm, observacoes: e.target.value })}
+                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-neutral-800 flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsHireModalOpen(false)}
+                  className="flex-1 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2.5 text-xs transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingHire}
+                  className="flex-1 rounded-xl bg-[#22c55e] hover:bg-[#16a34a] text-white font-extrabold py-2.5 text-xs transition-colors shadow-[0_0_15px_rgba(34,197,94,0.3)] cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmittingHire ? 'Salvando...' : 'Confirmar Contratação'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: ADICIONAR CONTRATADO DIRETO */}
+      {isManualHireModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#121312] border border-neutral-800 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setIsManualHireModalOpen(false)}
+              className="absolute top-4 right-4 text-neutral-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="p-2 rounded-xl bg-[#a3e635]/10 border border-[#a3e635]/30 text-[#a3e635]">
+                <UserPlus className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg text-white">Cadastrar Novo Contratado</h3>
+                <p className="text-xs text-neutral-400">Adicione um estagiário, freelancer ou funcionário diretamente</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmManualHire} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                  Nome Completo *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Nome do profissional"
+                  value={manualHireForm.nome}
+                  onChange={(e) => setManualHireForm({ ...manualHireForm, nome: e.target.value })}
+                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                    Cargo / Função *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Designer UI/UX"
+                    value={manualHireForm.cargo}
+                    onChange={(e) => setManualHireForm({ ...manualHireForm, cargo: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                    Tipo de Contratação *
+                  </label>
+                  <select
+                    value={manualHireForm.tipoContratacao}
+                    onChange={(e) => setManualHireForm({ ...manualHireForm, tipoContratacao: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white focus:border-[#a3e635] focus:outline-none"
+                  >
+                    <option value="Estagiário">Estagiário</option>
+                    <option value="Freelancer">Freelancer</option>
+                    <option value="CLT">CLT</option>
+                    <option value="PJ">PJ</option>
+                    <option value="Temporário">Temporário</option>
+                    <option value="Trainee">Trainee</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">E-mail</label>
+                  <input
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    value={manualHireForm.email}
+                    onChange={(e) => setManualHireForm({ ...manualHireForm, email: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Telefone / WhatsApp</label>
+                  <input
+                    type="text"
+                    placeholder="81999998888"
+                    value={manualHireForm.telefone}
+                    onChange={(e) => setManualHireForm({ ...manualHireForm, telefone: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">LinkedIn</label>
+                  <input
+                    type="text"
+                    placeholder="linkedin.com/in/perfil"
+                    value={manualHireForm.linkedin}
+                    onChange={(e) => setManualHireForm({ ...manualHireForm, linkedin: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Instagram</label>
+                  <input
+                    type="text"
+                    placeholder="@usuario"
+                    value={manualHireForm.instagram}
+                    onChange={(e) => setManualHireForm({ ...manualHireForm, instagram: e.target.value })}
+                    className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">Anotações / Resumo</label>
+                <textarea
+                  rows={2}
+                  placeholder="Anotações e detalhes adicionais..."
+                  value={manualHireForm.resumo}
+                  onChange={(e) => setManualHireForm({ ...manualHireForm, resumo: e.target.value })}
+                  className="w-full rounded-xl border border-neutral-800 bg-[#0a0a0a] py-2.5 px-3.5 text-xs text-white placeholder-neutral-600 focus:border-[#a3e635] focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-neutral-800 flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsManualHireModalOpen(false)}
+                  className="flex-1 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2.5 text-xs transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2.5 text-xs transition-colors shadow-[0_0_15px_rgba(163,230,53,0.3)] cursor-pointer"
+                >
+                  Cadastrar no Time
                 </button>
               </div>
             </form>

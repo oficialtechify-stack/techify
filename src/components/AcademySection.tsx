@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Course } from '../types';
 import { COURSES } from '../data';
+import GlassButton, { GlassEffect } from './GlassButton';
 
 export default function AcademySection() {
   const [selectedTopic, setSelectedTopic] = useState<'tutor' | 'idiomas' | 'cursos' | null>('tutor');
@@ -98,8 +99,13 @@ export default function AcademySection() {
     <div className="relative w-full min-h-screen overflow-hidden bg-[#030303] bg-nebula pb-24 pt-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
-        {/* Page Top Title matching screenshots */}
-        <div className="text-center">
+        {/* Page Top Title matching screenshots with entrance motion */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center"
+        >
           <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/20 bg-violet-500/5 px-4 py-1.5 text-xs text-violet-400 tracking-widest uppercase font-semibold mb-6">
             <GraduationCap className="h-3.5 w-3.5" />
             <span>ACADEMIA TECHIFY</span>
@@ -115,10 +121,15 @@ export default function AcademySection() {
           <p className="mx-auto mt-6 max-w-2xl text-center text-sm leading-relaxed text-neutral-400">
             Nossa IA proprietária gera trilhas personalizadas de aprendizado em tempo real. Programação, design e high-performance ao seu alcance, totalmente grátis.
           </p>
-        </div>
+        </motion.div>
 
-        {/* Stats segment (Image 6) */}
-        <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4 max-w-4xl mx-auto">
+        {/* Stats segment (Image 6) with stagger entrance */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4 max-w-4xl mx-auto"
+        >
           {[
             { value: '25+', label: 'CURSOS GRATUITOS', icon: BookOpen, color: 'text-brand-lime' },
             { value: '8', label: 'IDIOMAS', icon: Globe2, color: 'text-brand-cyan' },
@@ -137,7 +148,7 @@ export default function AcademySection() {
               </p>
             </div>
           ))}
-        </div>
+        </motion.div>
 
         {/* Dynamic Category Tabs Selection */}
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -405,12 +416,14 @@ export default function AcademySection() {
 
                     <div className="pt-4 border-t border-neutral-900 flex items-center justify-between">
                       <span className="text-[10px] font-mono text-neutral-600">{course.lessons} MÓDULOS DE AULA</span>
-                      <button
+                      <GlassButton
                         onClick={() => alert(`Acesso liberado! Iniciando lição prática de: ${course.title}`)}
-                        className="rounded-lg bg-neutral-900 hover:bg-brand-lime border border-neutral-800 hover:border-brand-lime text-neutral-300 hover:text-black transition-all text-[11px] font-bold px-4 py-2"
+                        variant="lime"
+                        size="sm"
+                        className="rounded-xl text-[11px] font-bold px-4 py-2"
                       >
                         Iniciar Curso
-                      </button>
+                      </GlassButton>
                     </div>
                   </div>
                 ))}

@@ -4,6 +4,7 @@ import { X, Calendar, User, Mail, MessageSquare, Phone, ChevronRight, Check } fr
 import { Consultation } from '../types';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import GlassButton, { GlassEffect } from './GlassButton';
 
 interface ConsultationModalProps {
   isOpen: boolean;
@@ -242,17 +243,19 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
 
                 {/* Form Buttons */}
                 <div className="flex gap-3 pt-2">
-                  <button
+                  <GlassButton
                     type="button"
                     onClick={onClose}
-                    className="flex-1 rounded-lg border border-neutral-800 py-3 text-sm font-medium transition-colors duration-200 hover:bg-neutral-900"
+                    variant="dark"
+                    className="flex-1 rounded-xl py-3 text-sm font-medium text-neutral-300"
                   >
                     Cancelar
-                  </button>
-                  <button
+                  </GlassButton>
+                  <GlassButton
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-brand-lime hover:bg-brand-accent text-black font-semibold text-sm py-3 transition-colors duration-200"
+                    variant="lime"
+                    className="flex-1 rounded-xl py-3 text-sm font-bold"
                   >
                     {isSubmitting ? (
                       <span className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
@@ -261,7 +264,7 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
                         Confirmar Agendamento <ChevronRight className="h-4 w-4" />
                       </>
                     )}
-                  </button>
+                  </GlassButton>
                 </div>
               </form>
             )}

@@ -88,6 +88,17 @@
         "createdAt": { "type": "string" }
       },
       "required": ["title", "category", "description"]
+    },
+    "newsletter": {
+      "title": "Assinantes da Newsletter",
+      "description": "Lista de e-mails de leads e visitantes que assinaram a newsletter da Techify",
+      "properties": {
+        "email": { "type": "string" },
+        "origem": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email", "createdAt"]
     }
   }
 }

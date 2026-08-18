@@ -11,6 +11,7 @@ import { collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, getDocs } fr
 import { db } from '../lib/firebase';
 import { useAdminAuth } from '../lib/adminAuth';
 import { ShaderBackground } from './ShaderBackground';
+import GlassButton, { GlassEffect } from './GlassButton';
 
 const INITIAL_JOBS = [
   {
@@ -160,7 +161,7 @@ export default function CareersSection() {
         });
       });
       setJobs(fetched);
-    });
+    }, (err) => console.warn('Firestore vagas listener offline/error:', err.message));
 
     return () => unsub();
   }, []);
@@ -352,8 +353,13 @@ export default function CareersSection() {
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
-        {/* Page Top Title matching screenshots */}
-        <div className="text-center">
+        {/* Page Top Title with Motion Entrance */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center"
+        >
           <h1 className="font-display text-4xl font-black tracking-tight text-white sm:text-6xl leading-tight">
             Junte-se ao <span className="text-[#a3e635]">Time Techify</span>
           </h1>
@@ -364,20 +370,32 @@ export default function CareersSection() {
 
           {/* GREEN "PUBLICAR VAGA" BUTTON (Admin Only) */}
           {isAdmin && (
-            <div className="mt-8 flex justify-center">
-              <button
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.15, duration: 0.4 }}
+              className="mt-8 flex justify-center"
+            >
+              <GlassButton
                 onClick={handleOpenPublishModal}
-                className="group relative inline-flex items-center gap-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-sm px-6 py-3.5 transition-all shadow-[0_0_20px_rgba(163,230,53,0.3)] hover:shadow-[0_0_30px_rgba(163,230,53,0.5)] cursor-pointer active:scale-98"
+                variant="lime"
+                size="md"
+                className="rounded-xl px-6 py-3.5 text-sm font-extrabold"
               >
                 <Plus className="h-5 w-5 stroke-[2.5]" />
                 <span>Publicar Vaga</span>
-              </button>
-            </div>
+              </GlassButton>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
 
-        {/* Filter controls and Search Bar */}
-        <div className="mt-14 space-y-6">
+        {/* Filter controls and Search Bar with Motion Entrance */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-14 space-y-6"
+        >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-900 pb-6">
             {/* Search Input */}
             <div className="relative flex-1 max-w-md">
@@ -402,24 +420,23 @@ export default function CareersSection() {
             {MOCK_ROLES.map((role) => {
               const isActive = selectedRole === role;
               return (
-                <button
+                <GlassEffect
                   key={role}
                   onClick={() => {
                     setSelectedRole(role);
                     setApplyingJobId(null);
                   }}
-                  className={`rounded-full px-5 py-2 text-xs font-black tracking-wide transition-all duration-300 cursor-pointer border whitespace-nowrap ${
-                    isActive
-                      ? 'bg-[#a3e635] border-[#a3e635] text-black shadow-[0_0_15px_rgba(163,230,53,0.3)]'
-                      : 'bg-neutral-900/40 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white'
+                  variant={isActive ? "lime" : "dark"}
+                  className={`rounded-full px-5 py-2 text-xs font-black tracking-wide cursor-pointer whitespace-nowrap ${
+                    isActive ? 'text-[#a3e635]' : 'text-neutral-400 hover:text-white'
                   }`}
                 >
                   {role}
-                </button>
+                </GlassEffect>
               );
             })}
           </div>
-        </div>
+        </motion.div>
 
         {/* JOB CARDS GRID (Exact match to screenshot 1 design) */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -441,10 +458,10 @@ export default function CareersSection() {
               return (
                 <motion.div
                   key={job.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.15 }}
-                  transition={{ duration: 0.5, delay: idx * 0.08 }}
+                  initial={{ opacity: 0, y: 30, filter: 'blur(10px)', scale: 0.97 }}
+                  whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
+                  viewport={{ once: false, amount: 0.12 }}
+                  transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
                   className="group relative rounded-2xl border border-neutral-800/90 bg-[#121312] hover:border-[#a3e635]/40 transition-all duration-300 overflow-hidden p-6 flex flex-col justify-between shadow-lg"
                 >
                   <div>
@@ -526,15 +543,17 @@ export default function CareersSection() {
                       {isExpanded ? 'Ocultar detalhes' : 'Ver detalhes completos'}
                     </button>
 
-                    <button
+                    <GlassButton
                       onClick={() => {
                         setApplyingJobId(isApplying ? null : job.id);
                         setExpandedJobId(job.id);
                       }}
-                      className="bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs px-4 py-2 rounded-xl transition-all shadow-[0_0_12px_rgba(163,230,53,0.2)] cursor-pointer"
+                      variant="lime"
+                      size="sm"
+                      className="px-4 py-2 rounded-xl text-xs font-extrabold"
                     >
                       Candidatar-se
-                    </button>
+                    </GlassButton>
                   </div>
 
                   {/* Expanded Content Section */}
@@ -784,20 +803,24 @@ export default function CareersSection() {
 
                                 {/* Bottom action buttons */}
                                 <div className="flex gap-2.5 pt-2">
-                                  <button
+                                  <GlassButton
                                     type="button"
                                     onClick={() => setApplyingJobId(null)}
-                                    className="flex-1 py-2.5 text-xs font-bold text-neutral-400 hover:text-white rounded-xl border border-neutral-800 hover:bg-neutral-900 transition-all cursor-pointer"
+                                    variant="dark"
+                                    size="sm"
+                                    className="flex-1 py-2.5 text-xs font-bold text-neutral-400 hover:text-white rounded-xl"
                                   >
                                     Cancelar
-                                  </button>
-                                  <button
+                                  </GlassButton>
+                                  <GlassButton
                                     type="submit"
-                                    className="flex-1 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2.5 text-xs shadow-[0_0_15px_rgba(163,230,53,0.25)] transition-all cursor-pointer flex items-center justify-center gap-2"
+                                    variant="lime"
+                                    size="sm"
+                                    className="flex-1 rounded-xl py-2.5 text-xs font-extrabold"
                                   >
                                     <Send className="h-3.5 w-3.5" />
                                     <span>Enviar Candidatura</span>
-                                  </button>
+                                  </GlassButton>
                                 </div>
                               </form>
                             )}

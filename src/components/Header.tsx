@@ -1,7 +1,8 @@
-import React from 'react';
-import { Home, Globe, Briefcase, Shield, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { Home, Globe, Briefcase, Shield, LogOut, Users, Menu, X, GraduationCap, Sparkles, MessageSquare } from 'lucide-react';
 import { TechifyIcon } from './TechifyLogo';
 import { useAdminAuth } from '../lib/adminAuth';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface HeaderProps {
   activeTab: string;
@@ -12,24 +13,32 @@ interface HeaderProps {
 
 export default function Header({ activeTab, setActiveTab, onOpenConsultation, onOpenAdminLogin }: HeaderProps) {
   const { isAdmin, logout } = useAdminAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const baseNavItems = [
     { id: 'inicio', label: 'INÍCIO', icon: Home },
+    { id: 'sobre-nos', label: 'SOBRE NÓS', icon: Users },
     { id: 'portfolio', label: 'PORTFÓLIO', icon: Globe },
     { id: 'carreiras', label: 'CARREIRAS', icon: Briefcase },
+    { id: 'academia', label: 'ACADEMIA', icon: GraduationCap },
   ];
 
   const navItems = isAdmin 
     ? [...baseNavItems, { id: 'admin', label: 'ADMIN', icon: Shield }]
     : baseNavItems;
 
+  const handleNavClick = (tabId: string) => {
+    setActiveTab(tabId);
+    setMobileMenuOpen(false);
+  };
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-neutral-900 bg-black/75 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 w-full border-b border-neutral-900 bg-black/85 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
         {/* Logo Container and Brand Name */}
         <div 
           className="flex cursor-pointer items-center gap-3 transition-opacity hover:opacity-90 select-none"
-          onClick={() => setActiveTab('inicio')}
+          onClick={() => handleNavClick('inicio')}
         >
           {/* Exact Techify icon box */}
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-800 bg-[#060606] p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-black">
@@ -40,25 +49,27 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
           </span>
         </div>
 
-        {/* Navigation Actions */}
-        <nav className="flex items-center gap-1 sm:gap-3">
+        {/* Desktop Navigation Actions */}
+        <nav className="hidden lg:flex items-center gap-1.5 sm:gap-2">
           {navItems.map((item) => {
             const IconComponent = item.icon;
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`relative flex items-center gap-1 sm:gap-1.5 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-[11px] sm:text-xs font-semibold tracking-wide transition-all duration-300 cursor-pointer ${
+                onClick={() => handleNavClick(item.id)}
+                className={`relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer select-none ${
                   isActive
-                    ? 'border border-brand-accent/30 bg-brand-accent/10 font-bold text-brand-lime'
-                    : 'border border-transparent text-neutral-400 hover:bg-neutral-900/50 hover:text-white'
+                    ? 'border border-[#22c55e] bg-[#051c05]/80 text-[#4ade80] shadow-[0_0_15px_rgba(34,197,94,0.18)]'
+                    : 'text-neutral-300 hover:text-white hover:bg-neutral-900/50 border border-transparent'
                 }`}
               >
-                <IconComponent className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                <span className="inline">{item.label}</span>
+                <IconComponent className={`h-4 w-4 shrink-0 ${isActive ? 'text-[#4ade80]' : 'text-neutral-400'}`} />
+                <span className="font-semibold">{item.label}</span>
+                
+                {/* Active bottom highlight bar */}
                 {isActive && (
-                  <span className="absolute -bottom-[1px] left-1/4 right-1/4 h-[2px] bg-brand-accent" />
+                  <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-8 h-[2.5px] bg-[#22c55e] rounded-full shadow-[0_0_8px_#22c55e]" />
                 )}
               </button>
             );
@@ -68,27 +79,110 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
             <button
               onClick={() => {
                 logout();
-                if (activeTab === 'admin') setActiveTab('inicio');
+                if (activeTab === 'admin') handleNavClick('inicio');
               }}
-              className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-lg border border-red-500/20 transition-all cursor-pointer"
-              title="Sair do Modo Admin"
+              className="flex items-center gap-1.5 rounded-xl border border-red-900/40 bg-red-950/20 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-900/30 hover:text-red-300 transition-colors cursor-pointer ml-1"
             >
               <LogOut className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden sm:inline">Sair</span>
+              <span>Sair</span>
             </button>
           )}
         </nav>
 
-        {/* Quick Contact Action Button on Desktop */}
-        <div className="hidden md:block">
+        {/* Quick Contact Action Button on Desktop & Mobile Menu Button */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onOpenConsultation}
-            className="flex items-center gap-1.5 rounded-lg bg-neutral-900/40 hover:bg-brand-accent/10 border border-neutral-800 hover:border-brand-accent/50 text-neutral-300 hover:text-white transition-all duration-200 text-xs font-semibold px-4 py-2"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-[#0d0e0d] hover:border-[#22c55e]/50 hover:bg-[#141514] px-4 py-2 text-xs font-semibold text-white transition-all shadow-sm cursor-pointer"
           >
-            Falar com Engenheiro
+            <MessageSquare className="h-3.5 w-3.5 text-[#22c55e]" />
+            <span>Falar com Engenheiro</span>
+          </button>
+
+          {/* Mobile Hamburger Toggle Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="flex lg:hidden items-center justify-center h-10 w-10 rounded-xl border border-neutral-800 bg-neutral-900/80 text-neutral-300 hover:text-white hover:border-neutral-700 transition-colors cursor-pointer"
+            aria-label="Abrir menu"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
+
+      {/* Mobile Drawer Menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="lg:hidden border-t border-neutral-900 bg-black/95 px-4 py-4 backdrop-blur-xl"
+          >
+            <div className="flex flex-col space-y-1.5">
+              {navItems.map((item) => {
+                const IconComponent = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavClick(item.id)}
+                    className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                      isActive
+                        ? 'border border-[#22c55e]/50 bg-[#06200a] text-[#4ade80]'
+                        : 'text-neutral-300 hover:bg-neutral-900 hover:text-white border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <IconComponent className={`h-4 w-4 ${isActive ? 'text-[#4ade80]' : 'text-neutral-400'}`} />
+                      <span>{item.label}</span>
+                    </div>
+                    {isActive && <div className="h-2 w-2 rounded-full bg-[#22c55e]" />}
+                  </button>
+                );
+              })}
+
+              <div className="pt-3 mt-2 border-t border-neutral-900 flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenConsultation();
+                  }}
+                  className="w-full py-3 rounded-xl bg-[#22c55e] text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.3)] cursor-pointer"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Falar com Engenheiro</span>
+                </button>
+
+                {isAdmin ? (
+                  <button
+                    onClick={() => {
+                      logout();
+                      handleNavClick('inicio');
+                    }}
+                    className="w-full py-2.5 rounded-xl border border-red-900/40 bg-red-950/20 text-red-400 text-xs font-bold flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span>Sair do Painel Admin</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenAdminLogin();
+                    }}
+                    className="w-full py-2 rounded-xl text-neutral-500 hover:text-neutral-300 text-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    <span>Acesso Administrativo</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
