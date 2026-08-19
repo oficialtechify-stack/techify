@@ -28,11 +28,39 @@ const ToonHub = lazy(() => import('./components/ToonHub'));
 
 export default function App() {
   const { isAdmin } = useAdminAuth();
-  const [activeTab, setActiveTab] = useState<string>('inicio');
+
+  // Helper to detect initial tab from URL params or hash
+  const getInitialTab = (): string => {
+    if (typeof window === 'undefined') return 'inicio';
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab');
+      if (tabParam) return tabParam;
+
+      if (searchParams.get('vaga') || searchParams.get('job')) {
+        return 'carreiras';
+      }
+
+      const hash = window.location.hash;
+      if (hash.startsWith('#vaga-') || hash === '#carreiras' || hash === '#vagas') {
+        return 'carreiras';
+      }
+      if (hash === '#portfolio' || hash === '#projetos') return 'portfolio';
+      if (hash === '#apps') return 'apps';
+      if (hash === '#sobre-nos' || hash === '#sobre') return 'sobre-nos';
+      if (hash === '#academia') return 'academia';
+      if (hash === '#admin') return 'admin';
+    } catch (e) {
+      console.warn('Error reading URL params:', e);
+    }
+    return 'inicio';
+  };
+
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab);
   const [isConsultationOpen, setIsConsultationOpen] = useState<boolean>(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState<boolean>(false);
 
-  // Secret admin trigger listeners (Ctrl+Shift+A, typing 'admin', or #admin hash)
+  // Sync tab with URL on popstate/hashchange and secret admin triggers
   useEffect(() => {
     let keyBuffer = '';
 
@@ -57,19 +85,27 @@ export default function App() {
       }
     };
 
-    const checkHash = () => {
-      if (window.location.hash === '#admin' || window.location.search.includes('admin=true')) {
+    const handleUrlChange = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (window.location.hash === '#admin' || searchParams.get('admin') === 'true') {
         setIsAdminLoginOpen(true);
+      }
+
+      const currentTab = getInitialTab();
+      if (currentTab && currentTab !== 'inicio') {
+        setActiveTab(currentTab);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('hashchange', checkHash);
-    checkHash();
+    window.addEventListener('hashchange', handleUrlChange);
+    window.addEventListener('popstate', handleUrlChange);
+    handleUrlChange();
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('hashchange', checkHash);
+      window.removeEventListener('hashchange', handleUrlChange);
+      window.removeEventListener('popstate', handleUrlChange);
     };
   }, []);
 

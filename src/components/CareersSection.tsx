@@ -5,7 +5,7 @@ import {
   DollarSign, ChevronDown, ChevronUp, Send, CheckCircle, ArrowRight,
   Plus, X, Shield, Trash2, ChevronRight, Linkedin, Instagram, Globe,
   FileText, Paperclip, Phone, Calendar, User, Mail, UploadCloud, Edit,
-  Share2, Copy, Check, MessageCircle, ExternalLink
+  Share2, Copy, Check, MessageCircle, ExternalLink, Sparkles
 } from 'lucide-react';
 import { toast } from './Toast';
 import { Job } from '../types';
@@ -57,6 +57,7 @@ export default function CareersSection() {
   const [selectedRole, setSelectedRole] = useState('Todos');
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
+  const [highlightedJobId, setHighlightedJobId] = useState<string | null>(null);
 
   // Admin protection state
   const { isAdmin } = useAdminAuth();
@@ -87,9 +88,17 @@ export default function CareersSection() {
   const [sharingJobModal, setSharingJobModal] = useState<Job | null>(null);
   const [copiedJobId, setCopiedJobId] = useState<string | null>(null);
 
+  // Helper to generate precise deep-link for a job
+  const getJobShareUrl = (job: Job): string => {
+    if (typeof window === 'undefined') return `https://www.techify.sbs/?tab=carreiras&vaga=${job.id}#vaga-${job.id}`;
+    const isCustomDomain = window.location.hostname.includes('techify.sbs');
+    const base = isCustomDomain ? 'https://www.techify.sbs' : window.location.origin;
+    return `${base}${window.location.pathname}?tab=carreiras&vaga=${encodeURIComponent(job.id)}#vaga-${encodeURIComponent(job.id)}`;
+  };
+
   // Helper to copy job link with feedback
   const handleCopyJobLink = async (job: Job) => {
-    const url = `https://www.techify.sbs/?tab=carreiras#vaga-${job.id || ''}`;
+    const url = getJobShareUrl(job);
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(url);
@@ -102,7 +111,7 @@ export default function CareersSection() {
         document.body.removeChild(textarea);
       }
       setCopiedJobId(job.id || 'copied');
-      toast.success('Link Copiado!', 'Link da vaga copiado com sucesso.');
+      toast.success('Link Copiado!', 'O link direto desta vaga foi copiado com sucesso.');
       setTimeout(() => setCopiedJobId(null), 2500);
     } catch (err) {
       console.error('Error copying job link:', err);
@@ -199,6 +208,68 @@ export default function CareersSection() {
 
     return () => unsub();
   }, []);
+
+  // Detect direct deep-linked job from URL (?vaga=ID or #vaga-ID) and scroll/highlight immediately
+  useEffect(() => {
+    if (jobs.length === 0) return;
+
+    const detectAndScrollToJob = () => {
+      try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const vagaParam = searchParams.get('vaga') || searchParams.get('job') || searchParams.get('id');
+        let targetId = vagaParam;
+
+        if (!targetId && window.location.hash) {
+          const cleanHash = window.location.hash.replace('#vaga-', '').replace('#', '');
+          if (cleanHash && cleanHash !== 'carreiras' && cleanHash !== 'vagas') {
+            targetId = cleanHash;
+          }
+        }
+
+        if (targetId) {
+          const cleanTarget = targetId.trim().toLowerCase();
+          const matchedJob = jobs.find(
+            (j) =>
+              j.id === targetId ||
+              j.id.toLowerCase() === cleanTarget ||
+              j.title.toLowerCase().replace(/\s+/g, '-').includes(cleanTarget)
+          );
+
+          if (matchedJob) {
+            setSelectedRole('Todos');
+            setSearchQuery('');
+            setExpandedJobId(matchedJob.id);
+            setHighlightedJobId(matchedJob.id);
+
+            setTimeout(() => {
+              const el = document.getElementById(`vaga-${matchedJob.id}`);
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 300);
+
+            const timer = setTimeout(() => {
+              setHighlightedJobId(null);
+            }, 7000);
+
+            return () => clearTimeout(timer);
+          }
+        }
+      } catch (err) {
+        console.warn('Error detecting deep-linked job:', err);
+      }
+    };
+
+    detectAndScrollToJob();
+
+    window.addEventListener('hashchange', detectAndScrollToJob);
+    window.addEventListener('popstate', detectAndScrollToJob);
+
+    return () => {
+      window.removeEventListener('hashchange', detectAndScrollToJob);
+      window.removeEventListener('popstate', detectAndScrollToJob);
+    };
+  }, [jobs]);
 
   // Filter roles dynamically
   const MOCK_ROLES = ['Todos', 'Design', 'Desenvolvimento', 'Marketing', 'Vendas', 'Outro'];
@@ -488,17 +559,34 @@ export default function CareersSection() {
             filteredJobs.map((job, idx) => {
               const isExpanded = expandedJobId === job.id;
               const isApplying = applyingJobId === job.id;
+              const isHighlighted = highlightedJobId === job.id;
 
               return (
                 <motion.div
                   key={job.id}
+                  id={`vaga-${job.id}`}
                   initial={{ opacity: 0, y: 30, filter: 'blur(10px)', scale: 0.97 }}
                   whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
                   viewport={{ once: false, amount: 0.12 }}
                   transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                  className="group relative rounded-2xl border border-neutral-800/90 bg-[#121312] hover:border-[#a3e635]/40 transition-all duration-300 overflow-hidden p-6 flex flex-col justify-between shadow-lg"
+                  className={`group relative rounded-2xl border transition-all duration-500 overflow-hidden p-6 flex flex-col justify-between shadow-lg ${
+                    isHighlighted
+                      ? 'border-[#a3e635] bg-[#131a11] ring-2 ring-[#a3e635] shadow-[0_0_35px_rgba(163,230,53,0.3)]'
+                      : 'border-neutral-800/90 bg-[#121312] hover:border-[#a3e635]/40'
+                  }`}
                 >
                   <div>
+                    {/* Deep link direct highlight badge */}
+                    {isHighlighted && (
+                      <div className="mb-4 flex items-center justify-between rounded-xl bg-[#a3e635]/20 border border-[#a3e635]/50 px-3.5 py-2 text-xs text-[#a3e635] font-bold">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 shrink-0 animate-spin" style={{ animationDuration: '4s' }} />
+                          <span>Vaga acessada via link direto</span>
+                        </div>
+                        <span className="text-[10px] text-neutral-300 font-medium">Visualizando detalhes</span>
+                      </div>
+                    )}
+
                     {/* Top Row: Title + Chevron / Admin Delete */}
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <h2 
@@ -669,7 +757,7 @@ export default function CareersSection() {
                           <div className="flex flex-wrap items-center gap-2 pt-1">
                             {/* WhatsApp Direct */}
                             <a
-                              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🔥 Vaga na Techify: *${job.title}*\n📍 Local: ${job.location}\n💼 Regime: ${job.type}${job.salary ? `\n💰 Salário: ${job.salary}` : ''}\n\nCandidate-se ou saiba mais no link oficial:\nhttps://www.techify.sbs/?tab=carreiras#vaga-${job.id || ''}`)}`}
+                              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🔥 Vaga na Techify: *${job.title}*\n📍 Local: ${job.location}\n💼 Regime: ${job.type}${job.salary ? `\n💰 Salário: ${job.salary}` : ''}\n\nCandidate-se ou saiba mais no link oficial:\n${getJobShareUrl(job)}`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-[#4ade80] text-xs font-semibold transition-all hover:scale-105"
@@ -680,7 +768,7 @@ export default function CareersSection() {
 
                             {/* LinkedIn Direct */}
                             <a
-                              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://www.techify.sbs/?tab=carreiras')}`}
+                              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(getJobShareUrl(job))}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A66C2]/15 hover:bg-[#0A66C2]/25 border border-[#0A66C2]/30 text-[#38bdf8] text-xs font-semibold transition-all hover:scale-105"
@@ -691,7 +779,7 @@ export default function CareersSection() {
 
                             {/* Twitter / X */}
                             <a
-                              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Vaga aberta na @techify: ${job.title} (${job.location}) 🚀 Candidate-se:`)}&url=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${job.id || ''}`)}`}
+                              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Vaga aberta na @techify: ${job.title} (${job.location}) 🚀 Candidate-se:`)}&url=${encodeURIComponent(getJobShareUrl(job))}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white text-xs font-semibold transition-all hover:scale-105"
@@ -704,7 +792,7 @@ export default function CareersSection() {
 
                             {/* Telegram */}
                             <a
-                              href={`https://t.me/share/url?url=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${job.id || ''}`)}&text=${encodeURIComponent(`🔥 Vaga aberta na Techify: ${job.title} (${job.location})`)}`}
+                              href={`https://t.me/share/url?url=${encodeURIComponent(getJobShareUrl(job))}&text=${encodeURIComponent(`🔥 Vaga aberta na Techify: ${job.title} (${job.location})`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#229ED9]/15 hover:bg-[#229ED9]/25 border border-[#229ED9]/30 text-[#38bdf8] text-xs font-semibold transition-all hover:scale-105"
@@ -1270,7 +1358,7 @@ export default function CareersSection() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {/* WhatsApp */}
                   <a
-                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🔥 Vaga na Techify: *${sharingJobModal.title}*\n📍 Local: ${sharingJobModal.location}\n💼 Regime: ${sharingJobModal.type}${sharingJobModal.salary ? `\n💰 Salário: ${sharingJobModal.salary}` : ''}\n\nCandidate-se ou saiba mais no link oficial:\nhttps://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`)}`}
+                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🔥 Vaga na Techify: *${sharingJobModal.title}*\n📍 Local: ${sharingJobModal.location}\n💼 Regime: ${sharingJobModal.type}${sharingJobModal.salary ? `\n💰 Salário: ${sharingJobModal.salary}` : ''}\n\nCandidate-se ou saiba mais no link oficial:\n${getJobShareUrl(sharingJobModal)}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#4ade80] transition-all hover:scale-[1.02]"
@@ -1281,7 +1369,7 @@ export default function CareersSection() {
 
                   {/* LinkedIn */}
                   <a
-                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`)}`}
+                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(getJobShareUrl(sharingJobModal))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20 border border-[#0A66C2]/30 text-[#38bdf8] transition-all hover:scale-[1.02]"
@@ -1292,7 +1380,7 @@ export default function CareersSection() {
 
                   {/* Twitter / X */}
                   <a
-                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Vaga aberta na @techify: ${sharingJobModal.title} (${sharingJobModal.location}) 🚀 Candidate-se:`)}&url=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`)}`}
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Vaga aberta na @techify: ${sharingJobModal.title} (${sharingJobModal.location}) 🚀 Candidate-se:`)}&url=${encodeURIComponent(getJobShareUrl(sharingJobModal))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white transition-all hover:scale-[1.02]"
@@ -1305,7 +1393,7 @@ export default function CareersSection() {
 
                   {/* Telegram */}
                   <a
-                    href={`https://t.me/share/url?url=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`)}&text=${encodeURIComponent(`🔥 Vaga aberta na Techify: ${sharingJobModal.title} (${sharingJobModal.location})`)}`}
+                    href={`https://t.me/share/url?url=${encodeURIComponent(getJobShareUrl(sharingJobModal))}&text=${encodeURIComponent(`🔥 Vaga aberta na Techify: ${sharingJobModal.title} (${sharingJobModal.location})`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-[#229ED9]/10 hover:bg-[#229ED9]/20 border border-[#229ED9]/30 text-[#38bdf8] transition-all hover:scale-[1.02]"
@@ -1316,7 +1404,7 @@ export default function CareersSection() {
 
                   {/* Facebook */}
                   <a
-                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`)}`}
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getJobShareUrl(sharingJobModal))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-[#1877F2]/10 hover:bg-[#1877F2]/20 border border-[#1877F2]/30 text-[#60a5fa] transition-all hover:scale-[1.02]"
@@ -1334,7 +1422,7 @@ export default function CareersSection() {
                           await navigator.share({
                             title: `Vaga Techify: ${sharingJobModal.title}`,
                             text: `Confira a vaga de ${sharingJobModal.title} na Techify!`,
-                            url: `https://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`,
+                            url: getJobShareUrl(sharingJobModal),
                           });
                         } catch (err) {
                           // user cancelled or share failed
