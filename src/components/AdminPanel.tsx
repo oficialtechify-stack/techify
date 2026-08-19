@@ -5,14 +5,15 @@ import {
   Plus, Trash2, Check, RefreshCw, ExternalLink, KeyRound, LogOut,
   Linkedin, Globe, FileText, Download, Edit, X, MapPin, UserCheck, UserPlus, Award,
   Copy, CheckCheck, FileSpreadsheet, Inbox, AtSign, Search, Sparkles,
-  Image as ImageIcon
+  Image as ImageIcon, Layers
 } from 'lucide-react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAdminAuth } from '../lib/adminAuth';
-import { Job, Project } from '../types';
+import { Job, Project, TechifyApp } from '../types';
 import AdminPortfolioTab from './AdminPortfolioTab';
 import AdminSiteEditorTab from './AdminSiteEditorTab';
+import AdminAppsTab from './AdminAppsTab';
 import { INITIAL_PORTFOLIO_SITES } from '../data/portfolioData';
 import { toast } from './Toast';
 
@@ -121,6 +122,7 @@ export default function AdminPanel() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [newsletterEmails, setNewsletterEmails] = useState<NewsletterItem[]>([]);
   const [portfolioProjects, setPortfolioProjects] = useState<Project[]>([]);
+  const [appsList, setAppsList] = useState<TechifyApp[]>([]);
   const [newsletterSearch, setNewsletterSearch] = useState('');
   const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
   const [allCopied, setAllCopied] = useState(false);
@@ -463,6 +465,14 @@ export default function AdminPanel() {
       setPortfolioProjects(fetched);
     }, (err) => console.warn('Firestore portfolio offline/error:', err.message));
 
+    const unsubApps = onSnapshot(collection(db, 'apps'), (snapshot) => {
+      const fetched: TechifyApp[] = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...(docSnap.data() as Omit<TechifyApp, 'id'>)
+      }));
+      setAppsList(fetched);
+    }, (err) => console.warn('Firestore apps error:', err.message));
+
     return () => {
       unsubConsultas();
       unsubCandidaturas();
@@ -472,6 +482,7 @@ export default function AdminPanel() {
       unsubVagas();
       unsubNewsletter();
       unsubPortfolio();
+      unsubApps();
     };
   }, []);
 
@@ -1052,6 +1063,18 @@ export default function AdminPanel() {
           >
             <ImageIcon className="h-4 w-4" />
             <span>Portfólio & Imagens ({portfolioProjects.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('apps')}
+            className={`px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'apps'
+                ? 'bg-[#a3e635] text-black shadow-[0_0_12px_rgba(163,230,53,0.3)]'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+            }`}
+          >
+            <Layers className="h-4 w-4 text-[#a3e635]" />
+            <span>Apps Techify ({appsList.length})</span>
           </button>
 
           <button
@@ -2027,7 +2050,12 @@ export default function AdminPanel() {
           <AdminPortfolioTab portfolioProjects={portfolioProjects} />
         )}
 
-        {/* 9. SITE CONTENT & TEAM EDITOR TAB */}
+        {/* 9. APPS MANAGEMENT TAB */}
+        {activeTab === 'apps' && (
+          <AdminAppsTab apps={appsList} />
+        )}
+
+        {/* 10. SITE CONTENT & TEAM EDITOR TAB */}
         {activeTab === 'site_editor' && (
           <AdminSiteEditorTab />
         )}

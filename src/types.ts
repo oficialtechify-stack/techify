@@ -53,3 +53,18 @@ export interface Consultation {
   time: string;
   details?: string;
 }
+
+export interface TechifyApp {
+  id: string;
+  title: string;
+  subtitle: string;
+  description?: string;
+  imageUrl: string;
+  linkUrl: string;
+  category: string;
+  status?: 'ativo' | 'beta' | 'em-breve';
+  tags?: string[];
+  featured?: boolean;
+  createdAt?: string;
+}
+

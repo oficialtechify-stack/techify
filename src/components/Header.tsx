@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Globe, Briefcase, Shield, LogOut, Users, Menu, X, GraduationCap, Sparkles, MessageSquare } from 'lucide-react';
+import { Home, Globe, Briefcase, Shield, LogOut, Users, Menu, X, GraduationCap, Layers, Sparkles, MessageSquare, Lock } from 'lucide-react';
 import { TechifyIcon } from './TechifyLogo';
 import { useAdminAuth } from '../lib/adminAuth';
 import { motion, AnimatePresence } from 'motion/react';
@@ -19,8 +19,9 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
     { id: 'inicio', label: 'INÍCIO', icon: Home },
     { id: 'sobre-nos', label: 'SOBRE NÓS', icon: Users },
     { id: 'portfolio', label: 'PORTFÓLIO', icon: Globe },
+    { id: 'apps', label: 'APPS', icon: Layers, isNew: true },
     { id: 'carreiras', label: 'CARREIRAS', icon: Briefcase },
-    { id: 'academia', label: 'ACADEMIA', icon: GraduationCap },
+    { id: 'academia', label: 'ACADEMIA', icon: GraduationCap, inDev: true },
   ];
 
   const navItems = isAdmin 
@@ -34,23 +35,23 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-neutral-900 bg-black/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 py-3 sm:py-3.5">
         {/* Logo Container and Brand Name */}
         <div 
-          className="flex cursor-pointer items-center gap-3 transition-opacity hover:opacity-90 select-none"
+          className="flex cursor-pointer items-center gap-2.5 sm:gap-3 transition-opacity hover:opacity-90 select-none shrink-0"
           onClick={() => handleNavClick('inicio')}
         >
           {/* Exact Techify icon box */}
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-800 bg-[#060606] p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-black">
+          <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg border border-neutral-800 bg-[#060606] p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-black">
             <TechifyIcon className="h-full w-full" color="#2eff00" />
           </div>
-          <span className="font-display text-xl font-black tracking-wider text-white">
+          <span className="font-display text-lg sm:text-xl font-black tracking-wider text-white">
             TECHIFY
           </span>
         </div>
 
         {/* Desktop Navigation Actions */}
-        <nav className="hidden lg:flex items-center gap-1.5 sm:gap-2">
+        <nav className="hidden lg:flex items-center gap-1 sm:gap-1.5">
           {navItems.map((item) => {
             const IconComponent = item.icon;
             const isActive = activeTab === item.id;
@@ -58,15 +59,28 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer select-none ${
+                className={`relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer select-none ${
                   isActive
                     ? 'border border-[#22c55e] bg-[#051c05]/80 text-[#4ade80] shadow-[0_0_15px_rgba(34,197,94,0.18)]'
                     : 'text-neutral-300 hover:text-white hover:bg-neutral-900/50 border border-transparent'
                 }`}
               >
-                <IconComponent className={`h-4 w-4 shrink-0 ${isActive ? 'text-[#4ade80]' : 'text-neutral-400'}`} />
+                <IconComponent className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-[#4ade80]' : 'text-neutral-400'}`} />
                 <span className="font-semibold">{item.label}</span>
                 
+                {/* Visual badge for APPS (Novo) or ACADEMIA (Em Dev) */}
+                {'isNew' in item && item.isNew && (
+                  <span className="ml-0.5 rounded-full bg-[#22c55e]/20 border border-[#22c55e]/40 px-1.5 py-0.2 text-[9px] font-extrabold text-[#4ade80]">
+                    NOVO
+                  </span>
+                )}
+                {'inDev' in item && item.inDev && (
+                  <span className="ml-0.5 flex items-center gap-0.5 rounded-full bg-neutral-800 border border-neutral-700 px-1.5 py-0.2 text-[9px] font-semibold text-neutral-400">
+                    <Lock className="h-2 w-2 text-neutral-400" />
+                    <span>DEV</span>
+                  </span>
+                )}
+
                 {/* Active bottom highlight bar */}
                 {isActive && (
                   <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-8 h-[2.5px] bg-[#22c55e] rounded-full shadow-[0_0_8px_#22c55e]" />
@@ -93,7 +107,7 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onOpenConsultation}
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-[#0d0e0d] hover:border-[#22c55e]/50 hover:bg-[#141514] px-4 py-2 text-xs font-semibold text-white transition-all shadow-sm cursor-pointer"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-[#0d0e0d] hover:border-[#22c55e]/50 hover:bg-[#141514] px-3.5 py-2 text-xs font-semibold text-white transition-all shadow-sm cursor-pointer"
           >
             <MessageSquare className="h-3.5 w-3.5 text-[#22c55e]" />
             <span>Falar com Engenheiro</span>
@@ -137,6 +151,17 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
                     <div className="flex items-center gap-3">
                       <IconComponent className={`h-4 w-4 ${isActive ? 'text-[#4ade80]' : 'text-neutral-400'}`} />
                       <span>{item.label}</span>
+                      {'isNew' in item && item.isNew && (
+                        <span className="rounded-full bg-[#22c55e]/20 border border-[#22c55e]/40 px-2 py-0.5 text-[10px] font-extrabold text-[#4ade80]">
+                          NOVO
+                        </span>
+                      )}
+                      {'inDev' in item && item.inDev && (
+                        <span className="flex items-center gap-1 rounded-full bg-neutral-800 border border-neutral-700 px-2 py-0.5 text-[10px] font-semibold text-neutral-400">
+                          <Lock className="h-2.5 w-2.5" />
+                          <span>EM DEV</span>
+                        </span>
+                      )}
                     </div>
                     {isActive && <div className="h-2 w-2 rounded-full bg-[#22c55e]" />}
                   </button>
@@ -155,7 +180,7 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
                   <span>Falar com Engenheiro</span>
                 </button>
 
-                {isAdmin ? (
+                {isAdmin && (
                   <button
                     onClick={() => {
                       logout();
@@ -165,17 +190,6 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
                   >
                     <LogOut className="h-3.5 w-3.5" />
                     <span>Sair do Painel Admin</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      onOpenAdminLogin();
-                    }}
-                    className="w-full py-2 rounded-xl text-neutral-500 hover:text-neutral-300 text-xs flex items-center justify-center gap-1.5"
-                  >
-                    <Shield className="h-3.5 w-3.5" />
-                    <span>Acesso Administrativo</span>
                   </button>
                 )}
               </div>

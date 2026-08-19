@@ -14,6 +14,7 @@ import { ToastProvider } from './components/Toast';
 
 // Lazy load heavy immersive showcase components and secondary modules
 const PortfolioSection = lazy(() => import('./components/PortfolioSection'));
+const AppsSection = lazy(() => import('./components/AppsSection'));
 const CareersSection = lazy(() => import('./components/CareersSection'));
 const AcademySection = lazy(() => import('./components/AcademySection'));
 const AboutSection = lazy(() => import('./components/AboutSection'));
@@ -187,10 +188,19 @@ export default function App() {
             onOpenConsultation={() => setIsConsultationOpen(true)}
           />
         );
+      case 'apps':
+        return <AppsSection onOpenConsultation={() => setIsConsultationOpen(true)} />;
       case 'carreiras':
         return <CareersSection />;
       case 'academia':
-        return <AcademySection />;
+        return (
+          <AcademySection 
+            onNavigate={(tab) => {
+              setActiveTab(tab);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }} 
+          />
+        );
       case 'admin':
         return <AdminPanel />;
       default:

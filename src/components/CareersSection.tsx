@@ -4,8 +4,10 @@ import {
   Briefcase, Search, Filter, AlertCircle, ArrowUpRight, MapPin, Clock, 
   DollarSign, ChevronDown, ChevronUp, Send, CheckCircle, ArrowRight,
   Plus, X, Shield, Trash2, ChevronRight, Linkedin, Instagram, Globe,
-  FileText, Paperclip, Phone, Calendar, User, Mail, UploadCloud, Edit
+  FileText, Paperclip, Phone, Calendar, User, Mail, UploadCloud, Edit,
+  Share2, Copy, Check, MessageCircle, ExternalLink
 } from 'lucide-react';
+import { toast } from './Toast';
 import { Job } from '../types';
 import { collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -80,6 +82,38 @@ export default function CareersSection() {
   const [benefitsList, setBenefitsList] = useState<string[]>([]);
 
   const [isSubmittingJob, setIsSubmittingJob] = useState(false);
+
+  // Social Share Job state
+  const [sharingJobModal, setSharingJobModal] = useState<Job | null>(null);
+  const [copiedJobId, setCopiedJobId] = useState<string | null>(null);
+
+  // Helper to copy job link with feedback
+  const handleCopyJobLink = async (job: Job) => {
+    const url = `https://www.techify.sbs/?tab=carreiras#vaga-${job.id || ''}`;
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedJobId(job.id || 'copied');
+      toast.success('Link Copiado!', 'Link da vaga copiado com sucesso.');
+      setTimeout(() => setCopiedJobId(null), 2500);
+    } catch (err) {
+      console.error('Error copying job link:', err);
+      toast.info('Link da vaga', url);
+    }
+  };
+
+  // Helper to share job natively or open modal
+  const handleShareJob = (job: Job) => {
+    setSharingJobModal(job);
+  };
 
   // Apply form state
   const [applyForm, setApplyForm] = useState({
@@ -475,6 +509,19 @@ export default function CareersSection() {
                       </h2>
 
                       <div className="flex items-center gap-2 shrink-0">
+                        {/* Share Job Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleShareJob(job);
+                          }}
+                          className="text-neutral-400 hover:text-[#a3e635] hover:bg-[#a3e635]/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+                          title="Compartilhar vaga nas redes sociais"
+                          aria-label="Compartilhar vaga"
+                        >
+                          <Share2 className="h-4.5 w-4.5" />
+                        </button>
+
                         {isAdmin && (
                           <div className="flex items-center gap-1">
                             <button
@@ -534,7 +581,7 @@ export default function CareersSection() {
                     </p>
                   </div>
 
-                  {/* Expand / Apply CTA Bottom Row */}
+                  {/* Expand / Share / Apply CTA Bottom Row */}
                   <div className="mt-6 pt-4 border-t border-neutral-800/60 flex items-center justify-between gap-3">
                     <button
                       onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
@@ -543,17 +590,31 @@ export default function CareersSection() {
                       {isExpanded ? 'Ocultar detalhes' : 'Ver detalhes completos'}
                     </button>
 
-                    <GlassButton
-                      onClick={() => {
-                        setApplyingJobId(isApplying ? null : job.id);
-                        setExpandedJobId(job.id);
-                      }}
-                      variant="lime"
-                      size="sm"
-                      className="px-4 py-2 rounded-xl text-xs font-extrabold"
-                    >
-                      Candidatar-se
-                    </GlassButton>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShareJob(job);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-neutral-300 hover:text-white bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 transition-all cursor-pointer"
+                        title="Compartilhar vaga"
+                      >
+                        <Share2 className="h-3.5 w-3.5 text-[#a3e635]" />
+                        <span className="hidden sm:inline">Compartilhar</span>
+                      </button>
+
+                      <GlassButton
+                        onClick={() => {
+                          setApplyingJobId(isApplying ? null : job.id);
+                          setExpandedJobId(job.id);
+                        }}
+                        variant="lime"
+                        size="sm"
+                        className="px-4 py-2 rounded-xl text-xs font-extrabold"
+                      >
+                        Candidatar-se
+                      </GlassButton>
+                    </div>
                   </div>
 
                   {/* Expanded Content Section */}
@@ -594,6 +655,84 @@ export default function CareersSection() {
                             </ul>
                           </div>
                         )}
+
+                        {/* Social Share Callout Box */}
+                        <div className="rounded-xl border border-neutral-800 bg-[#0d0e0d] p-3.5 space-y-2.5">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <span className="text-[11px] font-bold text-neutral-200 flex items-center gap-1.5">
+                              <Share2 className="h-3.5 w-3.5 text-[#a3e635]" />
+                              Divulgar esta vaga na sua rede:
+                            </span>
+                            <span className="text-[10px] text-neutral-500">Ajude outras pessoas a encontrarem esta vaga</span>
+                          </div>
+                          
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            {/* WhatsApp Direct */}
+                            <a
+                              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🔥 Vaga na Techify: *${job.title}*\n📍 Local: ${job.location}\n💼 Regime: ${job.type}${job.salary ? `\n💰 Salário: ${job.salary}` : ''}\n\nCandidate-se ou saiba mais no link oficial:\nhttps://www.techify.sbs/?tab=carreiras#vaga-${job.id || ''}`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-[#4ade80] text-xs font-semibold transition-all hover:scale-105"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5 fill-current" />
+                              <span>WhatsApp</span>
+                            </a>
+
+                            {/* LinkedIn Direct */}
+                            <a
+                              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://www.techify.sbs/?tab=carreiras')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A66C2]/15 hover:bg-[#0A66C2]/25 border border-[#0A66C2]/30 text-[#38bdf8] text-xs font-semibold transition-all hover:scale-105"
+                            >
+                              <Linkedin className="h-3.5 w-3.5 fill-current" />
+                              <span>LinkedIn</span>
+                            </a>
+
+                            {/* Twitter / X */}
+                            <a
+                              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Vaga aberta na @techify: ${job.title} (${job.location}) 🚀 Candidate-se:`)}&url=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${job.id || ''}`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white text-xs font-semibold transition-all hover:scale-105"
+                            >
+                              <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                              </svg>
+                              <span>X / Twitter</span>
+                            </a>
+
+                            {/* Telegram */}
+                            <a
+                              href={`https://t.me/share/url?url=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${job.id || ''}`)}&text=${encodeURIComponent(`🔥 Vaga aberta na Techify: ${job.title} (${job.location})`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#229ED9]/15 hover:bg-[#229ED9]/25 border border-[#229ED9]/30 text-[#38bdf8] text-xs font-semibold transition-all hover:scale-105"
+                            >
+                              <Send className="h-3.5 w-3.5" />
+                              <span>Telegram</span>
+                            </a>
+
+                            {/* Copy Link Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleCopyJobLink(job)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 text-xs font-semibold transition-all cursor-pointer ml-auto"
+                            >
+                              {copiedJobId === job.id ? (
+                                <>
+                                  <Check className="h-3.5 w-3.5 text-[#a3e635]" />
+                                  <span className="text-[#a3e635]">Copiado!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-3.5 w-3.5 text-neutral-400" />
+                                  <span>Copiar Link</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
 
                         {/* Apply Form nested inside */}
                         {isApplying && (
@@ -1058,6 +1197,198 @@ export default function CareersSection() {
                 </div>
 
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL COMPARTILHAR VAGA NAS REDES SOCIAIS */}
+      <AnimatePresence>
+        {sharingJobModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSharingJobModal(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+
+            {/* Modal Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-lg rounded-2xl border border-neutral-800 bg-[#0f100f] p-6 shadow-2xl z-10 space-y-5"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#a3e635]/15 text-[#a3e635] border border-[#a3e635]/30">
+                    <Share2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-white">Compartilhar Vaga</h3>
+                    <p className="text-xs text-neutral-400">Divulgue esta oportunidade na sua rede</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSharingJobModal(null)}
+                  className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-800 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Vaga Preview */}
+              <div className="rounded-xl border border-neutral-800 bg-[#070807] p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="bg-[#14532d]/80 text-[#4ade80] border border-[#22c55e]/40 text-[10px] font-bold px-2 py-0.5 rounded">
+                    {sharingJobModal.type}
+                  </span>
+                  <span className="bg-neutral-800 text-neutral-300 text-[10px] font-medium px-2 py-0.5 rounded">
+                    {sharingJobModal.category}
+                  </span>
+                  {sharingJobModal.salary && (
+                    <span className="text-[#a3e635] text-[10px] font-bold">
+                      {sharingJobModal.salary}
+                    </span>
+                  )}
+                </div>
+                <h4 className="font-bold text-white text-base">{sharingJobModal.title}</h4>
+                <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+                  <MapPin className="h-3.5 w-3.5 text-neutral-500" />
+                  <span>{sharingJobModal.location}</span>
+                </div>
+              </div>
+
+              {/* Redes Sociais Grid */}
+              <div className="space-y-2.5">
+                <p className="text-xs font-semibold text-neutral-300">Escolha onde deseja compartilhar:</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {/* WhatsApp */}
+                  <a
+                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🔥 Vaga na Techify: *${sharingJobModal.title}*\n📍 Local: ${sharingJobModal.location}\n💼 Regime: ${sharingJobModal.type}${sharingJobModal.salary ? `\n💰 Salário: ${sharingJobModal.salary}` : ''}\n\nCandidate-se ou saiba mais no link oficial:\nhttps://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#4ade80] transition-all hover:scale-[1.02]"
+                  >
+                    <MessageCircle className="h-5 w-5 fill-current" />
+                    <span className="text-xs font-bold">WhatsApp</span>
+                  </a>
+
+                  {/* LinkedIn */}
+                  <a
+                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20 border border-[#0A66C2]/30 text-[#38bdf8] transition-all hover:scale-[1.02]"
+                  >
+                    <Linkedin className="h-5 w-5 fill-current" />
+                    <span className="text-xs font-bold">LinkedIn</span>
+                  </a>
+
+                  {/* Twitter / X */}
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Vaga aberta na @techify: ${sharingJobModal.title} (${sharingJobModal.location}) 🚀 Candidate-se:`)}&url=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white transition-all hover:scale-[1.02]"
+                  >
+                    <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    <span className="text-xs font-bold">X / Twitter</span>
+                  </a>
+
+                  {/* Telegram */}
+                  <a
+                    href={`https://t.me/share/url?url=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`)}&text=${encodeURIComponent(`🔥 Vaga aberta na Techify: ${sharingJobModal.title} (${sharingJobModal.location})`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-[#229ED9]/10 hover:bg-[#229ED9]/20 border border-[#229ED9]/30 text-[#38bdf8] transition-all hover:scale-[1.02]"
+                  >
+                    <Send className="h-5 w-5" />
+                    <span className="text-xs font-bold">Telegram</span>
+                  </a>
+
+                  {/* Facebook */}
+                  <a
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`https://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-[#1877F2]/10 hover:bg-[#1877F2]/20 border border-[#1877F2]/30 text-[#60a5fa] transition-all hover:scale-[1.02]"
+                  >
+                    <Globe className="h-5 w-5" />
+                    <span className="text-xs font-bold">Facebook</span>
+                  </a>
+
+                  {/* Native Web Share */}
+                  {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.share({
+                            title: `Vaga Techify: ${sharingJobModal.title}`,
+                            text: `Confira a vaga de ${sharingJobModal.title} na Techify!`,
+                            url: `https://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`,
+                          });
+                        } catch (err) {
+                          // user cancelled or share failed
+                        }
+                      }}
+                      className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-[#a3e635]/10 hover:bg-[#a3e635]/20 border border-[#a3e635]/30 text-[#a3e635] transition-all hover:scale-[1.02] cursor-pointer"
+                    >
+                      <ExternalLink className="h-5 w-5" />
+                      <span className="text-xs font-bold">Mais Opções</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Link direto para copiar */}
+              <div className="space-y-1.5 pt-2 border-t border-neutral-800">
+                <label className="block text-xs font-semibold text-neutral-300">Link direto da vaga:</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`https://www.techify.sbs/?tab=carreiras#vaga-${sharingJobModal.id || ''}`}
+                    className="flex-1 rounded-xl border border-neutral-800 bg-[#070807] py-2.5 px-3 text-xs text-neutral-300 focus:outline-none select-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleCopyJobLink(sharingJobModal)}
+                    className="flex items-center gap-1.5 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black px-4 py-2.5 text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_15px_rgba(163,230,53,0.3)] shrink-0"
+                  >
+                    {copiedJobId === sharingJobModal.id ? (
+                      <>
+                        <Check className="h-4 w-4 stroke-[3]" />
+                        <span>Copiado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 stroke-[2.5]" />
+                        <span>Copiar</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Fechar botão */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSharingJobModal(null)}
+                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 font-bold py-2.5 text-xs transition-colors cursor-pointer"
+                >
+                  Fechar
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

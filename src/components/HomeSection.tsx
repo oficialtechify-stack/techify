@@ -233,23 +233,12 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         {/* Hero Header & Copy */}
         <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center pt-8">
           
-          {/* Static Badge */}
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 backdrop-blur-md px-4 py-1.5 text-xs font-semibold text-[#4ade80] shadow-[0_0_20px_rgba(34,197,94,0.15)] mb-6"
-          >
-            <EditableIcon id="hero_badge_icon" defaultName="Sparkles" className="h-3.5 w-3.5 text-[#22c55e]" />
-            <EditableText id="hero_badge_text" defaultText="Inovação Digital & Performance" title="Selo do Hero" />
-          </motion.div>
-
           {/* Main Headline */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl"
+            className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl pt-4"
           >
             <EditableText id="hero_title_1" defaultText="Transforme Seu" title="Título Hero Linha 1" /> <br />
             <span className="text-[#22c55e] drop-shadow-[0_0_35px_rgba(34,197,94,0.35)]">
@@ -343,15 +332,7 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       {/* ========================================================================= */}
       <section className="relative w-full py-16 sm:py-24 bg-gradient-to-b from-black via-[#060f07]/60 to-black border-b border-neutral-900/80 overflow-hidden">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-          <ScrollReveal delay={0.05} yOffset={24} threshold={0.2}>
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 backdrop-blur-md px-4 py-1.5 text-xs font-semibold text-[#4ade80] shadow-[0_0_20px_rgba(34,197,94,0.15)] mb-6">
-              <TrendingUp className="h-3.5 w-3.5 text-[#22c55e]" />
-              <span>Presença & Conversão</span>
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.15} yOffset={30} threshold={0.2}>
+          <ScrollReveal delay={0.08} yOffset={30} threshold={0.2}>
             {/* Heading */}
             <h2 className="font-display text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl">
               Seu concorrente aparece no Google. <br />
@@ -445,11 +426,6 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
               </div>
 
               <div className="mt-8 pt-6 border-t border-neutral-900">
-                <div className="flex -space-x-2 mb-3">
-                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-8 w-8 rounded-full border-2 border-black object-cover" />
-                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-8 w-8 rounded-full border-2 border-black object-cover" />
-                  <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-8 w-8 rounded-full border-2 border-black object-cover" />
-                </div>
                 <p className="text-xs italic text-neutral-400 leading-relaxed">
                   <EditableText
                     id="bento_card2_quote"
@@ -1085,18 +1061,6 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
             
             {/* Subtle Glow Background */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#22c55e]/15 blur-[120px] pointer-events-none" />
-
-            {/* Client Avatars */}
-            <div className="relative z-10 flex items-center gap-3 mb-6">
-              <div className="flex -space-x-2">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-7 w-7 rounded-full border-2 border-black object-cover" />
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-7 w-7 rounded-full border-2 border-black object-cover" />
-                <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=80&q=80" alt="Client" className="h-7 w-7 rounded-full border-2 border-black object-cover" />
-              </div>
-              <span className="text-xs font-semibold text-neutral-300">
-                Empresas que confiam na Techify
-              </span>
-            </div>
 
             {/* Headline */}
             <h2 className="relative z-10 font-display text-3xl sm:text-5xl md:text-6xl font-extrabold text-white max-w-3xl leading-[1.1] tracking-tight">

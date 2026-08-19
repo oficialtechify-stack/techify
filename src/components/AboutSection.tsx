@@ -83,14 +83,6 @@ export default function AboutSection({ onNavigate, onOpenConsultation }: AboutSe
     };
   }, []);
 
-  const trustedAvatars = [
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80",
-    "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=120&q=80",
-    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80",
-    "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=120&q=80"
-  ];
-
   return (
     <div className="relative w-full overflow-hidden bg-black text-white selection:bg-[#22c55e]/30 selection:text-white">
       
@@ -105,23 +97,6 @@ export default function AboutSection({ onNavigate, onOpenConsultation }: AboutSe
             
             {/* Ambient subtle glow */}
             <div className="absolute -top-12 -left-12 w-64 h-64 bg-[#22c55e]/10 rounded-full blur-3xl pointer-events-none" />
-
-            {/* Trusted by avatars label */}
-            <div className="flex items-center gap-3 mb-8">
-              <span className="text-xs sm:text-sm font-medium text-neutral-300">
-                Empresas que confiam na Techify
-              </span>
-              <div className="flex -space-x-2">
-                {trustedAvatars.slice(0, 3).map((img, i) => (
-                  <img 
-                    key={i} 
-                    src={img} 
-                    alt="Client" 
-                    className="h-6 w-6 rounded-full border-2 border-black object-cover" 
-                  />
-                ))}
-              </div>
-            </div>
 
             {/* Headline */}
             <motion.h1 
@@ -265,26 +240,6 @@ export default function AboutSection({ onNavigate, onOpenConsultation }: AboutSe
             sob medida
           </h2>
 
-          {/* Social Trust Avatars Group */}
-          <div className="mt-12 flex flex-col items-center gap-3">
-            <div className="flex -space-x-2.5 items-center">
-              {trustedAvatars.map((img, i) => (
-                <img 
-                  key={i} 
-                  src={img} 
-                  alt="Avatar" 
-                  className="h-10 w-10 rounded-full border-2 border-black object-cover shadow-lg" 
-                />
-              ))}
-              <div className="h-10 w-10 rounded-full border-2 border-black bg-[#22c55e] text-black font-black text-xs flex items-center justify-center shadow-lg">
-                +
-              </div>
-            </div>
-            <span className="text-xs sm:text-sm font-semibold text-neutral-400">
-              Empresas que confiam na Techify
-            </span>
-          </div>
-
         </div>
       </section>
 
@@ -397,18 +352,6 @@ export default function AboutSection({ onNavigate, onOpenConsultation }: AboutSe
 
           <div className="relative z-10 max-w-3xl">
             
-            {/* Top Avatars Proof */}
-            <div className="flex items-center gap-3 mb-8">
-              <span className="text-xs font-semibold text-neutral-300">
-                Empresas que confiam na Techify
-              </span>
-              <div className="flex -space-x-2">
-                {trustedAvatars.slice(0, 3).map((img, i) => (
-                  <img key={i} src={img} alt="Client" className="h-6 w-6 rounded-full border-2 border-black object-cover" />
-                ))}
-              </div>
-            </div>
-
             {/* Title */}
             <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-white leading-tight">
               Enquanto você decide, <br />

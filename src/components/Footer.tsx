@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, MessageCircle, Instagram, Linkedin, Github, Send, ArrowUpRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, MessageCircle, Instagram, Linkedin, Send, ArrowUpRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { TechifyIcon } from './TechifyLogo';
@@ -166,6 +166,12 @@ export default function Footer({ onNavigate, onOpenConsultation, onOpenAdminLogi
                   </button>
                 </li>
                 <li>
+                  <button onClick={() => onNavigate('apps')} className="hover:text-white transition-colors cursor-pointer text-left flex items-center gap-1.5">
+                    <span>Apps Techify</span>
+                    <span className="text-[9px] font-extrabold bg-[#22c55e]/20 text-[#4ade80] px-1.5 py-0.2 rounded-full">NOVO</span>
+                  </button>
+                </li>
+                <li>
                   <button onClick={() => onNavigate('sobre-nos')} className="hover:text-white transition-colors cursor-pointer text-left">
                     Sobre nós
                   </button>
@@ -194,13 +200,6 @@ export default function Footer({ onNavigate, onOpenConsultation, onOpenAdminLogi
                     Orçamento
                   </button>
                 </li>
-                {onOpenAdminLogin && (
-                  <li>
-                    <button onClick={onOpenAdminLogin} className="text-neutral-600 hover:text-neutral-400 transition-colors cursor-pointer text-left text-xs">
-                      Portal Admin
-                    </button>
-                  </li>
-                )}
               </ul>
             </div>
 
@@ -226,12 +225,6 @@ export default function Footer({ onNavigate, onOpenConsultation, onOpenAdminLogi
                   <a href="mailto:oficialtechify@gmail.com" className="flex items-center gap-1.5 hover:text-white transition-colors">
                     <Mail className="h-3.5 w-3.5 text-[#22c55e]" />
                     <span>Email</span>
-                  </a>
-                </li>
-                <li>
-                  <a href="https://github.com/techify" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-white transition-colors">
-                    <Github className="h-3.5 w-3.5 text-[#22c55e]" />
-                    <span>GitHub</span>
                   </a>
                 </li>
               </ul>
