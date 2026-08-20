@@ -30,7 +30,7 @@ import {
 import { PROJECTS, SERVICES } from '../data';
 import AnimatedGradient from './AnimatedGradient';
 import { GradientWave } from './GradientWave';
-import WavyBackground from './WavyBackground';
+import TechHeroBackground from './TechHeroBackground';
 import { TechifyIcon } from './TechifyLogo';
 import ScrollReveal from './ScrollReveal';
 import ShowcaseCarousel from './ShowcaseCarousel';
@@ -203,26 +203,21 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       />
       
       {/* ========================================================================= */}
-      {/* 1. HERO SECTION (Wavy Background WebGL Effect)                            */}
+      {/* 1. HERO SECTION (Tech Cyber Constellation & Deep Spatial Background)       */}
       {/* ========================================================================= */}
-      <WavyBackground className="min-h-[92vh] flex flex-col justify-between items-center pt-12 pb-16 bg-[#000000]">
+      <TechHeroBackground className="min-h-[90vh] flex flex-col justify-between items-center pt-12 pb-16">
         
-        {/* Deep Space Background with Starfield & Parallax Layers */}
+        {/* Parallax Cyber Orbs */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <motion.div 
             style={{ y: yHeroOrb }}
-            className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(34,197,94,0.12),transparent_70%)]" 
-          />
-          {/* Subtle Parallax Grid Lines */}
-          <motion.div 
-            style={{ y: yHeroRing }}
-            className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:4rem_4rem]" 
+            className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,rgba(163,230,53,0.08),transparent_70%)]" 
           />
 
           {/* Floating Parallax Cyber Ring */}
           <motion.div
             style={{ y: yHeroRing, rotate: rotateHeroRing }}
-            className="pointer-events-none absolute -top-16 left-8 sm:left-24 w-72 h-72 rounded-full border border-[#22c55e]/15 opacity-30 [border-dasharray:8px]"
+            className="pointer-events-none absolute -top-16 left-8 sm:left-24 w-72 h-72 rounded-full border border-[#a3e635]/15 opacity-25 [border-dasharray:8px]"
           />
           <motion.div
             style={{ y: yHeroOrb, rotate: rotateServicesGeom }}
@@ -241,7 +236,7 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
             className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl pt-4"
           >
             <EditableText id="hero_title_1" defaultText="Transforme Seu" title="Título Hero Linha 1" /> <br />
-            <span className="text-[#22c55e] drop-shadow-[0_0_35px_rgba(34,197,94,0.35)]">
+            <span className="bg-gradient-to-r from-[#a3e635] via-[#4ade80] to-[#22c55e] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(163,230,53,0.3)]">
               <EditableText id="hero_title_2" defaultText="Negócio Digital" title="Título Hero Linha 2" />
             </span>
           </motion.h1>
@@ -270,14 +265,14 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
           >
             <button
               onClick={() => onNavigate('portfolio')}
-              className="w-full sm:w-auto rounded-full border border-neutral-800 bg-neutral-900/80 hover:bg-neutral-800/90 px-6 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-neutral-200 transition-all cursor-pointer"
+              className="w-full sm:w-auto rounded-full border border-neutral-800 bg-neutral-900/90 hover:bg-neutral-800 hover:border-[#a3e635]/40 px-7 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-neutral-200 transition-all shadow-md cursor-pointer"
             >
               VER O QUE JÁ FIZEMOS
             </button>
 
             <button
               onClick={onOpenConsultation}
-              className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-7 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_25px_rgba(34,197,94,0.35)] cursor-pointer"
+              className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full bg-[#a3e635] hover:bg-[#84cc16] px-7 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_25px_rgba(163,230,53,0.35)] cursor-pointer"
             >
               <span>FALAR COM ENGENHEIRO</span>
               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
@@ -298,7 +293,7 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
             ))}
           </div>
         </div>
-      </WavyBackground>
+      </TechHeroBackground>
 
 
       {/* ========================================================================= */}
