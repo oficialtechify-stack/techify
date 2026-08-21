@@ -25,7 +25,10 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  Send
+  Send,
+  Image as ImageIcon,
+  ZoomIn,
+  X
 } from 'lucide-react';
 import { PROJECTS, SERVICES } from '../data';
 import AnimatedGradient from './AnimatedGradient';
@@ -37,7 +40,7 @@ import ShowcaseCarousel from './ShowcaseCarousel';
 import TextEmergence from './TextEmergence';
 import InteractiveDiagnosisSection from './InteractiveDiagnosisSection';
 import { EditableText, EditableNumber, EditableIcon, EditableImage } from './InlineEditProvider';
-import { getCachedGeneralContent, SiteGeneralContent } from '../lib/siteContent';
+import { getCachedGeneralContent, getCachedFeedbacks, SiteGeneralContent, FeedbackImage } from '../lib/siteContent';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -92,8 +95,10 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
   const [selectedArticle, setSelectedArticle] = useState<number | null>(null);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [generalContent, setGeneralContent] = useState<SiteGeneralContent>(getCachedGeneralContent);
+  const [feedbacks, setFeedbacks] = useState<FeedbackImage[]>(getCachedFeedbacks);
+  const [selectedFeedbackImage, setSelectedFeedbackImage] = useState<FeedbackImage | null>(null);
 
-  // Sync general content from Firestore and local cache in real-time
+  // Sync general content and feedbacks from Firestore and local cache in real-time
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "site_content", "general"), (snap) => {
       if (snap.exists()) {
@@ -102,17 +107,37 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       }
     }, (err) => console.warn('Firestore generalContent offline:', err.message));
 
+    const unsubFeedbacks = onSnapshot(doc(db, "site_content", "feedbacks"), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (Array.isArray(data.feedbacks)) {
+          setFeedbacks(data.feedbacks);
+        }
+      }
+    }, (err) => console.warn('Firestore feedbacks offline:', err.message));
+
     const handleContentUpdate = (e: Event) => {
       const customEvt = e as CustomEvent<SiteGeneralContent>;
       if (customEvt.detail) {
         setGeneralContent(customEvt.detail);
       }
     };
+
+    const handleFeedbacksUpdate = (e: Event) => {
+      const customEvt = e as CustomEvent<FeedbackImage[]>;
+      if (customEvt.detail) {
+        setFeedbacks(customEvt.detail);
+      }
+    };
+
     window.addEventListener('techify-content-updated', handleContentUpdate);
+    window.addEventListener('techify-feedbacks-updated', handleFeedbacksUpdate);
 
     return () => {
       unsub();
+      unsubFeedbacks();
       window.removeEventListener('techify-content-updated', handleContentUpdate);
+      window.removeEventListener('techify-feedbacks-updated', handleFeedbacksUpdate);
     };
   }, []);
 
@@ -184,31 +209,6 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
     }
   ];
 
-  // Testimonials data
-  const testimonials = [
-    {
-      quote: "A Techify entendeu o problema do nosso negócio com extrema rapidez e entregou um sistema robusto e veloz, sem enrolação.",
-      author: "Rodrigo Mendonça",
-      role: "Fundador & CEO, InovaLog Tech",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-      company: "InovaLog"
-    },
-    {
-      quote: "Comunicação direta e entrega impecável do briefing ao lançamento. Nossas conversões no WhatsApp subiram mais de 40% na primeira semana.",
-      author: "Camila Guimarães",
-      role: "Diretora de Marketing, Sempre Mais",
-      avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80",
-      company: "Sempre Mais"
-    },
-    {
-      quote: "Simplificaram uma demanda complexa de automação de faturamento e entregaram uma plataforma intuitiva que nosso time usa diariamente sem erros.",
-      author: "Lucas Silveira",
-      role: "Diretor de Operações, Genesis Group",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
-      company: "Genesis"
-    }
-  ];
-
   return (
     <div ref={containerRef} className="relative w-full overflow-hidden bg-black text-white selection:bg-[#22c55e]/30 selection:text-white">
       
@@ -254,26 +254,8 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         </div>
 
         {/* Hero Header & Copy */}
-        <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center pt-4 sm:pt-8">
+        <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center pt-6 sm:pt-10">
           
-          {/* Top Badge */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-[#a3e635]/30 bg-black/60 backdrop-blur-md px-4 py-1.5 text-xs font-semibold text-neutral-300 mb-6 shadow-[0_0_15px_rgba(163,230,53,0.15)]"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#a3e635] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#a3e635]" />
-            </span>
-            <EditableText 
-              id="hero_badge" 
-              defaultText={generalContent.heroBadge || "Tecnologia & Performance sob Medida"} 
-              title="Selo / Badge Hero" 
-            />
-          </motion.div>
-
           {/* Main Headline with Smooth Emergence */}
           <TextEmergence delay={0.1} yOffset={25} duration={0.8} blur={16}>
             <h1 className="font-display text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl pt-1 sm:pt-2">
@@ -797,7 +779,7 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
 
 
       {/* ========================================================================= */}
-      {/* 6. DEPOIMENTOS (TESTIMONIALS)                                             */}
+      {/* 6. DEPOIMENTOS & PRINTS REAIS DE FEEDBACKS                                */}
       {/* ========================================================================= */}
       <section className="relative w-full py-20 bg-neutral-950/60 border-y border-neutral-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -807,66 +789,125 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-black px-3.5 py-1 text-xs font-bold text-neutral-300 mb-4">
                   <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
-                  <span>Depoimentos</span>
+                  <span>Depoimentos & Feedbacks Reais</span>
                 </div>
                 <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-white">
-                  O que dizem sobre nós?
+                  Feedbacks Reais de Clientes
                 </h2>
-                <p className="text-sm text-neutral-400 mt-2">
-                  Histórias reais de quem acelerou seu negócio com a Techify.
+                <p className="text-sm text-neutral-400 mt-2 max-w-2xl">
+                  Prints autênticos de conversas no WhatsApp, avaliações e satisfação comprovada de quem contratou a Techify.
                 </p>
               </div>
 
-              {/* Navigation buttons */}
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setCurrentTestimonial((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1))}
-                  className="h-10 w-10 rounded-full border border-neutral-800 bg-neutral-900 flex items-center justify-center text-neutral-300 hover:text-white hover:border-neutral-700 transition-colors cursor-pointer"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button 
-                  onClick={() => setCurrentTestimonial((prev) => (prev === testimonials.length - 1 ? 0 : prev + 1))}
-                  className="h-10 w-10 rounded-full border border-neutral-800 bg-neutral-900 flex items-center justify-center text-neutral-300 hover:text-white hover:border-neutral-700 transition-colors cursor-pointer"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
+              {feedbacks.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-neutral-400">
+                    {feedbacks.length} {feedbacks.length === 1 ? 'print autenticado' : 'prints autenticados'}
+                  </span>
+                </div>
+              )}
             </div>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((testi, idx) => (
-              <ScrollReveal key={idx} delay={idx * 0.12} yOffset={30}>
-                <div 
-                  className={`rounded-3xl border p-8 flex flex-col justify-between transition-all h-full ${
-                    idx === currentTestimonial 
-                      ? 'border-[#22c55e]/50 bg-[#061709] shadow-[0_0_30px_rgba(34,197,94,0.15)]' 
-                      : 'border-neutral-800 bg-[#0a0a0a]'
-                  }`}
-                >
-                  <div className="mb-6">
-                    <div className="flex items-center gap-1 text-[#facc15] mb-4">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-current" />
-                      ))}
+          {feedbacks.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {feedbacks.map((fb, idx) => (
+                <ScrollReveal key={fb.id || idx} delay={idx * 0.1} yOffset={25}>
+                  <div 
+                    onClick={() => setSelectedFeedbackImage(fb)}
+                    className="group relative rounded-3xl border border-neutral-800/80 bg-[#0a0a0a] hover:border-[#22c55e]/50 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer shadow-lg hover:shadow-[0_0_25px_rgba(34,197,94,0.12)] hover:-translate-y-1"
+                  >
+                    {/* Feedback Print / Image Container */}
+                    <div className="relative w-full aspect-[4/3] bg-neutral-900 overflow-hidden">
+                      <img 
+                        src={fb.imageUrl} 
+                        alt={fb.clientName || 'Feedback Real Techify'} 
+                        className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/80 border border-[#22c55e]/60 text-xs font-bold text-[#a3e635] shadow-lg">
+                          <ZoomIn className="h-4 w-4" />
+                          <span>Clique para ampliar print</span>
+                        </div>
+                      </div>
+                      
+                      {/* Certified Stamp */}
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-[#22c55e]/40 text-[11px] font-bold text-emerald-400">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        <span>Verificado</span>
+                      </div>
                     </div>
-                    <p className="text-sm sm:text-base text-neutral-200 leading-relaxed italic">
-                      "{testi.quote}"
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-3 pt-6 border-t border-neutral-800/80">
-                    <img src={testi.avatar} alt={testi.author} className="h-10 w-10 rounded-full object-cover border border-neutral-700" />
-                    <div>
-                      <h4 className="text-sm font-bold text-white">{testi.author}</h4>
-                      <p className="text-xs text-neutral-400">{testi.role}</p>
+                    {/* Card Content & Details */}
+                    <div className="p-5 flex flex-col justify-between flex-1">
+                      <div>
+                        {/* Rating Stars */}
+                        <div className="flex items-center gap-1 text-[#facc15] mb-2.5">
+                          {[...Array(fb.rating || 5)].map((_, i) => (
+                            <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                          ))}
+                        </div>
+
+                        {fb.comment && (
+                          <p className="text-xs sm:text-sm text-neutral-300 line-clamp-3 italic mb-3">
+                            "{fb.comment}"
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="pt-3 border-t border-neutral-800/80 flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-bold text-white">
+                            {fb.clientName || 'Cliente Techify'}
+                          </h4>
+                          {fb.projectName && (
+                            <p className="text-[11px] text-neutral-400">
+                              {fb.projectName}
+                            </p>
+                          )}
+                        </div>
+                        {fb.date && (
+                          <span className="text-[10px] text-neutral-500 font-mono">
+                            {fb.date}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          ) : (
+            <ScrollReveal threshold={0.2}>
+              <div className="rounded-3xl border border-neutral-800 bg-[#0c0e0c] p-8 sm:p-12 text-center flex flex-col items-center justify-center max-w-2xl mx-auto">
+                <div className="h-16 w-16 rounded-2xl bg-[#a3e635]/10 border border-[#a3e635]/20 flex items-center justify-center text-[#a3e635] mb-5">
+                  <ShieldCheck className="h-8 w-8" />
                 </div>
-              </ScrollReveal>
-            ))}
-          </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
+                  Feedbacks 100% Autênticos
+                </h3>
+                <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-lg mb-6">
+                  Aqui exibimos prints e capturas reais de conversas com nossos clientes, garantindo transparência e resultados comprovados.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    onClick={onOpenConsultation}
+                    className="inline-flex items-center gap-2 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-6 py-2.5 text-xs font-bold text-black transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+                  >
+                    <span>Falar com a Equipe</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onNavigate('portfolio')}
+                    className="inline-flex items-center gap-2 rounded-full border border-neutral-700 hover:border-neutral-500 bg-neutral-900 px-6 py-2.5 text-xs font-bold text-neutral-200 transition-all cursor-pointer"
+                  >
+                    <span>Ver Nossos Projetos</span>
+                  </button>
+                </div>
+              </div>
+            </ScrollReveal>
+          )}
 
         </div>
       </section>
@@ -1035,6 +1076,87 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       >
         <MessageCircle className="h-7 w-7" />
       </a>
+
+      {/* Lightbox Modal for Feedback Prints */}
+      <AnimatePresence>
+        {selectedFeedbackImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedFeedbackImage(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-4xl max-h-[90vh] w-full rounded-3xl border border-neutral-800 bg-[#0c0e0c] shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 bg-[#121412]">
+                <div className="flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
+                  <div>
+                    <h3 className="text-sm font-bold text-white">
+                      {selectedFeedbackImage.clientName || 'Feedback de Cliente Autêntico'}
+                    </h3>
+                    {selectedFeedbackImage.projectName && (
+                      <p className="text-xs text-neutral-400">
+                        {selectedFeedbackImage.projectName}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedFeedbackImage(null)}
+                  className="h-8 w-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* High-res Image Preview */}
+              <div className="p-4 sm:p-6 overflow-y-auto max-h-[70vh] flex items-center justify-center bg-black/40">
+                <img
+                  src={selectedFeedbackImage.imageUrl}
+                  alt={selectedFeedbackImage.clientName || 'Print de feedback real'}
+                  className="max-h-[65vh] w-auto max-w-full object-contain rounded-xl border border-neutral-800 shadow-xl"
+                />
+              </div>
+
+              {/* Modal Footer with details & CTA */}
+              <div className="px-6 py-4 border-t border-neutral-800 bg-[#0d100d] flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-[#facc15]">
+                    {[...Array(selectedFeedbackImage.rating || 5)].map((_, i) => (
+                      <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                    ))}
+                  </div>
+                  {selectedFeedbackImage.date && (
+                    <span className="text-xs text-neutral-400 font-mono">
+                      • {selectedFeedbackImage.date}
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setSelectedFeedbackImage(null);
+                    onOpenConsultation();
+                  }}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-6 py-2 text-xs font-bold text-black transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+                >
+                  <span>Quero um projeto de sucesso</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

@@ -11,6 +11,17 @@ export interface TeamMember {
   instagram?: string;
 }
 
+export interface FeedbackImage {
+  id: string;
+  imageUrl: string;
+  clientName?: string;
+  projectName?: string;
+  comment?: string;
+  rating?: number;
+  date?: string;
+  createdAt: string;
+}
+
 export interface SiteGeneralContent {
   // Hero
   heroBadge: string;
@@ -97,6 +108,32 @@ export const DEFAULT_SITE_CONTENT: SiteGeneralContent = {
 
 const TEAM_CACHE_KEY = 'techify_cached_team_members';
 const CONTENT_CACHE_KEY = 'techify_cached_general_content';
+const FEEDBACK_CACHE_KEY = 'techify_cached_feedback_images';
+
+export const DEFAULT_FEEDBACKS: FeedbackImage[] = [];
+
+export function getCachedFeedbacks(): FeedbackImage[] {
+  try {
+    const raw = localStorage.getItem(FEEDBACK_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (err) {
+    console.warn(err);
+  }
+  return DEFAULT_FEEDBACKS;
+}
+
+export async function saveFeedbacksToFirestore(feedbacks: FeedbackImage[]): Promise<void> {
+  localStorage.setItem(FEEDBACK_CACHE_KEY, JSON.stringify(feedbacks));
+  window.dispatchEvent(new CustomEvent('techify-feedbacks-updated', { detail: feedbacks }));
+  
+  await setDoc(doc(db, "site_content", "feedbacks"), {
+    feedbacks,
+    updatedAt: new Date().toISOString()
+  }, { merge: true });
+}
 
 export function getCachedTeamMembers(): TeamMember[] {
   try {

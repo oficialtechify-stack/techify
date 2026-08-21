@@ -25,13 +25,17 @@ import {
 } from 'lucide-react';
 import { 
   TeamMember, 
-  SiteGeneralContent, 
+  SiteGeneralContent,
+  FeedbackImage,
   DEFAULT_TEAM_MEMBERS, 
   DEFAULT_SITE_CONTENT,
+  DEFAULT_FEEDBACKS,
   getCachedTeamMembers,
   getCachedGeneralContent,
+  getCachedFeedbacks,
   saveTeamMembersToFirestore,
-  saveGeneralContentToFirestore
+  saveGeneralContentToFirestore,
+  saveFeedbacksToFirestore
 } from '../lib/siteContent';
 import { compressImageFile } from '../lib/imageUtils';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -49,11 +53,24 @@ const PRESET_AVATARS = [
 ];
 
 export default function AdminSiteEditorTab() {
-  const [subTab, setSubTab] = useState<'team' | 'hero' | 'about' | 'contact'>('team');
+  const [subTab, setSubTab] = useState<'feedbacks' | 'team' | 'hero' | 'about' | 'contact'>('feedbacks');
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(getCachedTeamMembers);
   const [generalContent, setGeneralContent] = useState<SiteGeneralContent>(getCachedGeneralContent);
+  const [feedbacks, setFeedbacks] = useState<FeedbackImage[]>(getCachedFeedbacks);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Feedback Modal State
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
+  const [feedbackImageUrl, setFeedbackImageUrl] = useState('');
+  const [feedbackClientName, setFeedbackClientName] = useState('');
+  const [feedbackProjectName, setFeedbackProjectName] = useState('');
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackDate, setFeedbackDate] = useState('');
+  const [isUploadingFeedbackImage, setIsUploadingFeedbackImage] = useState(false);
+  const feedbackFileInputRef = useRef<HTMLInputElement>(null);
 
   // Member Modal State
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
@@ -82,6 +99,15 @@ export default function AdminSiteEditorTab() {
       }
     }, (err) => console.warn('Firestore team offline:', err.message));
 
+    const unsubFeedbacks = onSnapshot(doc(db, "site_content", "feedbacks"), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (Array.isArray(data.feedbacks)) {
+          setFeedbacks(data.feedbacks);
+        }
+      }
+    }, (err) => console.warn('Firestore feedbacks offline:', err.message));
+
     const unsubGeneral = onSnapshot(doc(db, "site_content", "general"), (snap) => {
       if (snap.exists()) {
         const data = snap.data() as Partial<SiteGeneralContent>;
@@ -91,6 +117,7 @@ export default function AdminSiteEditorTab() {
 
     return () => {
       unsubTeam();
+      unsubFeedbacks();
       unsubGeneral();
     };
   }, []);
@@ -98,6 +125,112 @@ export default function AdminSiteEditorTab() {
   const showNotification = (msg: string) => {
     setFeedback(msg);
     setTimeout(() => setFeedback(null), 3500);
+  };
+
+  // Open feedback modal
+  const handleOpenFeedbackModal = (fb?: FeedbackImage) => {
+    if (fb) {
+      setEditingFeedbackId(fb.id);
+      setFeedbackImageUrl(fb.imageUrl);
+      setFeedbackClientName(fb.clientName || '');
+      setFeedbackProjectName(fb.projectName || '');
+      setFeedbackComment(fb.comment || '');
+      setFeedbackRating(fb.rating || 5);
+      setFeedbackDate(fb.date || '');
+    } else {
+      setEditingFeedbackId(null);
+      setFeedbackImageUrl('');
+      setFeedbackClientName('');
+      setFeedbackProjectName('');
+      setFeedbackComment('');
+      setFeedbackRating(5);
+      setFeedbackDate(new Date().toLocaleDateString('pt-BR'));
+    }
+    setIsFeedbackModalOpen(true);
+  };
+
+  // Upload feedback image from device
+  const handleFeedbackImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingFeedbackImage(true);
+    try {
+      const base64 = await compressImageFile(file, 1200, 1200, 0.88);
+      setFeedbackImageUrl(base64);
+      toast.success("Print Carregado", "Imagem pronta para salvar.");
+    } catch (err) {
+      console.error('Error compressing feedback image:', err);
+      toast.error("Erro no Upload", "Não foi possível carregar a imagem.");
+    } finally {
+      setIsUploadingFeedbackImage(false);
+    }
+  };
+
+  // Save feedback
+  const handleSaveFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!feedbackImageUrl.trim()) {
+      toast.warning("Imagem Obrigatória", "Por favor selecione ou insira a URL da imagem/print.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      let updated: FeedbackImage[];
+      if (editingFeedbackId) {
+        updated = feedbacks.map(item => 
+          item.id === editingFeedbackId 
+            ? {
+                ...item,
+                imageUrl: feedbackImageUrl.trim(),
+                clientName: feedbackClientName.trim(),
+                projectName: feedbackProjectName.trim(),
+                comment: feedbackComment.trim(),
+                rating: feedbackRating,
+                date: feedbackDate.trim()
+              }
+            : item
+        );
+        toast.success("Print Atualizado", "As alterações no feedback foram salvas.");
+      } else {
+        const newFeedback: FeedbackImage = {
+          id: 'fb-' + Date.now(),
+          imageUrl: feedbackImageUrl.trim(),
+          clientName: feedbackClientName.trim() || 'Cliente Satisfeito',
+          projectName: feedbackProjectName.trim(),
+          comment: feedbackComment.trim(),
+          rating: feedbackRating,
+          date: feedbackDate.trim() || new Date().toLocaleDateString('pt-BR'),
+          createdAt: new Date().toISOString()
+        };
+        updated = [newFeedback, ...feedbacks];
+        toast.success("Novo Print Publicado", "O feedback real foi publicado no site com sucesso.");
+      }
+
+      setFeedbacks(updated);
+      await saveFeedbacksToFirestore(updated);
+      setIsFeedbackModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao Salvar", "Não foi possível salvar o feedback.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Delete feedback
+  const handleDeleteFeedback = async (id: string) => {
+    if (!window.confirm("Deseja realmente remover este print de feedback do site?")) return;
+    try {
+      const updated = feedbacks.filter(fb => fb.id !== id);
+      setFeedbacks(updated);
+      await saveFeedbacksToFirestore(updated);
+      toast.info("Feedback Removido", "O print foi removido com sucesso.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao Excluir", "Não foi possível remover o print.");
+    }
   };
 
   // Open member modal for edit or new
@@ -285,6 +418,18 @@ export default function AdminSiteEditorTab() {
       {/* Sub-Tabs */}
       <div className="flex flex-wrap items-center gap-2 border-b border-neutral-800/80 pb-3">
         <button
+          onClick={() => setSubTab('feedbacks')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            subTab === 'feedbacks'
+              ? 'bg-[#a3e635] text-black shadow-[0_0_12px_rgba(163,230,53,0.3)]'
+              : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+          }`}
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span>Feedbacks & Prints Reais ({feedbacks.length})</span>
+        </button>
+
+        <button
           onClick={() => setSubTab('team')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             subTab === 'team'
@@ -332,6 +477,124 @@ export default function AdminSiteEditorTab() {
           <span>Contatos & Redes Sociais</span>
         </button>
       </div>
+
+      {/* 0. FEEDBACKS & PRINTS REAIS TAB */}
+      {subTab === 'feedbacks' && (
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-display text-lg font-bold text-white flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-[#a3e635]" />
+                Prints de Feedbacks & Avaliações Reais
+              </h3>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Faça upload de prints reais do WhatsApp, avaliações do Google ou fotos de feedback enviadas pelos clientes para exibir no site.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => handleOpenFeedbackModal()}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs transition-all shadow-[0_0_15px_rgba(163,230,53,0.3)] cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Adicionar Print de Feedback</span>
+              </button>
+            </div>
+          </div>
+
+          {feedbacks.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-neutral-800 bg-[#0d100d] p-12 text-center flex flex-col items-center justify-center">
+              <div className="h-14 w-14 rounded-2xl bg-[#a3e635]/10 border border-[#a3e635]/20 flex items-center justify-center text-[#a3e635] mb-4">
+                <ImageIcon className="h-7 w-7" />
+              </div>
+              <h4 className="text-sm font-bold text-white mb-1">
+                Nenhum print de feedback cadastrado
+              </h4>
+              <p className="text-xs text-neutral-400 max-w-md mb-5">
+                Suba capturas de tela reais de clientes satisfeitos no WhatsApp ou Google para gerar credibilidade instantânea.
+              </p>
+              <button
+                onClick={() => handleOpenFeedbackModal()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-bold text-xs transition-all cursor-pointer shadow-[0_0_15px_rgba(163,230,53,0.25)]"
+              >
+                <Upload className="h-4 w-4" />
+                <span>Subir Primeiro Print Real</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {feedbacks.map((fb) => (
+                <div
+                  key={fb.id}
+                  className="rounded-2xl border border-neutral-800 bg-[#0c0e0c] hover:border-neutral-700 transition-all overflow-hidden flex flex-col justify-between"
+                >
+                  <div className="relative aspect-[4/3] bg-neutral-900 overflow-hidden border-b border-neutral-800">
+                    <img
+                      src={fb.imageUrl}
+                      alt={fb.clientName || 'Feedback'}
+                      className="w-full h-full object-cover object-top"
+                    />
+                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-neutral-700 text-[11px] font-bold text-[#a3e635]">
+                      <Check className="h-3 w-3" />
+                      <span>Autêntico</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 flex flex-col justify-between flex-1">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1 text-[#facc15]">
+                          {[...Array(fb.rating || 5)].map((_, i) => (
+                            <span key={i}>★</span>
+                          ))}
+                        </div>
+                        {fb.date && (
+                          <span className="text-[10px] text-neutral-500 font-mono">
+                            {fb.date}
+                          </span>
+                        )}
+                      </div>
+
+                      <h4 className="text-xs font-bold text-white">
+                        {fb.clientName || 'Cliente'}
+                      </h4>
+                      {fb.projectName && (
+                        <p className="text-[11px] text-[#a3e635] mt-0.5">
+                          {fb.projectName}
+                        </p>
+                      )}
+
+                      {fb.comment && (
+                        <p className="text-[11px] text-neutral-400 mt-2 line-clamp-2 italic">
+                          "{fb.comment}"
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleOpenFeedbackModal(fb)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-700 hover:border-neutral-500 bg-neutral-800 text-[11px] font-bold text-neutral-200 transition-colors cursor-pointer"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                        <span>Editar</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteFeedback(fb.id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/30 hover:bg-red-500/10 text-red-400 text-[11px] font-bold transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Excluir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 1. TEAM TAB */}
       {subTab === 'team' && (
@@ -816,6 +1079,169 @@ export default function AdminSiteEditorTab() {
                   className="px-5 py-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs transition-all shadow-[0_0_12px_rgba(163,230,53,0.3)] cursor-pointer disabled:opacity-50"
                 >
                   {isSaving ? 'Salvando...' : 'Salvar Membro'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* FEEDBACK IMAGE MODAL */}
+      {isFeedbackModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg rounded-2xl border border-neutral-800 bg-[#0d100d] p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-4 mb-4">
+              <h3 className="font-display text-base font-bold text-white flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-[#a3e635]" />
+                {editingFeedbackId ? 'Editar Print de Feedback' : 'Cadastrar Novo Print de Feedback'}
+              </h3>
+              <button
+                onClick={() => setIsFeedbackModalOpen(false)}
+                className="h-7 w-7 rounded-lg border border-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFeedback} className="flex flex-col gap-4">
+              {/* Image Preview & Upload */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1.5">Imagem / Print da Conversa *</label>
+                
+                {feedbackImageUrl ? (
+                  <div className="relative w-full aspect-[4/3] rounded-xl border border-neutral-800 overflow-hidden bg-neutral-900 mb-2">
+                    <img
+                      src={feedbackImageUrl}
+                      alt="Feedback Preview"
+                      className="w-full h-full object-cover object-top"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackImageUrl('')}
+                      className="absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-red-500/80 hover:bg-red-600 text-white text-[11px] font-bold backdrop-blur-sm cursor-pointer"
+                    >
+                      Trocar Imagem
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      ref={feedbackFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFeedbackImageUpload}
+                    />
+
+                    <div
+                      onClick={() => feedbackFileInputRef.current?.click()}
+                      className="w-full py-8 border-2 border-dashed border-neutral-800 hover:border-[#a3e635]/60 bg-neutral-900/50 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors"
+                    >
+                      <Upload className="h-7 w-7 text-[#a3e635] mb-2" />
+                      <span className="text-xs font-bold text-white">
+                        {isUploadingFeedbackImage ? 'Comprimindo imagem...' : 'Clique para selecionar print do dispositivo'}
+                      </span>
+                      <span className="text-[11px] text-neutral-500 mt-0.5">
+                        PNG, JPG, WebP (otimização automática)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="h-px bg-neutral-800 flex-1" />
+                      <span className="text-[10px] text-neutral-500 font-bold uppercase">ou use URL direta</span>
+                      <div className="h-px bg-neutral-800 flex-1" />
+                    </div>
+
+                    <input
+                      type="url"
+                      placeholder="https://exemplo.com/print-whatsapp.jpg"
+                      value={feedbackImageUrl}
+                      onChange={(e) => setFeedbackImageUrl(e.target.value)}
+                      className="w-full rounded-xl bg-neutral-900 border border-neutral-800 px-3.5 py-2 text-xs text-white focus:border-[#a3e635] focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Client & Project Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Nome do Cliente / Empresa</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Dra. Mariana Costa"
+                    value={feedbackClientName}
+                    onChange={(e) => setFeedbackClientName(e.target.value)}
+                    className="w-full rounded-xl bg-neutral-900 border border-neutral-800 px-3.5 py-2 text-xs text-white focus:border-[#a3e635] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Tipo de Serviço / Projeto</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Landing Page + Tráfego Pago"
+                    value={feedbackProjectName}
+                    onChange={(e) => setFeedbackProjectName(e.target.value)}
+                    className="w-full rounded-xl bg-neutral-900 border border-neutral-800 px-3.5 py-2 text-xs text-white focus:border-[#a3e635] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Comment / Snippet */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">Comentário / Trecho do Print</label>
+                <textarea
+                  rows={2}
+                  placeholder="Ex: O site ficou perfeito e já fechamos 4 clientes na primeira semana de anúncios!"
+                  value={feedbackComment}
+                  onChange={(e) => setFeedbackComment(e.target.value)}
+                  className="w-full rounded-xl bg-neutral-900 border border-neutral-800 px-3.5 py-2 text-xs text-white focus:border-[#a3e635] focus:outline-none"
+                />
+              </div>
+
+              {/* Rating & Date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Avaliação</label>
+                  <select
+                    value={feedbackRating}
+                    onChange={(e) => setFeedbackRating(Number(e.target.value))}
+                    className="w-full rounded-xl bg-neutral-900 border border-neutral-800 px-3 py-2 text-xs text-white focus:border-[#a3e635] focus:outline-none"
+                  >
+                    <option value={5}>★★★★★ (5 Estrelas)</option>
+                    <option value={4}>★★★★☆ (4 Estrelas)</option>
+                    <option value={3}>★★★☆☆ (3 Estrelas)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Data / Período</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Março/2025"
+                    value={feedbackDate}
+                    onChange={(e) => setFeedbackDate(e.target.value)}
+                    className="w-full rounded-xl bg-neutral-900 border border-neutral-800 px-3 py-2 text-xs text-white focus:border-[#a3e635] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsFeedbackModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-800 text-xs font-bold text-neutral-300 transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSaving || isUploadingFeedbackImage}
+                  className="px-5 py-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs transition-all shadow-[0_0_12px_rgba(163,230,53,0.3)] cursor-pointer disabled:opacity-50"
+                >
+                  {isSaving ? 'Publicando...' : 'Salvar e Publicar Print'}
                 </button>
               </div>
             </form>
