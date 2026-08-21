@@ -68,3 +68,18 @@ export interface TechifyApp {
   createdAt?: string;
 }
 
+export interface DiagnosticoLead {
+  id?: string;
+  opcaoId: 'sem_site' | 'sem_sistema' | 'sem_anuncio' | 'todos_3';
+  opcaoTitulo: string;
+  problema: string;
+  solucaoResumo: string;
+  nome?: string;
+  whatsapp?: string;
+  email?: string;
+  status: 'Novo' | 'Em Atendimento' | 'Concluído';
+  data: string;
+  createdAt: string;
+  userAgent?: string;
+}
+

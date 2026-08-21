@@ -35,7 +35,11 @@ import { TechifyIcon } from './TechifyLogo';
 import ScrollReveal from './ScrollReveal';
 import ShowcaseCarousel from './ShowcaseCarousel';
 import TextEmergence from './TextEmergence';
+import InteractiveDiagnosisSection from './InteractiveDiagnosisSection';
 import { EditableText, EditableNumber, EditableIcon, EditableImage } from './InlineEditProvider';
+import { getCachedGeneralContent, SiteGeneralContent } from '../lib/siteContent';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface AnimatedCounterProps {
   targetValue: number;
@@ -87,6 +91,30 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedArticle, setSelectedArticle] = useState<number | null>(null);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [generalContent, setGeneralContent] = useState<SiteGeneralContent>(getCachedGeneralContent);
+
+  // Sync general content from Firestore and local cache in real-time
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "site_content", "general"), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as Partial<SiteGeneralContent>;
+        setGeneralContent(prev => ({ ...prev, ...data }));
+      }
+    }, (err) => console.warn('Firestore generalContent offline:', err.message));
+
+    const handleContentUpdate = (e: Event) => {
+      const customEvt = e as CustomEvent<SiteGeneralContent>;
+      if (customEvt.detail) {
+        setGeneralContent(customEvt.detail);
+      }
+    };
+    window.addEventListener('techify-content-updated', handleContentUpdate);
+
+    return () => {
+      unsub();
+      window.removeEventListener('techify-content-updated', handleContentUpdate);
+    };
+  }, []);
 
   // Framer Motion Scroll Parallax Transforms
   const { scrollYProgress } = useScroll({
@@ -205,7 +233,7 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       {/* ========================================================================= */}
       {/* 1. HERO SECTION (Tech Cyber Constellation & Deep Spatial Background)       */}
       {/* ========================================================================= */}
-      <TechHeroBackground className="min-h-[90vh] flex flex-col justify-between items-center pt-12 pb-16">
+      <TechHeroBackground className="min-h-[90vh] flex flex-col justify-between items-center pt-10 sm:pt-14 pb-16">
         
         {/* Parallax Cyber Orbs */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -226,55 +254,87 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         </div>
 
         {/* Hero Header & Copy */}
-        <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center pt-8">
+        <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center pt-4 sm:pt-8">
           
-          {/* Main Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl pt-4"
+          {/* Top Badge */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 rounded-full border border-[#a3e635]/30 bg-black/60 backdrop-blur-md px-4 py-1.5 text-xs font-semibold text-neutral-300 mb-6 shadow-[0_0_15px_rgba(163,230,53,0.15)]"
           >
-            <EditableText id="hero_title_1" defaultText="Transforme Seu" title="Título Hero Linha 1" /> <br />
-            <span className="bg-gradient-to-r from-[#a3e635] via-[#4ade80] to-[#22c55e] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(163,230,53,0.3)]">
-              <EditableText id="hero_title_2" defaultText="Negócio Digital" title="Título Hero Linha 2" />
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#a3e635] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#a3e635]" />
             </span>
-          </motion.h1>
-
-          {/* Stable Subtitle */}
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="max-w-2xl text-base sm:text-lg text-neutral-300 leading-relaxed font-normal mt-5"
-          >
-            <EditableText
-              id="hero_description_main"
-              defaultText="Criamos plataformas web e identidade visual que geram resultados reais. Da ideia ao lançamento, sua visão ganha vida."
-              title="Descrição do Hero"
-              isMultiline={true}
+            <EditableText 
+              id="hero_badge" 
+              defaultText={generalContent.heroBadge || "Tecnologia & Performance sob Medida"} 
+              title="Selo / Badge Hero" 
             />
-          </motion.p>
+          </motion.div>
+
+          {/* Main Headline with Smooth Emergence */}
+          <TextEmergence delay={0.1} yOffset={25} duration={0.8} blur={16}>
+            <h1 className="font-display text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl pt-1 sm:pt-2">
+              <span className="block text-white text-3xl sm:text-5xl md:text-6xl mb-2 sm:mb-3 font-extrabold tracking-tight">
+                <EditableText 
+                  id="hero_title_1" 
+                  defaultText={generalContent.heroHeadline1 || "A Solução Definitiva"} 
+                  title="Título Hero Linha 1" 
+                />
+              </span>
+              <span className="block text-[#a3e635] tracking-tight uppercase drop-shadow-[0_0_35px_rgba(163,230,53,0.35)] font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl leading-[1.08] hover:drop-shadow-[0_0_45px_rgba(163,230,53,0.6)] transition-all">
+                <EditableText 
+                  id="hero_title_2" 
+                  defaultText={generalContent.heroHeadline2 || "ESTRUTURA COMPLETA PARA SUA EMPRESA CRESCER"} 
+                  title="Título Hero Linha 2" 
+                />
+              </span>
+            </h1>
+          </TextEmergence>
+
+          {/* Subtitle with Emergence */}
+          <TextEmergence delay={0.25} yOffset={18} duration={0.7} blur={10}>
+            <p className="max-w-3xl text-sm sm:text-base md:text-lg text-neutral-300 leading-relaxed font-normal mt-6">
+              <EditableText
+                id="hero_description_main"
+                defaultText={generalContent.heroDescription || "Unimos desenvolvimento de sites e sistemas, design de alto impacto e marketing estratégico. Uma experiência completa conduzida por um time pronto para acelerar seus resultados. Nossa equipe de especialistas cuida de toda a sua estratégia digital para o seu negócio escalar."}
+                title="Descrição do Hero"
+                isMultiline={true}
+              />
+            </p>
+          </TextEmergence>
 
           {/* Dual Action Buttons */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.3 }}
-            className="mt-8 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
+            transition={{ duration: 0.7, delay: 0.35 }}
+            className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
           >
             <button
               onClick={() => onNavigate('portfolio')}
-              className="w-full sm:w-auto rounded-full border border-neutral-800 bg-neutral-900/90 hover:bg-neutral-800 hover:border-[#a3e635]/40 px-7 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-neutral-200 transition-all shadow-md cursor-pointer"
+              className="w-full sm:w-auto rounded-full border border-neutral-800 bg-neutral-900/90 hover:bg-neutral-800 hover:border-[#a3e635]/40 px-7 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-neutral-200 transition-all shadow-md cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
-              VER O QUE JÁ FIZEMOS
+              <EditableText
+                id="hero_cta_secondary"
+                defaultText={generalContent.heroCtaSecondary || "VER O QUE JÁ FIZEMOS"}
+                title="Botão Secundário"
+              />
             </button>
 
             <button
               onClick={onOpenConsultation}
-              className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full bg-[#a3e635] hover:bg-[#84cc16] px-7 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_25px_rgba(163,230,53,0.35)] cursor-pointer"
+              className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full bg-[#a3e635] hover:bg-[#84cc16] px-7 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_25px_rgba(163,230,53,0.35)] cursor-pointer hover:shadow-[0_0_35px_rgba(163,230,53,0.6)] hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span>FALAR COM ENGENHEIRO</span>
+              <span>
+                <EditableText
+                  id="hero_cta_primary"
+                  defaultText={generalContent.heroCtaPrimary || "FALAR COM ENGENHEIRO"}
+                  title="Botão Principal"
+                />
+              </span>
               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </div>
@@ -283,7 +343,12 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         </div>
 
         {/* Rating Footer */}
-        <div className="relative z-10 mt-12 flex flex-col items-center gap-1.5">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.45 }}
+          className="relative z-10 mt-12 flex flex-col items-center gap-1.5"
+        >
           <span className="text-xs font-semibold text-neutral-300 tracking-wide">
             4.9/5 em satisfação de clientes
           </span>
@@ -292,7 +357,7 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
               <Star key={i} className="h-4 w-4 fill-[#facc15] text-[#facc15]" />
             ))}
           </div>
-        </div>
+        </motion.div>
       </TechHeroBackground>
 
 
@@ -483,131 +548,9 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
 
 
       {/* ========================================================================= */}
-      {/* 4. SERVIÇOS (GradientWave WebGL Background + 3 Detailed Solution Cards)   */}
+      {/* 4. DIAGNÓSTICO INTERATIVO (Interação Direta + Envio para Admin)           */}
       {/* ========================================================================= */}
-      <section className="relative w-full overflow-hidden py-24 sm:py-32">
-        {/* Animated WebGL Gradient Wave Background with Parallax Shift */}
-        <motion.div style={{ y: yServicesGlow }} className="absolute inset-0 z-0">
-          <GradientWave 
-            colors={["#011205", "#03280c", "#0d4d1a", "#021c07"]}
-            className="opacity-95 h-[130%]"
-            noiseSpeed={0.00001}
-            deform={{ incline: 0.35, noiseAmp: 280, noiseFlow: 4 }}
-          />
-        </motion.div>
-        
-        {/* Parallax Floating Tech Shapes in Background */}
-        <motion.div 
-          style={{ y: yServicesGlow, rotate: rotateServicesGeom }}
-          className="pointer-events-none absolute -top-12 -right-12 w-64 h-64 rounded-3xl border border-[#22c55e]/20 bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.1),transparent_70%)] blur-sm z-[2]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black pointer-events-none z-[1]" />
-
-        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          
-          <ScrollReveal threshold={0.2}>
-            <div className="flex flex-col items-center text-center mb-16">
-              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-black/80 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-6">
-                <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
-                <span>Serviços</span>
-              </div>
-
-              <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-white max-w-3xl leading-tight">
-                Está perdendo cliente por qual desses três?
-              </h2>
-
-              <p className="mt-4 max-w-2xl text-sm sm:text-base text-neutral-300 leading-relaxed font-normal">
-                Sem site, o cliente não te acha. Sem sistema, você perde tempo e dinheiro no controle manual. Sem anúncio, ninguém sabe que a sua empresa existe. A Techify resolve os três.
-              </p>
-
-              <button
-                onClick={onOpenConsultation}
-                className="mt-8 group inline-flex items-center gap-2 rounded-full bg-black hover:bg-neutral-900 border border-neutral-700 px-6 py-3 text-xs font-bold text-white transition-all cursor-pointer"
-              >
-                <span>QUERO APARECER PRIMEIRO</span>
-                <ArrowUpRight className="h-4 w-4 text-[#22c55e] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </button>
-            </div>
-          </ScrollReveal>
-
-          {/* 3 Solution Cards matching reference image */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            
-            {/* Service 1: Sites */}
-            <ScrollReveal delay={0.1} yOffset={40}>
-              <div className="group rounded-3xl border border-neutral-800 bg-[#080d08]/90 backdrop-blur-md p-6 sm:p-8 flex flex-col justify-between hover:border-[#22c55e]/50 transition-all shadow-xl h-full">
-                <div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#132b17] text-[#4ade80] mb-6">
-                    <Globe className="h-6 w-6" />
-                  </div>
-                  
-                  <h3 className="font-display text-xl font-black text-white mb-2">Sites & Landing Pages</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed mb-6">
-                    Seu cliente procura no celular e não te encontra. Fazemos o site que aparece no Google, abre instantaneamente e vira pedidos diretos no seu WhatsApp.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl overflow-hidden border border-neutral-800/80 bg-neutral-950 h-44">
-                  <img 
-                    src="https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=600&q=80" 
-                    alt="Sites" 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* Service 2: Sistemas */}
-            <ScrollReveal delay={0.2} yOffset={40}>
-              <div className="group rounded-3xl border border-neutral-800 bg-[#080d08]/90 backdrop-blur-md p-6 sm:p-8 flex flex-col justify-between hover:border-[#22c55e]/50 transition-all shadow-xl h-full">
-                <div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#132b17] text-[#4ade80] mb-6">
-                    <Database className="h-6 w-6" />
-                  </div>
-                  
-                  <h3 className="font-display text-xl font-black text-white mb-2">Sistemas de Gestão</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed mb-6">
-                    Controlar venda, estoque e mensalidade no caderno ou na planilha custa caro e dá erro. Criamos o sistema sob medida exatamente do jeito que o seu negócio funciona.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl overflow-hidden border border-neutral-800/80 bg-neutral-950 h-44">
-                  <img 
-                    src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=600&q=80" 
-                    alt="Sistemas" 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* Service 3: Marketing */}
-            <ScrollReveal delay={0.3} yOffset={40}>
-              <div className="group rounded-3xl border border-neutral-800 bg-[#080d08]/90 backdrop-blur-md p-6 sm:p-8 flex flex-col justify-between hover:border-[#22c55e]/50 transition-all shadow-xl h-full">
-                <div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#132b17] text-[#4ade80] mb-6">
-                    <Zap className="h-6 w-6" />
-                  </div>
-                  
-                  <h3 className="font-display text-xl font-black text-white mb-2">Marketing & Anúncios</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed mb-6">
-                    Impulsionar post aleatório não traz cliente pagante. Cuidamos dos seus anúncios no Google e no Instagram para o seu telefone tocar toda semana com clientes prontos para comprar.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl overflow-hidden border border-neutral-800/80 bg-neutral-950 h-44">
-                  <img 
-                    src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80" 
-                    alt="Marketing" 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-              </div>
-            </ScrollReveal>
-
-          </div>
-        </div>
-      </section>
+      <InteractiveDiagnosisSection onOpenConsultation={onOpenConsultation} />
 
 
       {/* ========================================================================= */}

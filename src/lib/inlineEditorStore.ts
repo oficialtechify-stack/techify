@@ -51,11 +51,31 @@ export async function saveInlineText(id: string, text: string): Promise<void> {
   notifySubscribers();
   try {
     await setDoc(doc(db, "site_content", "inline_overrides"), {
-      [`texts.${id}`]: text,
+      texts: activeOverrides.texts,
       updatedAt: new Date().toISOString()
     }, { merge: true });
   } catch (err) {
     console.warn('Error saving inline text to firestore:', err);
+  }
+
+  // Also sync common hero keys with general content if applicable
+  if (id === 'hero_title_1' || id === 'hero_title_2' || id === 'hero_description_main') {
+    try {
+      const fieldMap: Record<string, string> = {
+        hero_title_1: 'heroHeadline1',
+        hero_title_2: 'heroHeadline2',
+        hero_description_main: 'heroDescription'
+      };
+      const generalField = fieldMap[id];
+      if (generalField) {
+        await setDoc(doc(db, "site_content", "general"), {
+          [generalField]: text,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      }
+    } catch (err) {
+      console.warn('Sync to general content notice:', err);
+    }
   }
 }
 
@@ -65,7 +85,7 @@ export async function saveInlineNumber(id: string, data: { value: number | strin
   notifySubscribers();
   try {
     await setDoc(doc(db, "site_content", "inline_overrides"), {
-      [`numbers.${id}`]: data,
+      numbers: activeOverrides.numbers,
       updatedAt: new Date().toISOString()
     }, { merge: true });
   } catch (err) {
@@ -79,7 +99,7 @@ export async function saveInlineIcon(id: string, iconName: string): Promise<void
   notifySubscribers();
   try {
     await setDoc(doc(db, "site_content", "inline_overrides"), {
-      [`icons.${id}`]: iconName,
+      icons: activeOverrides.icons,
       updatedAt: new Date().toISOString()
     }, { merge: true });
   } catch (err) {
@@ -93,7 +113,7 @@ export async function saveInlineImage(id: string, imageUrl: string): Promise<voi
   notifySubscribers();
   try {
     await setDoc(doc(db, "site_content", "inline_overrides"), {
-      [`images.${id}`]: imageUrl,
+      images: activeOverrides.images,
       updatedAt: new Date().toISOString()
     }, { merge: true });
   } catch (err) {
@@ -118,10 +138,23 @@ export function initInlineOverridesListener(callback: (overrides: InlineOverride
   const unsub = onSnapshot(doc(db, "site_content", "inline_overrides"), (snap) => {
     if (snap.exists()) {
       const data = snap.data();
-      const texts = data.texts || {};
-      const numbers = data.numbers || {};
-      const icons = data.icons || {};
-      const images = data.images || {};
+      const texts: Record<string, string> = { ...(data.texts || {}) };
+      const numbers: Record<string, any> = { ...(data.numbers || {}) };
+      const icons: Record<string, string> = { ...(data.icons || {}) };
+      const images: Record<string, string> = { ...(data.images || {}) };
+
+      // Parse any flat keys (e.g. "texts.hero_title_1") for backwards compatibility
+      Object.keys(data).forEach((k) => {
+        if (k.startsWith('texts.')) {
+          texts[k.replace('texts.', '')] = data[k];
+        } else if (k.startsWith('numbers.')) {
+          numbers[k.replace('numbers.', '')] = data[k];
+        } else if (k.startsWith('icons.')) {
+          icons[k.replace('icons.', '')] = data[k];
+        } else if (k.startsWith('images.')) {
+          images[k.replace('images.', '')] = data[k];
+        }
+      });
       
       activeOverrides = {
         texts: { ...activeOverrides.texts, ...texts },
@@ -130,7 +163,7 @@ export function initInlineOverridesListener(callback: (overrides: InlineOverride
         images: { ...activeOverrides.images, ...images }
       };
       persistLocally();
-      callback(activeOverrides);
+      callback({ ...activeOverrides });
     }
   }, (err) => {
     console.warn('Inline overrides snapshot offline fallback:', err.message);
@@ -140,7 +173,7 @@ export function initInlineOverridesListener(callback: (overrides: InlineOverride
     const customEvt = e as CustomEvent<InlineOverrides>;
     if (customEvt.detail) {
       activeOverrides = customEvt.detail;
-      callback(activeOverrides);
+      callback({ ...activeOverrides });
     }
   };
 

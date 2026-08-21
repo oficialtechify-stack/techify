@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Shield, Calendar, Clock, Briefcase, Users, Handshake, 
+  Shield, Calendar, Clock, Briefcase, Users, User, Handshake, 
   Mail, Phone, Instagram, CheckCircle2, XCircle, Send, 
   Plus, Trash2, Check, RefreshCw, ExternalLink, KeyRound, LogOut,
   Linkedin, Globe, FileText, Download, Edit, X, MapPin, UserCheck, UserPlus, Award,
@@ -10,7 +10,7 @@ import {
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAdminAuth } from '../lib/adminAuth';
-import { Job, Project, TechifyApp } from '../types';
+import { Job, Project, TechifyApp, DiagnosticoLead } from '../types';
 import AdminPortfolioTab from './AdminPortfolioTab';
 import AdminSiteEditorTab from './AdminSiteEditorTab';
 import AdminAppsTab from './AdminAppsTab';
@@ -56,6 +56,8 @@ interface CandidaturaItem {
   };
   experiencia?: string;
   status: 'pendente' | 'aprovado' | 'recusado';
+  arquivado?: boolean;
+  dataAprovacao?: string;
   createdAt?: string;
 }
 
@@ -118,6 +120,9 @@ export default function AdminPanel() {
   const [candidaturas, setCandidaturas] = useState<CandidaturaItem[]>([]);
   const [contratados, setContratados] = useState<ContratadoItem[]>([]);
   const [leads, setLeads] = useState<LeadItem[]>([]);
+  const [diagnosticos, setDiagnosticos] = useState<DiagnosticoLead[]>([]);
+  const [leadsSubTab, setLeadsSubTab] = useState<'leads' | 'diagnosticos'>('diagnosticos');
+  const [candidaturasSubTab, setCandidaturasSubTab] = useState<'pendentes' | 'arquivadas'>('pendentes');
   const [parceiros, setParceiros] = useState<ParceiroItem[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [newsletterEmails, setNewsletterEmails] = useState<NewsletterItem[]>([]);
@@ -473,10 +478,24 @@ export default function AdminPanel() {
       setAppsList(fetched);
     }, (err) => console.warn('Firestore apps error:', err.message));
 
+    const unsubDiagnosticos = onSnapshot(collection(db, 'diagnosticos'), (snapshot) => {
+      const docs: DiagnosticoLead[] = [];
+      snapshot.forEach((docSnap) => {
+        docs.push({ id: docSnap.id, ...(docSnap.data() as Omit<DiagnosticoLead, 'id'>) });
+      });
+      docs.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
+      setDiagnosticos(docs);
+    }, (err) => console.warn('Firestore diagnosticos error:', err.message));
+
     return () => {
       unsubConsultas();
       unsubCandidaturas();
       unsubLeads();
+      unsubDiagnosticos();
       unsubParceiros();
       unsubContratados();
       unsubVagas();
@@ -575,6 +594,9 @@ export default function AdminPanel() {
   const emAndamentoList = consultas.filter(c => c.status === 'pendente');
   const historicoList = consultas.filter(c => c.status === 'concluido' || c.status === 'recusado');
 
+  const candidaturasPendentes = candidaturas.filter(c => c.status !== 'aprovado' && c.status !== 'recusado' && !c.arquivado);
+  const candidaturasArquivadas = candidaturas.filter(c => c.status === 'aprovado' || c.status === 'recusado' || c.arquivado);
+
   // Status Handlers
   const handleUpdateConsultaStatus = async (id: string, newStatus: 'concluido' | 'recusado') => {
     try {
@@ -602,11 +624,33 @@ export default function AdminPanel() {
 
   const handleUpdateCandidaturaStatus = async (id: string, newStatus: 'aprovado' | 'recusado') => {
     try {
-      await updateDoc(doc(db, "candidaturas", id), { status: newStatus });
-      toast.success('Candidatura Atualizada', `O candidato foi marcado como ${newStatus}.`);
+      await updateDoc(doc(db, "candidaturas", id), { 
+        status: newStatus,
+        arquivado: true,
+        updatedAt: new Date().toISOString()
+      });
+      if (newStatus === 'recusado') {
+        toast.info('Candidatura Recusada', 'A candidatura foi recusada e arquivada.');
+      } else {
+        toast.success('Candidatura Aprovada', 'O candidato foi aprovado e arquivado.');
+      }
     } catch (err) {
       console.error("Error updating candidatura status:", err);
       toast.error('Erro ao Atualizar', 'Não foi possível atualizar a candidatura.');
+    }
+  };
+
+  const handleRestoreCandidatura = async (id: string) => {
+    try {
+      await updateDoc(doc(db, "candidaturas", id), { 
+        status: 'pendente',
+        arquivado: false,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success('Candidatura Restaurada', 'O candidato retornou para a lista de Pendentes / Em Análise.');
+    } catch (err) {
+      console.error("Error restoring candidatura:", err);
+      toast.error('Erro ao Restaurar', 'Não foi possível mover a candidatura para pendente.');
     }
   };
 
@@ -628,38 +672,95 @@ export default function AdminPanel() {
     try {
       const dataAtual = new Date().toLocaleDateString('pt-BR');
       
-      // 1. Grava no banco de dados na coleção 'contratados'
-      await addDoc(collection(db, 'contratados'), {
-        nome: selectedCandidate.nome,
-        cargo: hireForm.cargo || selectedCandidate.vaga || 'Profissional Techify',
-        tipoContratacao: hireForm.tipoContratacao || 'Estagiário',
-        vagaOrigem: selectedCandidate.vaga || '',
-        email: selectedCandidate.email,
-        telefone: selectedCandidate.telefone || '',
-        linkedin: selectedCandidate.linkedin || '',
-        instagram: selectedCandidate.instagram || '',
-        portfolio: selectedCandidate.portfolio || '',
-        curriculo: selectedCandidate.curriculo || null,
-        experiencia: hireForm.observacoes || selectedCandidate.experiencia || '',
-        dataContratacao: dataAtual,
-        createdAt: new Date().toISOString(),
-        candidaturaId: selectedCandidate.id
-      });
+      // 1. Grava ou atualiza no banco de dados na coleção 'contratados'
+      const existingContratado = contratados.find(c => 
+        (c.candidaturaId && c.candidaturaId === selectedCandidate.id) ||
+        (c.email && c.email.toLowerCase() === selectedCandidate.email.toLowerCase())
+      );
 
-      // 2. Atualiza status da candidatura para 'aprovado'
+      if (!existingContratado) {
+        await addDoc(collection(db, 'contratados'), {
+          nome: selectedCandidate.nome,
+          cargo: hireForm.cargo || selectedCandidate.vaga || 'Profissional Techify',
+          tipoContratacao: hireForm.tipoContratacao || 'Estagiário',
+          vagaOrigem: selectedCandidate.vaga || '',
+          email: selectedCandidate.email,
+          telefone: selectedCandidate.telefone || '',
+          linkedin: selectedCandidate.linkedin || '',
+          instagram: selectedCandidate.instagram || '',
+          portfolio: selectedCandidate.portfolio || '',
+          curriculo: selectedCandidate.curriculo || null,
+          experiencia: hireForm.observacoes || selectedCandidate.experiencia || '',
+          dataContratacao: dataAtual,
+          createdAt: new Date().toISOString(),
+          candidaturaId: selectedCandidate.id
+        });
+      }
+
+      // 2. Atualiza status da candidatura para 'aprovado' e arquiva
       await updateDoc(doc(db, 'candidaturas', selectedCandidate.id), {
-        status: 'aprovado'
+        status: 'aprovado',
+        arquivado: true,
+        dataAprovacao: new Date().toISOString()
       });
 
-      toast.success('Contratação Confirmada', `${selectedCandidate.nome} foi aprovado(a) e adicionado(a) à equipe.`);
+      toast.success(
+        'Contratação Confirmada!', 
+        `${selectedCandidate.nome} foi aprovado(a), arquivado(a) e adicionado(a) à área de Contratados.`
+      );
       setIsHireModalOpen(false);
       setSelectedCandidate(null);
+      // Redireciona direto para a área de contratados conforme solicitado
       setActiveTab('contratados');
     } catch (err) {
       console.error('Erro ao aprovar e contratar candidato:', err);
       toast.error('Erro na Contratação', 'Não foi possível registrar o profissional contratado.');
     } finally {
       setIsSubmittingHire(false);
+    }
+  };
+
+  const handleQuickApproveAndHire = async (candidate: CandidaturaItem) => {
+    try {
+      const dataAtual = new Date().toLocaleDateString('pt-BR');
+      
+      // Adiciona na coleção contratados se não existir
+      const existingContratado = contratados.find(c => 
+        (c.candidaturaId && c.candidaturaId === candidate.id) ||
+        (c.email && c.email.toLowerCase() === candidate.email.toLowerCase())
+      );
+
+      if (!existingContratado) {
+        await addDoc(collection(db, 'contratados'), {
+          nome: candidate.nome,
+          cargo: candidate.vaga || 'Profissional Techify',
+          tipoContratacao: 'Estagiário',
+          vagaOrigem: candidate.vaga || '',
+          email: candidate.email,
+          telefone: candidate.telefone || '',
+          linkedin: candidate.linkedin || '',
+          instagram: candidate.instagram || '',
+          portfolio: candidate.portfolio || '',
+          curriculo: candidate.curriculo || null,
+          experiencia: candidate.experiencia || '',
+          dataContratacao: dataAtual,
+          createdAt: new Date().toISOString(),
+          candidaturaId: candidate.id
+        });
+      }
+
+      // Atualiza e arquiva
+      await updateDoc(doc(db, 'candidaturas', candidate.id), {
+        status: 'aprovado',
+        arquivado: true,
+        dataAprovacao: new Date().toISOString()
+      });
+
+      toast.success('Contratado com Sucesso', `${candidate.nome} foi aprovado(a), arquivado(a) e adicionado(a) aos Contratados.`);
+      setActiveTab('contratados');
+    } catch (err) {
+      console.error('Erro na aprovação rápida:', err);
+      toast.error('Erro ao Aprovar', 'Não foi possível concluir a aprovação.');
     }
   };
 
@@ -754,6 +855,26 @@ export default function AdminPanel() {
     } catch (err) {
       console.error("Error deleting lead:", err);
       toast.error('Erro ao Excluir', 'Não foi possível remover o lead.');
+    }
+  };
+
+  const handleUpdateDiagnosticoStatus = async (id: string, status: 'Novo' | 'Em Atendimento' | 'Concluído') => {
+    try {
+      await updateDoc(doc(db, "diagnosticos", id), { status });
+      toast.success('Status Atualizado', `Diagnóstico marcado como "${status}".`);
+    } catch (err) {
+      console.error("Error updating diagnostico status:", err);
+      toast.error('Erro ao Atualizar', 'Não foi possível atualizar o status.');
+    }
+  };
+
+  const handleDeleteDiagnostico = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "diagnosticos", id));
+      toast.info('Diagnóstico Removido', 'A resposta de diagnóstico foi excluída.');
+    } catch (err) {
+      console.error("Error deleting diagnostico:", err);
+      toast.error('Erro ao Excluir', 'Não foi possível remover o diagnóstico.');
     }
   };
 
@@ -990,7 +1111,14 @@ export default function AdminPanel() {
             }`}
           >
             <Briefcase className="h-4 w-4" />
-            <span>Candidaturas ({candidaturas.length})</span>
+            <span>Candidaturas ({candidaturasPendentes.length})</span>
+            {candidaturasPendentes.length > 0 && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                activeTab === 'candidaturas' ? 'bg-black text-[#a3e635]' : 'bg-[#a3e635] text-black'
+              }`}>
+                {candidaturasPendentes.length}
+              </span>
+            )}
           </button>
 
           <button
@@ -1026,7 +1154,7 @@ export default function AdminPanel() {
             }`}
           >
             <Users className="h-4 w-4" />
-            <span>Leads ({leads.length})</span>
+            <span>Leads & Diagnósticos ({leads.length + diagnosticos.length})</span>
           </button>
 
           <button
@@ -1258,175 +1386,432 @@ export default function AdminPanel() {
         {/* 3. CANDIDATURAS TAB */}
         {activeTab === 'candidaturas' && (
           <div className="mt-6">
-            {candidaturas.length === 0 ? (
-              <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-12 text-center text-neutral-400">
-                <Briefcase className="mx-auto h-10 w-10 text-neutral-600 mb-3" />
-                <p className="text-base font-bold text-white">Nenhuma candidatura recebida</p>
-                <p className="text-xs text-neutral-500 mt-1">Candidaturas enviadas na aba 'Carreiras' aparecerão aqui.</p>
+            {/* Sub-tabs header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 bg-[#111211] p-3 rounded-2xl border border-neutral-800/80">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCandidaturasSubTab('pendentes')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                    candidaturasSubTab === 'pendentes'
+                      ? 'bg-[#a3e635] text-black shadow-[0_0_12px_rgba(163,230,53,0.3)]'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800/60'
+                  }`}
+                >
+                  <Briefcase className="h-3.5 w-3.5" />
+                  <span>Pendentes / Em Análise</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                    candidaturasSubTab === 'pendentes' ? 'bg-black text-[#a3e635]' : 'bg-neutral-800 text-neutral-300'
+                  }`}>
+                    {candidaturasPendentes.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setCandidaturasSubTab('arquivadas')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                    candidaturasSubTab === 'arquivadas'
+                      ? 'bg-[#a3e635] text-black shadow-[0_0_12px_rgba(163,230,53,0.3)]'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800/60'
+                  }`}
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Arquivadas / Processadas</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                    candidaturasSubTab === 'arquivadas' ? 'bg-black text-[#a3e635]' : 'bg-neutral-800 text-neutral-300'
+                  }`}>
+                    {candidaturasArquivadas.length}
+                  </span>
+                </button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {candidaturas.map((item) => (
-                  <div 
-                    key={item.id}
-                    className="bg-[#131414] border border-neutral-800/80 rounded-2xl p-5 hover:border-neutral-700/80 transition-all flex flex-col justify-between shadow-lg"
-                  >
-                    <div>
-                      {/* Header */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-bold text-white text-lg font-sans">
-                            {item.nome}
-                          </h3>
-                          {item.dataNascimento && (
-                            <p className="text-[11px] text-neutral-400 flex items-center gap-1 mt-0.5">
-                              <Calendar className="h-3 w-3 text-neutral-500" />
-                              <span>Nasc: {item.dataNascimento}</span>
-                            </p>
-                          )}
-                        </div>
-                        <span className="bg-[#1e293b] border border-[#3b82f6]/40 text-[#93c5fd] text-[11px] font-bold px-2.5 py-0.5 rounded-md shrink-0">
-                          {item.vaga}
-                        </span>
-                      </div>
 
-                      {/* Contact & Social Info */}
-                      <div className="space-y-2 text-xs text-neutral-300 mt-4">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
-                          <a 
-                            href={`mailto:${item.email}?subject=${encodeURIComponent("Seleção Techify - Vaga de " + item.vaga)}&body=${encodeURIComponent("Olá " + item.nome + ",\n\nAgradecemos seu interesse em fazer parte da equipe Techify para a vaga de " + item.vaga + ".\n\nAtenciosamente,\nEquipe de RH - Techify\nE-mail oficial: oficialtechify@gmail.com")}`} 
-                            className="hover:underline truncate text-neutral-300"
-                          >
-                            {item.email}
-                          </a>
-                        </div>
+              <div className="text-[11px] text-neutral-400 flex items-center gap-1.5 bg-neutral-900/80 px-3 py-1.5 rounded-xl border border-neutral-800">
+                <Sparkles className="h-3.5 w-3.5 text-[#a3e635]" />
+                <span>Ao aprovar, o candidato é <strong>arquivado</strong> e movido para <strong>Contratados</strong>.</span>
+              </div>
+            </div>
 
-                        {item.telefone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-3.5 w-3.5 text-[#a3e635] shrink-0" />
-                            <a 
-                              href={`https://wa.me/55${item.telefone.replace(/\D/g, '')}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-[#a3e635] hover:underline font-semibold"
-                            >
-                              {item.telefone} (WhatsApp)
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Separate LinkedIn */}
-                        {item.linkedin && (
-                          <div className="flex items-center gap-2 pt-0.5">
-                            <Linkedin className="h-3.5 w-3.5 text-[#0a66c2] shrink-0" />
-                            <a 
-                              href={item.linkedin.startsWith('http') ? item.linkedin : `https://${item.linkedin}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-[#60a5fa] hover:underline truncate"
-                            >
-                              {item.linkedin}
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Separate Instagram */}
-                        {item.instagram && (
-                          <div className="flex items-center gap-2">
-                            <Instagram className="h-3.5 w-3.5 text-[#e1306c] shrink-0" />
-                            <a 
-                              href={item.instagram.startsWith('http') ? item.instagram : `https://instagram.com/${item.instagram.replace('@', '')}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-[#f472b6] hover:underline truncate"
-                            >
-                              {item.instagram}
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Separate Portfolio */}
-                        {item.portfolio && (
-                          <div className="flex items-center gap-2">
-                            <Globe className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
-                            <a 
-                              href={item.portfolio.startsWith('http') ? item.portfolio : `https://${item.portfolio}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-neutral-300 hover:underline truncate"
-                            >
-                              {item.portfolio}
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Currículo Anexado */}
-                        {item.curriculo && (
-                          <div className="bg-[#090a09] border border-[#a3e635]/30 rounded-xl p-3 mt-3 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <FileText className="h-4 w-4 text-[#a3e635] shrink-0" />
-                              <div className="min-w-0">
-                                <p className="font-bold text-white text-[11px] truncate">{item.curriculo.nomeArquivo}</p>
-                                <p className="text-[10px] text-neutral-400">{item.curriculo.tamanho}</p>
-                              </div>
-                            </div>
-                            <a
-                              href={item.curriculo.conteudoBase64}
-                              download={item.curriculo.nomeArquivo}
-                              className="bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-[11px] px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0 transition-colors"
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                              <span>Baixar</span>
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Experience summary */}
-                        {item.experiencia && (
-                          <div className="bg-[#0b0c0b] p-3 rounded-xl border border-neutral-800/60 mt-3 text-xs text-neutral-300 leading-relaxed">
-                            <p className="font-semibold text-[10px] text-neutral-500 uppercase mb-1">Resumo Profissional:</p>
-                            {item.experiencia}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-neutral-800/50">
-                      <div className="flex items-center gap-2">
+            {/* PENDENTES VIEW */}
+            {candidaturasSubTab === 'pendentes' && (
+              <>
+                {candidaturasPendentes.length === 0 ? (
+                  <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-12 text-center text-neutral-400">
+                    <CheckCircle2 className="mx-auto h-10 w-10 text-[#a3e635] mb-3" />
+                    <p className="text-base font-bold text-white">Nenhuma candidatura pendente</p>
+                    <p className="text-xs text-neutral-500 mt-1 mb-4">
+                      Todas as candidaturas foram avaliadas! Os profissionais contratados estão na área de Contratados.
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-3">
+                      <button
+                        onClick={() => setActiveTab('contratados')}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-xs transition-all shadow-[0_0_12px_rgba(163,230,53,0.3)] cursor-pointer"
+                      >
+                        <UserCheck className="h-4 w-4" />
+                        <span>Ver Contratados ({contratados.length})</span>
+                      </button>
+                      {candidaturasArquivadas.length > 0 && (
                         <button
-                          onClick={() => handleOpenHireModal(item)}
-                          className="bg-[#22c55e] hover:bg-[#16a34a] text-white px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_12px_rgba(34,197,94,0.3)]"
+                          onClick={() => setCandidaturasSubTab('arquivadas')}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs transition-all cursor-pointer"
                         >
-                          <CheckCircle2 className="h-4 w-4" />
-                          <span>{item.status === 'aprovado' ? 'Aprovado (Ver Contratado)' : 'Aprovar'}</span>
+                          <Clock className="h-4 w-4" />
+                          <span>Ver Histórico Arquivado ({candidaturasArquivadas.length})</span>
                         </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {candidaturasPendentes.map((item) => (
+                      <div 
+                        key={item.id}
+                        className="bg-[#131414] border border-neutral-800/80 rounded-2xl p-5 hover:border-neutral-700/80 transition-all flex flex-col justify-between shadow-lg relative overflow-hidden"
+                      >
+                        <div>
+                          {/* Header */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-bold text-white text-lg font-sans">
+                                {item.nome}
+                              </h3>
+                              {item.dataNascimento && (
+                                <p className="text-[11px] text-neutral-400 flex items-center gap-1 mt-0.5">
+                                  <Calendar className="h-3 w-3 text-neutral-500" />
+                                  <span>Nasc: {item.dataNascimento}</span>
+                                </p>
+                              )}
+                            </div>
+                            <span className="bg-[#1e293b] border border-[#3b82f6]/40 text-[#93c5fd] text-[11px] font-bold px-2.5 py-0.5 rounded-md shrink-0">
+                              {item.vaga}
+                            </span>
+                          </div>
 
-                        <button
-                          onClick={() => handleUpdateCandidaturaStatus(item.id, 'recusado')}
-                          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                            item.status === 'recusado'
-                              ? 'bg-red-500/20 border border-red-500/40 text-red-400'
-                              : 'bg-[#ef4444] hover:bg-[#dc2626] text-white'
+                          {/* Contact & Social Info */}
+                          <div className="space-y-2 text-xs text-neutral-300 mt-4">
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+                              <a 
+                                href={`mailto:${item.email}?subject=${encodeURIComponent("Seleção Techify - Vaga de " + item.vaga)}&body=${encodeURIComponent("Olá " + item.nome + ",\n\nAgradecemos seu interesse em fazer parte da equipe Techify para a vaga de " + item.vaga + ".\n\nAtenciosamente,\nEquipe de RH - Techify\nE-mail oficial: oficialtechify@gmail.com")}`} 
+                                className="hover:underline truncate text-neutral-300"
+                              >
+                                {item.email}
+                              </a>
+                            </div>
+
+                            {item.telefone && (
+                              <div className="flex items-center gap-2">
+                                <Phone className="h-3.5 w-3.5 text-[#a3e635] shrink-0" />
+                                <a 
+                                  href={`https://wa.me/55${item.telefone.replace(/\D/g, '')}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-[#a3e635] hover:underline font-semibold"
+                                >
+                                  {item.telefone} (WhatsApp)
+                                </a>
+                              </div>
+                            )}
+
+                            {/* Separate LinkedIn */}
+                            {item.linkedin && (
+                              <div className="flex items-center gap-2 pt-0.5">
+                                <Linkedin className="h-3.5 w-3.5 text-[#0a66c2] shrink-0" />
+                                <a 
+                                  href={item.linkedin.startsWith('http') ? item.linkedin : `https://${item.linkedin}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-[#60a5fa] hover:underline truncate"
+                                >
+                                  {item.linkedin}
+                                </a>
+                              </div>
+                            )}
+
+                            {/* Separate Instagram */}
+                            {item.instagram && (
+                              <div className="flex items-center gap-2">
+                                <Instagram className="h-3.5 w-3.5 text-[#e1306c] shrink-0" />
+                                <a 
+                                  href={item.instagram.startsWith('http') ? item.instagram : `https://instagram.com/${item.instagram.replace('@', '')}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-[#f472b6] hover:underline truncate"
+                                >
+                                  {item.instagram}
+                                </a>
+                              </div>
+                            )}
+
+                            {/* Separate Portfolio */}
+                            {item.portfolio && (
+                              <div className="flex items-center gap-2">
+                                <Globe className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
+                                <a 
+                                  href={item.portfolio.startsWith('http') ? item.portfolio : `https://${item.portfolio}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-neutral-300 hover:underline truncate"
+                                >
+                                  {item.portfolio}
+                                </a>
+                              </div>
+                            )}
+
+                            {/* Currículo Anexado */}
+                            {item.curriculo && (
+                              <div className="bg-[#090a09] border border-[#a3e635]/30 rounded-xl p-3 mt-3 flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <FileText className="h-4 w-4 text-[#a3e635] shrink-0" />
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-white text-[11px] truncate">{item.curriculo.nomeArquivo}</p>
+                                    <p className="text-[10px] text-neutral-400">{item.curriculo.tamanho}</p>
+                                  </div>
+                                </div>
+                                <a
+                                  href={item.curriculo.conteudoBase64}
+                                  download={item.curriculo.nomeArquivo}
+                                  className="bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-[11px] px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0 transition-colors"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                  <span>Baixar</span>
+                                </a>
+                              </div>
+                            )}
+
+                            {/* Experience summary */}
+                            {item.experiencia && (
+                              <div className="bg-[#0b0c0b] p-3 rounded-xl border border-neutral-800/60 mt-3 text-xs text-neutral-300 leading-relaxed">
+                                <p className="font-semibold text-[10px] text-neutral-500 uppercase mb-1">Resumo Profissional:</p>
+                                {item.experiencia}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4 mt-4 border-t border-neutral-800/50">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleOpenHireModal(item)}
+                              className="bg-[#22c55e] hover:bg-[#16a34a] text-white px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_12px_rgba(34,197,94,0.3)] hover:scale-105"
+                              title="Aprovar e mover para Contratados"
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                              <span>Aprovar & Contratar</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleUpdateCandidaturaStatus(item.id, 'recusado')}
+                              className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-3 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5"
+                              title="Recusar e arquivar candidatura"
+                            >
+                              <XCircle className="h-4 w-4" />
+                              <span>Recusar</span>
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() => handleDeleteCandidatura(item.id)}
+                            className="text-neutral-500 hover:text-red-400 p-1.5 transition-colors cursor-pointer"
+                            title="Excluir Candidatura"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ARQUIVADAS / PROCESSADAS VIEW */}
+            {candidaturasSubTab === 'arquivadas' && (
+              <>
+                {candidaturasArquivadas.length === 0 ? (
+                  <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-12 text-center text-neutral-400">
+                    <Clock className="mx-auto h-10 w-10 text-neutral-600 mb-3" />
+                    <p className="text-base font-bold text-white">Nenhuma candidatura arquivada</p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Candidaturas aprovadas ou recusadas ficarão registradas aqui para consulta.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {candidaturasArquivadas.map((item) => {
+                      const isApproved = item.status === 'aprovado';
+                      return (
+                        <div 
+                          key={item.id}
+                          className={`bg-[#131414] border rounded-2xl p-5 transition-all flex flex-col justify-between shadow-lg relative overflow-hidden ${
+                            isApproved 
+                              ? 'border-emerald-500/40 hover:border-emerald-500/70' 
+                              : 'border-red-500/30 hover:border-red-500/50 opacity-90'
                           }`}
                         >
-                          <XCircle className="h-4 w-4" />
-                          <span>Recusar</span>
-                        </button>
-                      </div>
+                          {/* Status Highlight Banner */}
+                          <div className={`text-[10px] font-extrabold uppercase tracking-wide px-3 py-1 -mt-5 -mx-5 mb-4 flex items-center justify-between ${
+                            isApproved 
+                              ? 'bg-emerald-500/20 text-emerald-400 border-b border-emerald-500/30' 
+                              : 'bg-red-500/20 text-red-400 border-b border-red-500/30'
+                          }`}>
+                            <span className="flex items-center gap-1.5">
+                              {isApproved ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                              {isApproved ? 'Aprovado & Na Equipe' : 'Candidatura Recusada'}
+                            </span>
+                            {item.dataAprovacao && (
+                              <span className="text-[9px] text-neutral-400 lowercase font-normal">
+                                {new Date(item.dataAprovacao).toLocaleDateString('pt-BR')}
+                              </span>
+                            )}
+                          </div>
 
-                      <button
-                        onClick={() => handleDeleteCandidatura(item.id)}
-                        className="text-neutral-500 hover:text-red-400 p-1.5 transition-colors cursor-pointer"
-                        title="Excluir Candidatura"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+                          <div>
+                            {/* Header */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <h3 className="font-bold text-white text-lg font-sans">
+                                  {item.nome}
+                                </h3>
+                                {item.dataNascimento && (
+                                  <p className="text-[11px] text-neutral-400 flex items-center gap-1 mt-0.5">
+                                    <Calendar className="h-3 w-3 text-neutral-500" />
+                                    <span>Nasc: {item.dataNascimento}</span>
+                                  </p>
+                                )}
+                              </div>
+                              <span className="bg-[#1e293b] border border-[#3b82f6]/40 text-[#93c5fd] text-[11px] font-bold px-2.5 py-0.5 rounded-md shrink-0">
+                                {item.vaga}
+                              </span>
+                            </div>
 
+                            {/* Contact & Social Info */}
+                            <div className="space-y-2 text-xs text-neutral-300 mt-4">
+                              <div className="flex items-center gap-2">
+                                <Mail className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+                                <a 
+                                  href={`mailto:${item.email}?subject=${encodeURIComponent("Seleção Techify - Vaga de " + item.vaga)}&body=${encodeURIComponent("Olá " + item.nome + ",\n\nAtenciosamente,\nEquipe Techify")}`} 
+                                  className="hover:underline truncate text-neutral-300"
+                                >
+                                  {item.email}
+                                </a>
+                              </div>
+
+                              {item.telefone && (
+                                <div className="flex items-center gap-2">
+                                  <Phone className="h-3.5 w-3.5 text-[#a3e635] shrink-0" />
+                                  <a 
+                                    href={`https://wa.me/55${item.telefone.replace(/\D/g, '')}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-[#a3e635] hover:underline font-semibold"
+                                  >
+                                    {item.telefone} (WhatsApp)
+                                  </a>
+                                </div>
+                              )}
+
+                              {item.linkedin && (
+                                <div className="flex items-center gap-2 pt-0.5">
+                                  <Linkedin className="h-3.5 w-3.5 text-[#0a66c2] shrink-0" />
+                                  <a 
+                                    href={item.linkedin.startsWith('http') ? item.linkedin : `https://${item.linkedin}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-[#60a5fa] hover:underline truncate"
+                                  >
+                                    {item.linkedin}
+                                  </a>
+                                </div>
+                              )}
+
+                              {item.instagram && (
+                                <div className="flex items-center gap-2">
+                                  <Instagram className="h-3.5 w-3.5 text-[#e1306c] shrink-0" />
+                                  <a 
+                                    href={item.instagram.startsWith('http') ? item.instagram : `https://instagram.com/${item.instagram.replace('@', '')}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-[#f472b6] hover:underline truncate"
+                                  >
+                                    {item.instagram}
+                                  </a>
+                                </div>
+                              )}
+
+                              {/* Currículo Anexado */}
+                              {item.curriculo && (
+                                <div className="bg-[#090a09] border border-[#a3e635]/30 rounded-xl p-3 mt-3 flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <FileText className="h-4 w-4 text-[#a3e635] shrink-0" />
+                                    <div className="min-w-0">
+                                      <p className="font-bold text-white text-[11px] truncate">{item.curriculo.nomeArquivo}</p>
+                                      <p className="text-[10px] text-neutral-400">{item.curriculo.tamanho}</p>
+                                    </div>
+                                  </div>
+                                  <a
+                                    href={item.curriculo.conteudoBase64}
+                                    download={item.curriculo.nomeArquivo}
+                                    className="bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold text-[11px] px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0 transition-colors"
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                    <span>Baixar</span>
+                                  </a>
+                                </div>
+                              )}
+
+                              {item.experiencia && (
+                                <div className="bg-[#0b0c0b] p-3 rounded-xl border border-neutral-800/60 mt-3 text-xs text-neutral-300 leading-relaxed">
+                                  <p className="font-semibold text-[10px] text-neutral-500 uppercase mb-1">Resumo Profissional:</p>
+                                  {item.experiencia}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-4 mt-4 border-t border-neutral-800/50">
+                            <div className="flex items-center gap-2">
+                              {isApproved ? (
+                                <button
+                                  onClick={() => setActiveTab('contratados')}
+                                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                                >
+                                  <UserCheck className="h-4 w-4" />
+                                  <span>Ver nos Contratados ↗</span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleOpenHireModal(item)}
+                                  className="bg-[#22c55e] hover:bg-[#16a34a] text-white px-3 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5"
+                                >
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  <span>Aprovar & Contratar</span>
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => handleRestoreCandidatura(item.id)}
+                                className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                title="Desarquivar e retornar para lista de Pendentes"
+                              >
+                                Restaurar
+                              </button>
+                            </div>
+
+                            <button
+                              onClick={() => handleDeleteCandidatura(item.id)}
+                              className="text-neutral-500 hover:text-red-400 p-1.5 transition-colors cursor-pointer"
+                              title="Excluir Registro"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -1693,93 +2078,239 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* 4. LEADS TAB (Exact Screenshot #4 layout) */}
+        {/* 4. LEADS & DIAGNÓSTICOS TAB */}
         {activeTab === 'leads' && (
           <div className="mt-6">
-            {leads.length === 0 ? (
-              <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-12 text-center text-neutral-400">
-                <Users className="mx-auto h-10 w-10 text-neutral-600 mb-3" />
-                <p className="text-base font-bold text-white">Nenhum lead cadastrado</p>
-                <p className="text-xs text-neutral-500 mt-1">Clique em 'Cadastrar Lead' para adicionar um novo cliente em potencial.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {leads.map((lead) => (
-                  <div 
-                    key={lead.id}
-                    className="bg-[#131414] border border-neutral-800/80 rounded-2xl p-5 hover:border-neutral-700/80 transition-all flex flex-col justify-between shadow-lg"
-                  >
-                    <div>
-                      {/* Name & Completo Badge */}
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-bold text-white text-lg font-sans">
-                          {lead.nome}
-                        </h3>
-                        <span className="bg-[#14532d]/50 border border-[#22c55e]/50 text-[#4ade80] text-[11px] font-bold px-2.5 py-0.5 rounded-md shrink-0">
-                          {lead.status || 'Completo'}
-                        </span>
-                      </div>
+            {/* Subtab Switcher */}
+            <div className="flex items-center gap-3 mb-6 border-b border-neutral-800 pb-3">
+              <button
+                type="button"
+                onClick={() => setLeadsSubTab('diagnosticos')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  leadsSubTab === 'diagnosticos'
+                    ? 'bg-[#a3e635] text-black shadow-[0_0_15px_rgba(163,230,53,0.3)]'
+                    : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white'
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Diagnósticos do Site ({diagnosticos.length})</span>
+                {diagnosticos.filter(d => d.status === 'Novo').length > 0 && (
+                  <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
+                )}
+              </button>
 
-                      {/* Segment sub-label */}
-                      <p className="text-neutral-400 text-xs my-1 font-medium">
-                        {lead.segmento}
-                      </p>
+              <button
+                type="button"
+                onClick={() => setLeadsSubTab('leads')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  leadsSubTab === 'leads'
+                    ? 'bg-[#a3e635] text-black shadow-[0_0_15px_rgba(163,230,53,0.3)]'
+                    : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Leads Manuais ({leads.length})</span>
+              </button>
+            </div>
 
-                      {/* Info lines */}
-                      <div className="space-y-2 text-xs text-neutral-400 mt-3">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
-                          <span className="truncate">{lead.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
-                          <span>{lead.telefone}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Instagram className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
-                          <span>@{lead.instagram.replace('@', '')}</span>
-                        </div>
-                      </div>
-
-                      {/* Interesses dark box */}
-                      <div className="bg-[#0c0d0d] p-3 rounded-xl border border-neutral-800/80 my-3">
-                        <div className="text-[#a3e635] text-xs font-bold flex items-center gap-1.5 mb-1">
-                          <span className="inline-block h-2 w-2 rounded-full bg-[#a3e635] shadow-[0_0_6px_#a3e635]" />
-                          <span>Interesses</span>
-                        </div>
-                        <p className="text-white text-xs font-medium">
-                          {lead.interesses}
-                        </p>
-                      </div>
-
-                      {/* Footer Row */}
-                      <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-1">
-                        <span>Emails enviados: {lead.emailsEnviados || 0}</span>
-                        <span>{lead.dataEnvio}</span>
-                      </div>
-                    </div>
-
-                    {/* Bright Green Email Action Button */}
-                    <div className="mt-4 pt-3 border-t border-neutral-800/50 flex items-center gap-2">
-                      <button
-                        onClick={() => handleSendEmailLead(lead)}
-                        className="bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2.5 rounded-xl flex items-center justify-center gap-2 text-xs flex-1 transition-all shadow-[0_0_12px_rgba(163,230,53,0.25)] cursor-pointer active:scale-98"
-                      >
-                        <Send className="h-4 w-4" />
-                        <span>Enviar Email</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleDeleteLead(lead.id)}
-                        className="bg-neutral-900 border border-neutral-800/80 hover:bg-red-500/20 hover:border-red-500/50 text-neutral-400 hover:text-red-400 p-2.5 rounded-xl transition-all cursor-pointer"
-                        title="Excluir Lead"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-
+            {/* DIAGNÓSTICOS DO SITE VIEW */}
+            {leadsSubTab === 'diagnosticos' && (
+              <div>
+                {diagnosticos.length === 0 ? (
+                  <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-12 text-center text-neutral-400">
+                    <Sparkles className="mx-auto h-10 w-10 text-[#a3e635] mb-3" />
+                    <p className="text-base font-bold text-white">Nenhum diagnóstico registrado ainda</p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Assim que um visitante responder à pergunta "Está perdendo cliente por qual desses três?" no site, a resposta aparecerá aqui em tempo real.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {diagnosticos.map((item) => (
+                      <div 
+                        key={item.id}
+                        className="bg-[#131414] border border-neutral-800/80 rounded-2xl p-5 hover:border-[#a3e635]/40 transition-all flex flex-col justify-between shadow-lg"
+                      >
+                        <div>
+                          {/* Header: Option Tag & Status */}
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <span className="bg-[#a3e635]/15 border border-[#a3e635]/40 text-[#a3e635] text-xs font-bold px-3 py-1 rounded-lg">
+                              {item.opcaoTitulo}
+                            </span>
+                            
+                            <select
+                              value={item.status || 'Novo'}
+                              onChange={(e) => item.id && handleUpdateDiagnosticoStatus(item.id, e.target.value as 'Novo' | 'Em Atendimento' | 'Concluído')}
+                              className="bg-neutral-900 border border-neutral-800 text-[11px] font-bold text-neutral-300 rounded-lg px-2 py-1 focus:border-[#a3e635] focus:outline-none cursor-pointer"
+                            >
+                              <option value="Novo">🔴 Novo</option>
+                              <option value="Em Atendimento">🟡 Em Atendimento</option>
+                              <option value="Concluído">🟢 Concluído</option>
+                            </select>
+                          </div>
+
+                          {/* Contact Info (if submitted) */}
+                          {item.whatsapp && (
+                            <div className="mt-3 p-3 rounded-xl bg-black/60 border border-neutral-800">
+                              <p className="text-xs font-bold text-white flex items-center gap-1.5 mb-1">
+                                <User className="h-3.5 w-3.5 text-[#a3e635]" />
+                                <span>{item.nome || 'Cliente Interessado'}</span>
+                              </p>
+                              <p className="text-xs text-neutral-300 flex items-center gap-1.5">
+                                <Phone className="h-3.5 w-3.5 text-neutral-400" />
+                                <span>{item.whatsapp}</span>
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Problem summary */}
+                          <div className="mt-3 bg-[#0a0c0a] p-3 rounded-xl border border-neutral-800/70">
+                            <p className="text-[11px] font-bold text-amber-400 uppercase tracking-wider mb-1">
+                              Gargalo Marcado:
+                            </p>
+                            <p className="text-xs text-neutral-300 leading-relaxed">
+                              {item.problema}
+                            </p>
+                          </div>
+
+                          {/* Solution Proposed */}
+                          <div className="mt-2 text-xs text-neutral-400">
+                            <span className="text-neutral-500 font-semibold">Solução apresentada: </span>
+                            <span className="text-neutral-200">{item.solucaoResumo}</span>
+                          </div>
+
+                          {/* Date Footer */}
+                          <div className="flex items-center justify-between text-[11px] text-neutral-500 mt-4 pt-2 border-t border-neutral-800/50">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {item.data}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="mt-4 pt-3 border-t border-neutral-800/50 flex items-center gap-2">
+                          {item.whatsapp ? (
+                            <a
+                              href={`https://api.whatsapp.com/send?phone=55${item.whatsapp.replace(/\D/g, '')}&text=${encodeURIComponent(`Olá ${item.nome || ''}! Vimos que você respondeu ao diagnóstico no site da Techify com a opção ${item.opcaoTitulo}. Como podemos ajudar com sua estrutura digital?`)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="bg-[#22c55e] hover:bg-[#16a34a] text-black font-extrabold py-2 rounded-xl flex items-center justify-center gap-2 text-xs flex-1 transition-all shadow-[0_0_12px_rgba(34,197,94,0.25)] cursor-pointer"
+                            >
+                              <Phone className="h-3.5 w-3.5" />
+                              <span>Falar no WhatsApp</span>
+                            </a>
+                          ) : (
+                            <div className="text-[11px] text-neutral-500 italic py-1 flex-1">
+                              Resposta anônima do visitante
+                            </div>
+                          )}
+
+                          <button
+                            onClick={() => item.id && handleDeleteDiagnostico(item.id)}
+                            className="bg-neutral-900 border border-neutral-800/80 hover:bg-red-500/20 hover:border-red-500/50 text-neutral-400 hover:text-red-400 p-2.5 rounded-xl transition-all cursor-pointer"
+                            title="Excluir Diagnóstico"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* LEADS MANUAIS VIEW */}
+            {leadsSubTab === 'leads' && (
+              <div>
+                {leads.length === 0 ? (
+                  <div className="rounded-2xl border border-neutral-800 bg-[#121312] p-12 text-center text-neutral-400">
+                    <Users className="mx-auto h-10 w-10 text-neutral-600 mb-3" />
+                    <p className="text-base font-bold text-white">Nenhum lead cadastrado</p>
+                    <p className="text-xs text-neutral-500 mt-1">Clique em 'Cadastrar Lead' para adicionar um novo cliente em potencial.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {leads.map((lead) => (
+                      <div 
+                        key={lead.id}
+                        className="bg-[#131414] border border-neutral-800/80 rounded-2xl p-5 hover:border-neutral-700/80 transition-all flex flex-col justify-between shadow-lg"
+                      >
+                        <div>
+                          {/* Name & Completo Badge */}
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-bold text-white text-lg font-sans">
+                              {lead.nome}
+                            </h3>
+                            <span className="bg-[#14532d]/50 border border-[#22c55e]/50 text-[#4ade80] text-[11px] font-bold px-2.5 py-0.5 rounded-md shrink-0">
+                              {lead.status || 'Completo'}
+                            </span>
+                          </div>
+
+                          {/* Segment sub-label */}
+                          <p className="text-neutral-400 text-xs my-1 font-medium">
+                            {lead.segmento}
+                          </p>
+
+                          {/* Info lines */}
+                          <div className="space-y-2 text-xs text-neutral-400 mt-3">
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+                              <span className="truncate">{lead.email}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+                              <span>{lead.telefone}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Instagram className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+                              <span>@{lead.instagram.replace('@', '')}</span>
+                            </div>
+                          </div>
+
+                          {/* Interesses dark box */}
+                          <div className="bg-[#0c0d0d] p-3 rounded-xl border border-neutral-800/80 my-3">
+                            <div className="text-[#a3e635] text-xs font-bold flex items-center gap-1.5 mb-1">
+                              <span className="inline-block h-2 w-2 rounded-full bg-[#a3e635] shadow-[0_0_6px_#a3e635]" />
+                              <span>Interesses</span>
+                            </div>
+                            <p className="text-white text-xs font-medium">
+                              {lead.interesses}
+                            </p>
+                          </div>
+
+                          {/* Footer Row */}
+                          <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-1">
+                            <span>Emails enviados: {lead.emailsEnviados || 0}</span>
+                            <span>{lead.dataEnvio}</span>
+                          </div>
+                        </div>
+
+                        {/* Bright Green Email Action Button */}
+                        <div className="mt-4 pt-3 border-t border-neutral-800/50 flex items-center gap-2">
+                          <button
+                            onClick={() => handleSendEmailLead(lead)}
+                            className="bg-[#a3e635] hover:bg-[#84cc16] text-black font-extrabold py-2.5 rounded-xl flex items-center justify-center gap-2 text-xs flex-1 transition-all shadow-[0_0_12px_rgba(163,230,53,0.25)] cursor-pointer active:scale-98"
+                          >
+                            <Send className="h-4 w-4" />
+                            <span>Enviar Email</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteLead(lead.id)}
+                            className="bg-neutral-900 border border-neutral-800/80 hover:bg-red-500/20 hover:border-red-500/50 text-neutral-400 hover:text-red-400 p-2.5 rounded-xl transition-all cursor-pointer"
+                            title="Excluir Lead"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -75,11 +75,11 @@ export const DEFAULT_TEAM_MEMBERS: TeamMember[] = [
 
 export const DEFAULT_SITE_CONTENT: SiteGeneralContent = {
   heroBadge: "Tecnologia & Performance sob Medida",
-  heroHeadline1: "Você não precisa entender de tecnologia.",
-  heroHeadline2: "Precisa de resultado.",
-  heroDescription: "Desenvolvemos sites ultrarrápidos, plataformas exclusivas e estratégias de alta conversão para empresas que querem liderar o mercado.",
-  heroCtaPrimary: "QUERO MEU PROJETO",
-  heroCtaSecondary: "VER NOSSOS TRABALHOS",
+  heroHeadline1: "A Solução Definitiva",
+  heroHeadline2: "ESTRUTURA COMPLETA PARA SUA EMPRESA CRESCER",
+  heroDescription: "Unimos desenvolvimento de sites e sistemas, design de alto impacto e marketing estratégico. Uma experiência completa conduzida por um time pronto para acelerar seus resultados. Nossa equipe de especialistas cuida de toda a sua estratégia digital para o seu negócio escalar.",
+  heroCtaPrimary: "FALAR COM ENGENHEIRO",
+  heroCtaSecondary: "VER O QUE JÁ FIZEMOS",
   aboutBadge: "Sobre nós",
   aboutTitle: "A empresa digital dedicada a criar sistemas, sites e marketing sob medida",
   aboutDescription: "A Techify nasceu para simplificar a engenharia digital. Entregamos soluções de alto impacto com prazo garantido e excelência técnica.",
