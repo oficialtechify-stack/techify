@@ -196,20 +196,20 @@ export default function ClientsSliderSection({
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Navigation Arrow Left */}
+          {/* Navigation Arrow Left - Hidden on mobile */}
           <button
             onClick={prevSlide}
             aria-label="Projeto anterior"
-            className="absolute -left-3 sm:-left-6 lg:-left-12 top-1/2 -translate-y-1/2 z-30 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full border border-neutral-700/80 bg-black/85 text-white backdrop-blur-md hover:border-[#22c55e] hover:bg-[#22c55e] hover:text-black transition-all shadow-[0_0_25px_rgba(0,0,0,0.8)] cursor-pointer group"
+            className="hidden sm:flex absolute -left-3 sm:-left-6 lg:-left-12 top-1/2 -translate-y-1/2 z-30 h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full border border-neutral-700/80 bg-black/85 text-white backdrop-blur-md hover:border-[#22c55e] hover:bg-[#22c55e] hover:text-black transition-all shadow-[0_0_25px_rgba(0,0,0,0.8)] cursor-pointer group"
           >
             <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:-translate-x-0.5" />
           </button>
 
-          {/* Navigation Arrow Right */}
+          {/* Navigation Arrow Right - Hidden on mobile */}
           <button
             onClick={nextSlide}
             aria-label="Próximo projeto"
-            className="absolute -right-3 sm:-right-6 lg:-right-12 top-1/2 -translate-y-1/2 z-30 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full border border-neutral-700/80 bg-black/85 text-white backdrop-blur-md hover:border-[#22c55e] hover:bg-[#22c55e] hover:text-black transition-all shadow-[0_0_25px_rgba(0,0,0,0.8)] cursor-pointer group"
+            className="hidden sm:flex absolute -right-3 sm:-right-6 lg:-right-12 top-1/2 -translate-y-1/2 z-30 h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full border border-neutral-700/80 bg-black/85 text-white backdrop-blur-md hover:border-[#22c55e] hover:bg-[#22c55e] hover:text-black transition-all shadow-[0_0_25px_rgba(0,0,0,0.8)] cursor-pointer group"
           >
             <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:translate-x-0.5" />
           </button>
@@ -228,8 +228,8 @@ export default function ClientsSliderSection({
                 />
               </div>
 
-              {/* Project Details Box */}
-              <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 w-full max-w-3xl rounded-2xl border border-neutral-800/80 bg-[#0c0e0c]/90 px-6 py-4 backdrop-blur-md min-h-[84px]">
+              {/* Project Details Box - Hidden on mobile */}
+              <div className="hidden sm:flex mt-4 sm:mt-6 flex-col sm:flex-row items-center justify-between gap-3 w-full max-w-3xl rounded-2xl border border-neutral-800/80 bg-[#0c0e0c]/90 px-6 py-4 backdrop-blur-md min-h-[84px]">
                 <div className="text-center sm:text-left">
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
                     <span className="text-xs font-bold uppercase tracking-wider text-[#22c55e]">
@@ -262,8 +262,8 @@ export default function ClientsSliderSection({
             </div>
           </div>
 
-          {/* Dots Pagination Navigation */}
-          <div className="flex items-center justify-center gap-2 mt-8">
+          {/* Dots Pagination Navigation - Hidden on mobile */}
+          <div className="hidden sm:flex items-center justify-center gap-2 mt-8">
             {CLIENT_SLIDES.map((slide, idx) => (
               <button
                 key={slide.id}
