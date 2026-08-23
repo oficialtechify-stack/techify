@@ -41,8 +41,6 @@ import ClientsSliderSection from './ClientsSliderSection';
 import PackagesSection from './PackagesSection';
 import TextEmergence from './TextEmergence';
 import InteractiveDiagnosisSection from './InteractiveDiagnosisSection';
-import SpecialtyBentoSection from './SpecialtyBentoSection';
-import ProductionProcessSection from './ProductionProcessSection';
 import { EditableText, EditableNumber, EditableIcon, EditableImage } from './InlineEditProvider';
 import { getCachedGeneralContent, getCachedFeedbacks, getCachedTeamMembers, SiteGeneralContent, FeedbackImage, TeamMember } from '../lib/siteContent';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -442,11 +440,204 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       {/* 3. SEÇÃO DE SOLUÇÃO & DIFERENCIAL                                         */}
       {/* ========================================================================= */}
       
-      {/* 3.1 Especialidade / Cansado de contratar um profissional para cada coisa? (4 Cards com Animações Motion Avançadas) */}
-      <SpecialtyBentoSection onOpenConsultation={onOpenConsultation} />
+      {/* 3.1 Especialidade / Cansado de contratar um profissional para cada coisa? */}
+      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ScrollReveal threshold={0.2}>
+          <div className="flex flex-col items-center text-center mb-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-6">
+              <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
+              <span>Especialidade</span>
+            </div>
 
-      {/* 3.2 Como Funciona Nossa Produção (Pipeline com 5 Etapas e Motion Interativo) */}
-      <ProductionProcessSection onOpenConsultation={onOpenConsultation} />
+            <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-white max-w-3xl leading-tight">
+              Cansado de contratar um profissional para cada coisa?
+            </h2>
+
+            <p className="mt-4 max-w-2xl text-sm sm:text-base text-neutral-400 leading-relaxed font-normal">
+              Um faz o site, outro some com a senha, um terceiro cuida do anúncio e ninguém se entende. Na Techify é um time completo, do começo ao fim, com alguém de prontidão para te atender.
+            </p>
+          </div>
+        </ScrollReveal>
+
+        {/* 2x2 Interactive Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          {/* Bento 1: Menos trabalho na mão (Mockup financeiro animado) */}
+          <ScrollReveal delay={0.1} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              {/* Interactive Billing Card Mockup */}
+              <div className="rounded-2xl border border-neutral-800/80 bg-neutral-950 p-5 mb-8 shadow-inner">
+                <div className="flex items-center justify-between text-xs text-neutral-400 mb-2">
+                  <span>Cobrança mensal automatizada</span>
+                  <span className="text-[#22c55e] font-bold">R$ 4.900 / R$ 10.000</span>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full h-2 rounded-full bg-neutral-900 overflow-hidden mb-5">
+                  <div className="h-full bg-gradient-to-r from-[#22c55e] to-[#4ade80] rounded-full w-[49%]" />
+                </div>
+
+                {/* List of automated entries */}
+                <div className="space-y-2.5">
+                  {[
+                    { name: 'Plano Pro Anual', date: 'Hoje às 14:32', val: 'R$ 1.200' },
+                    { name: 'Licença Corporativa', date: 'Ontem às 18:10', val: 'R$ 2.450' },
+                    { name: 'Manutenção Mensal', date: '12 de Agosto', val: 'R$ 850' },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800/50 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-lg bg-[#22c55e]/10 text-[#22c55e] flex items-center justify-center">
+                          <Check className="h-3.5 w-3.5" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white">{item.name}</p>
+                          <p className="text-[10px] text-neutral-500">{item.date}</p>
+                        </div>
+                      </div>
+                      <span className="font-bold text-[#4ade80]">{item.val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Menos trabalho na mão</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Tarefa repetida no manual consome o dia do seu time. Automatizamos processos para sobrar tempo para o que realmente importa: vender.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Bento 2: Site e loja virtual (Bar chart + Badge) */}
+          <ScrollReveal delay={0.2} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              {/* Visual Growth Chart */}
+              <div className="rounded-2xl border border-neutral-800/80 bg-neutral-950 p-6 mb-8 flex flex-col justify-between min-h-[220px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white">Você sabe de onde vem cada venda?</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#22c55e]/20 text-[#4ade80] font-bold">
+                    +142% conversão
+                  </span>
+                </div>
+
+                {/* Bar Growth Visualization */}
+                <div className="flex items-end justify-between gap-2 h-28 pt-4">
+                  {[
+                    { year: '2021', h: '25%' },
+                    { year: '2022', h: '40%' },
+                    { year: '2023', h: '60%' },
+                    { year: '2024', h: '78%' },
+                    { year: '2025', h: '95%' },
+                    { year: '2026', h: '100%', active: true },
+                  ].map((bar, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                      <div 
+                        style={{ height: bar.h }} 
+                        className={`w-full rounded-md transition-all ${
+                          bar.active 
+                            ? 'bg-[#22c55e] shadow-[0_0_12px_#22c55e]' 
+                            : 'bg-neutral-800 hover:bg-neutral-700'
+                        }`} 
+                      />
+                      <span className={`text-[10px] ${bar.active ? 'text-[#4ade80] font-bold' : 'text-neutral-500'}`}>
+                        {bar.year}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 text-[11px] font-medium text-neutral-400 bg-neutral-900/50 p-2 rounded-lg border border-neutral-800/50">
+                  Estratégia, Design e Tecnologia de ponta unificados.
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Site e loja virtual</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Sites e e-commerces que carregam instantaneamente em qualquer celular e aguentam o crescimento acelerado do seu negócio sem travar.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Bento 3: Sistema de gestão (Live Stats + Marquee Badges) */}
+          <ScrollReveal delay={0.1} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              <div className="rounded-2xl border border-neutral-800/80 bg-neutral-950 p-5 mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs text-neutral-400 font-medium">Desempenho Geral</p>
+                    <p className="text-3xl font-black text-white mt-1">+49% <span className="text-xs text-[#4ade80] font-bold">+2.5% semana</span></p>
+                  </div>
+                  <div className="h-10 w-10 rounded-xl bg-[#22c55e]/10 text-[#22c55e] flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5" />
+                  </div>
+                </div>
+
+                {/* Tag Badges Carousel */}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {[
+                    'Preço fechado',
+                    'Prazo por escrito',
+                    'Suporte pós-entrega',
+                    'Sem fidelidade',
+                    'Aparece no Google',
+                    'Sem dor de cabeça'
+                  ].map((tag, idx) => (
+                    <span key={idx} className="rounded-full bg-neutral-900 border border-neutral-800 px-3 py-1 text-[10px] font-semibold text-neutral-300">
+                      ✓ {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Sistema de gestão sob medida</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Estoque, vendas, mensalidades e clientes num lugar só, feito exatamente sob medida para as necessidades do seu negócio.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Bento 4: Anúncios que trazem cliente (Radar Orbit com Leads) */}
+          <ScrollReveal delay={0.2} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              {/* Orbital Radar Visual */}
+              <div className="relative h-52 rounded-2xl border border-neutral-800/80 bg-neutral-950 p-4 mb-8 flex items-center justify-center overflow-hidden">
+                {/* Concentric Rings */}
+                <div className="absolute w-44 h-44 rounded-full border border-neutral-800/60" />
+                <div className="absolute w-28 h-28 rounded-full border border-[#22c55e]/20" />
+                
+                {/* Center Logo */}
+                <div className="relative z-10 h-12 w-12 rounded-full bg-black border border-[#22c55e] p-2 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.4)]">
+                  <TechifyIcon className="h-full w-full" />
+                </div>
+
+                {/* Floating Lead Pills */}
+                <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-neutral-900/90 border border-neutral-800 px-2.5 py-1 rounded-full text-[10px] font-medium text-white shadow-lg animate-bounce" style={{ animationDuration: '3s' }}>
+                  <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
+                  <span>Alexandre H. <strong className="text-[#4ade80]">+6%</strong></span>
+                </div>
+
+                <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-neutral-900/90 border border-neutral-800 px-2.5 py-1 rounded-full text-[10px] font-medium text-white shadow-lg animate-bounce" style={{ animationDuration: '4s' }}>
+                  <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
+                  <span>Raimundo P. <strong className="text-[#4ade80]">+4.5%</strong></span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Anúncio que traz cliente</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Anúncios estratégicos no Google e Instagram para o cliente certo achar sua empresa exatamente na hora em que está buscando comprar.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+        </div>
+      </section>
 
       {/* 3.2 A empresa que resolve o que trava o seu negócio (Bento Stats Section) */}
       <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-neutral-900/80">
