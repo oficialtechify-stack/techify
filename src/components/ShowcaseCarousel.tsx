@@ -400,10 +400,10 @@ export default function ShowcaseCarousel({ onOpenConsultation }: ShowcaseCarouse
         {items.map((item, index) => (
           <motion.div
             key={item.id}
-            initial={{ opacity: 0, y: 24, filter: 'blur(10px)', scale: 0.97 }}
+            initial={{ opacity: 0, y: 16, filter: 'blur(8px)', scale: 0.98 }}
             whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
-            viewport={{ once: false, amount: 0.1 }}
-            transition={{ duration: 0.55, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, amount: 0.1 }}
+            transition={{ duration: 0.45, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
             className="flex-shrink-0 w-[290px] sm:w-[330px] md:w-[350px] lg:w-[370px] snap-start flex flex-col rounded-2xl border border-neutral-800 bg-[#0a0f0b] p-3 sm:p-4 hover:border-[#22c55e]/60 transition-all duration-300 group hover:shadow-[0_10px_35px_rgba(34,197,94,0.15)]"
           >
             {/* Story Phone / Monitor Mockup Container with exact proportions */}

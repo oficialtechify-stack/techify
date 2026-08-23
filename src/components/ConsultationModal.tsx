@@ -9,14 +9,27 @@ import GlassButton, { GlassEffect } from './GlassButton';
 interface ConsultationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultService?: string;
 }
 
-export default function ConsultationModal({ isOpen, onClose }: ConsultationModalProps) {
+export const SERVICES_CATALOG = [
+  { id: 'pacote_completo', label: '⭐ Pacote Full Growth 360° (Site + Design + Mkt + Redes) — De R$ 2.300 por R$ 580' },
+  { id: 'pacote_tracao', label: '🚀 Pacote Tração & Vendas (Site + Marketing) — R$ 350' },
+  { id: 'teste_gratis', label: '🎁 Teste de Design & Amostra de Site Grátis (Sem Compromisso)' },
+  { id: 'sites', label: 'Criação de Sites & Landing Pages de Alta Performance' },
+  { id: 'design', label: 'Design Gráfico, Identidade Visual & UI/UX' },
+  { id: 'marketing', label: 'Marketing Digital, Tráfego Pago & Gestão de Redes' },
+  { id: 'dev', label: 'Desenvolvimento de Sistemas & Automações' },
+  { id: 'seo', label: 'Otimização SEO & Google Meu Negócio' },
+  { id: 'outro', label: 'Outro Projeto Sob Medida' },
+];
+
+export default function ConsultationModal({ isOpen, onClose, defaultService }: ConsultationModalProps) {
   const [formData, setFormData] = useState<Consultation>({
     name: '',
     email: '',
     whatsapp: '',
-    service: 'sites',
+    service: defaultService || 'pacote_completo',
     date: '',
     time: '',
     details: '',
@@ -25,14 +38,19 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const servicesList = [
-    { id: 'sites', label: 'Criação de Sites' },
-    { id: 'design', label: 'Design Gráfico' },
-    { id: 'branding', label: 'Branding' },
-    { id: 'dev', label: 'Desenvolvimento' },
-    { id: 'seo', label: 'Otimização & SEO' },
-    { id: 'outro', label: 'Outro' },
-  ];
+  const servicesList = SERVICES_CATALOG;
+
+  // Sync default service when passed
+  React.useEffect(() => {
+    if (defaultService) {
+      const match = servicesList.find(
+        s => s.id === defaultService || s.label.toLowerCase().includes(defaultService.toLowerCase())
+      );
+      if (match) {
+        setFormData(prev => ({ ...prev, service: match.id }));
+      }
+    }
+  }, [defaultService, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,14 +206,17 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
 
                 {/* Service type */}
                 <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1">Serviço de Interesse</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-medium text-neutral-400">Serviço ou Pacote de Interesse *</label>
+                    <span className="text-[10px] text-[#4ade80] font-bold">Teste Grátis Disponível</span>
+                  </div>
                   <select
                     value={formData.service}
                     onChange={(e) => setFormData({ ...formData, service: e.target.value })}
-                    className="w-full rounded-lg border border-neutral-800 bg-neutral-950 py-2.5 px-3 text-sm text-white transition-all focus:border-brand-accent focus:outline-none"
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-950 py-3 px-3 text-xs sm:text-sm text-white font-medium transition-all focus:border-[#22c55e] focus:outline-none shadow-sm cursor-pointer"
                   >
                     {servicesList.map((service) => (
-                      <option key={service.id} value={service.id}>
+                      <option key={service.id} value={service.id} className="bg-neutral-900 text-white py-1">
                         {service.label}
                       </option>
                     ))}

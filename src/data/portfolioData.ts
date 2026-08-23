@@ -150,6 +150,15 @@ export const INITIAL_PORTFOLIO_SITES: PortfolioInitialItem[] = [
 ];
 
 export const PORTFOLIO_PRESET_IMAGES = [
+  { label: 'Maria Eduarda - Estética Integrativa', url: 'https://brainsistemas.com.br/wp-content/uploads/2024/01/brain_maria_eduarda-1.png' },
+  { label: 'Matteoni - Personal Trainer', url: 'https://brainsistemas.com.br/wp-content/uploads/2024/01/brain_matteoni.png' },
+  { label: 'Brigada Garra - Treinamento & Segurança', url: 'https://brainsistemas.com.br/wp-content/uploads/2024/01/brain_brigada_garra.png' },
+  { label: 'Dowell - Equipamentos Industriais', url: 'https://brainsistemas.com.br/wp-content/uploads/2024/01/brain_dowell.png' },
+  { label: 'Top Trip - Agência de Viagens', url: 'https://brainsistemas.com.br/wp-content/uploads/2024/01/brain_top_trip.png' },
+  { label: 'Desapega Peças - Autopeças', url: 'https://brainsistemas.com.br/wp-content/uploads/2024/01/brain_desapega_pecas.png' },
+  { label: 'Fast Limp - Higienização Profissional', url: 'https://brainsistemas.com.br/wp-content/uploads/2024/01/brain_fast_limp.png' },
+  { label: 'Dolls Tale - Moda & Brinquedos', url: 'https://brainsistemas.com.br/wp-content/uploads/2024/01/brain_dolls_tale.png' },
+  { label: 'Flor de Liz - Vestuário & Moda', url: 'https://brainsistemas.com.br/wp-content/uploads/2024/01/brain_flor_de_liz.png' },
   { label: 'E-commerce Esportivo / CR7', url: cr7StoryImg },
   { label: 'Banner Sneaker Dark Luxury', url: nikeBannerImg },
   { label: 'Louis Vuitton LV Trainer', url: lvBannerImg },

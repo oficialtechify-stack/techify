@@ -37,6 +37,8 @@ import TechHeroBackground from './TechHeroBackground';
 import { TechifyIcon } from './TechifyLogo';
 import ScrollReveal from './ScrollReveal';
 import ShowcaseCarousel from './ShowcaseCarousel';
+import ClientsSliderSection from './ClientsSliderSection';
+import PackagesSection from './PackagesSection';
 import TextEmergence from './TextEmergence';
 import InteractiveDiagnosisSection from './InteractiveDiagnosisSection';
 import { EditableText, EditableNumber, EditableIcon, EditableImage } from './InlineEditProvider';
@@ -87,7 +89,7 @@ function AnimatedCounter({ targetValue, suffix = '', label, idx = 0, id = 'stat_
 
 interface HomeSectionProps {
   onNavigate: (tab: string) => void;
-  onOpenConsultation: () => void;
+  onOpenConsultation: (serviceName?: string) => void;
 }
 
 export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSectionProps) {
@@ -536,7 +538,22 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
 
 
       {/* ========================================================================= */}
-      {/* 4.1 PORTFÓLIO / PROJETOS ENTREGUES CTA                                    */}
+      {/* 4.1 CLIENTES ATENDIDOS E SATISFEITOS SLIDER (Mockups Reais de Sites)      */}
+      {/* ========================================================================= */}
+      <ClientsSliderSection 
+        onOpenConsultation={onOpenConsultation}
+        onNavigatePortfolio={() => onNavigate('portfolio')}
+      />
+
+
+      {/* ========================================================================= */}
+      {/* 4.2 PACOTES & PLANOS TECHIFY (Site + Designer + Marketing + Redes Sociais) */}
+      {/* ========================================================================= */}
+      <PackagesSection onOpenConsultation={onOpenConsultation} />
+
+
+      {/* ========================================================================= */}
+      {/* 4.3 PORTFÓLIO / PROJETOS ENTREGUES CTA                                    */}
       {/* ========================================================================= */}
       <section className="relative w-full py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal threshold={0.15}>

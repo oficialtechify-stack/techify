@@ -58,7 +58,15 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<string>(getInitialTab);
   const [isConsultationOpen, setIsConsultationOpen] = useState<boolean>(false);
+  const [consultationDefaultService, setConsultationDefaultService] = useState<string>('pacote_completo');
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState<boolean>(false);
+
+  const handleOpenConsultation = (serviceName?: string) => {
+    if (serviceName) {
+      setConsultationDefaultService(serviceName);
+    }
+    setIsConsultationOpen(true);
+  };
 
   // Sync tab with URL on popstate/hashchange and secret admin triggers
   useEffect(() => {
@@ -198,7 +206,7 @@ export default function App() {
               setActiveTab(tab);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }} 
-            onOpenConsultation={() => setIsConsultationOpen(true)} 
+            onOpenConsultation={(service) => handleOpenConsultation(service)} 
           />
         );
       case 'portfolio':
@@ -221,11 +229,11 @@ export default function App() {
               setActiveTab(tab);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            onOpenConsultation={() => setIsConsultationOpen(true)}
+            onOpenConsultation={(service) => handleOpenConsultation(service)}
           />
         );
       case 'apps':
-        return <AppsSection onOpenConsultation={() => setIsConsultationOpen(true)} />;
+        return <AppsSection onOpenConsultation={(service) => handleOpenConsultation(service)} />;
       case 'carreiras':
         return <CareersSection />;
       case 'academia':
@@ -246,7 +254,7 @@ export default function App() {
               setActiveTab(tab);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }} 
-            onOpenConsultation={() => setIsConsultationOpen(true)} 
+            onOpenConsultation={(service) => handleOpenConsultation(service)} 
           />
         );
     }
@@ -269,7 +277,7 @@ export default function App() {
               setActiveTab(tab);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }} 
-            onOpenConsultation={() => setIsConsultationOpen(true)} 
+            onOpenConsultation={() => handleOpenConsultation()} 
             onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
           />
 
@@ -297,13 +305,14 @@ export default function App() {
           {/* Persistent Page Footer */}
           <Footer 
             onNavigate={handleNavigateFromFooter} 
-            onOpenConsultation={() => setIsConsultationOpen(true)} 
+            onOpenConsultation={() => handleOpenConsultation()} 
             onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
           />
 
           {/* Interactive Consultation Modal */}
           <ConsultationModal 
             isOpen={isConsultationOpen} 
+            defaultService={consultationDefaultService}
             onClose={() => setIsConsultationOpen(false)} 
           />
 

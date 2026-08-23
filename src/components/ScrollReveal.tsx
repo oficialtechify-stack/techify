@@ -17,17 +17,17 @@ interface ScrollRevealProps extends HTMLMotionProps<'div'> {
 export default function ScrollReveal({
   children,
   delay = 0,
-  duration = 0.65,
-  yOffset = 24,
+  duration = 0.55,
+  yOffset = 18,
   xOffset = 0,
-  scale = 0.98,
+  scale = 0.99,
   blur = true,
   className = "",
-  threshold = 0.15,
-  once = false, // Replays on every scroll by default as requested
+  threshold = 0.1,
+  once = true, // Default to true to prevent scroll jitter and repetitive layout shifts
   ...props
 }: ScrollRevealProps) {
-  const blurAmount = typeof blur === 'number' ? blur : blur ? 12 : 0;
+  const blurAmount = typeof blur === 'number' ? blur : blur ? 8 : 0;
 
   return (
     <motion.div
@@ -48,12 +48,11 @@ export default function ScrollReveal({
       viewport={{
         once: once,
         amount: threshold,
-        margin: '0px 0px -40px 0px',
       }}
       transition={{
         duration,
         delay,
-        ease: [0.16, 1, 0.3, 1], // Smooth cinematic exponential deceleration
+        ease: [0.16, 1, 0.3, 1], // Smooth exponential ease-out
       }}
       className={className}
       {...props}

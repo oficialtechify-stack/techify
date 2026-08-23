@@ -16,12 +16,12 @@ interface TextEmergenceProps {
 export default function TextEmergence({
   children,
   delay = 0,
-  duration = 0.7,
-  blur = 14,
-  yOffset = 22,
+  duration = 0.6,
+  blur = 10,
+  yOffset = 16,
   className = '',
   glow = false,
-  once = false, // Replays on every scroll down/up
+  once = true, // Default to true to avoid layout shifts on scroll
   as: Component = 'div',
 }: TextEmergenceProps) {
   const MotionComponent = motion[Component] || motion.div;
@@ -32,7 +32,7 @@ export default function TextEmergence({
         opacity: 0,
         y: yOffset,
         filter: `blur(${blur}px)`,
-        scale: 0.97,
+        scale: 0.98,
       }}
       whileInView={{
         opacity: 1,
@@ -42,8 +42,7 @@ export default function TextEmergence({
       }}
       viewport={{
         once: once,
-        amount: 0.15,
-        margin: '0px 0px -30px 0px',
+        amount: 0.1,
       }}
       transition={{
         duration,
@@ -62,9 +61,9 @@ export function WordsEmergence({
   text,
   className = '',
   delay = 0,
-  stagger = 0.05,
-  blur = 12,
-  once = false
+  stagger = 0.04,
+  blur = 8,
+  once = true
 }: {
   text: string;
   className?: string;
@@ -79,7 +78,7 @@ export function WordsEmergence({
     <motion.span
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: once, amount: 0.2 }}
+      viewport={{ once: once, amount: 0.15 }}
       className={`inline-flex flex-wrap gap-x-[0.3em] ${className}`}
     >
       {words.map((word, index) => (
@@ -88,7 +87,7 @@ export function WordsEmergence({
           variants={{
             hidden: {
               opacity: 0,
-              y: 18,
+              y: 14,
               filter: `blur(${blur}px)`,
             },
             visible: {
@@ -96,7 +95,7 @@ export function WordsEmergence({
               y: 0,
               filter: 'blur(0px)',
               transition: {
-                duration: 0.6,
+                duration: 0.5,
                 delay: delay + index * stagger,
                 ease: [0.16, 1, 0.3, 1],
               },
