@@ -42,7 +42,7 @@ import PackagesSection from './PackagesSection';
 import TextEmergence from './TextEmergence';
 import InteractiveDiagnosisSection from './InteractiveDiagnosisSection';
 import { EditableText, EditableNumber, EditableIcon, EditableImage } from './InlineEditProvider';
-import { getCachedGeneralContent, getCachedFeedbacks, SiteGeneralContent, FeedbackImage } from '../lib/siteContent';
+import { getCachedGeneralContent, getCachedFeedbacks, getCachedTeamMembers, SiteGeneralContent, FeedbackImage, TeamMember } from '../lib/siteContent';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -98,9 +98,10 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [generalContent, setGeneralContent] = useState<SiteGeneralContent>(getCachedGeneralContent);
   const [feedbacks, setFeedbacks] = useState<FeedbackImage[]>(getCachedFeedbacks);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(getCachedTeamMembers);
   const [selectedFeedbackImage, setSelectedFeedbackImage] = useState<FeedbackImage | null>(null);
 
-  // Sync general content and feedbacks from Firestore and local cache in real-time
+  // Sync general content, feedbacks and team members from Firestore and local cache in real-time
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "site_content", "general"), (snap) => {
       if (snap.exists()) {
@@ -118,6 +119,15 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       }
     }, (err) => console.warn('Firestore feedbacks offline:', err.message));
 
+    const unsubTeam = onSnapshot(doc(db, "site_content", "team"), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (Array.isArray(data.members) && data.members.length > 0) {
+          setTeamMembers(data.members);
+        }
+      }
+    }, (err) => console.warn('Firestore team offline:', err.message));
+
     const handleContentUpdate = (e: Event) => {
       const customEvt = e as CustomEvent<SiteGeneralContent>;
       if (customEvt.detail) {
@@ -132,14 +142,24 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       }
     };
 
+    const handleTeamUpdate = (e: Event) => {
+      const customEvt = e as CustomEvent<TeamMember[]>;
+      if (customEvt.detail) {
+        setTeamMembers(customEvt.detail);
+      }
+    };
+
     window.addEventListener('techify-content-updated', handleContentUpdate);
     window.addEventListener('techify-feedbacks-updated', handleFeedbacksUpdate);
+    window.addEventListener('techify-team-updated', handleTeamUpdate);
 
     return () => {
       unsub();
       unsubFeedbacks();
+      unsubTeam();
       window.removeEventListener('techify-content-updated', handleContentUpdate);
       window.removeEventListener('techify-feedbacks-updated', handleFeedbacksUpdate);
+      window.removeEventListener('techify-team-updated', handleTeamUpdate);
     };
   }, []);
 
@@ -372,8 +392,10 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       </ScrollReveal>
 
       {/* ========================================================================= */}
-      {/* 2.1 PRESENÇA NO GOOGLE & CONVERSÃO (Destaque Estratégico Fixo)            */}
+      {/* 2. SEÇÃO DE CONSCIENTIZAÇÃO DA DOR                                        */}
       {/* ========================================================================= */}
+      
+      {/* 2.1 Presença no Google & Conversão */}
       <section className="relative w-full py-16 sm:py-24 bg-gradient-to-b from-black via-[#060f07]/60 to-black border-b border-neutral-900/80 overflow-hidden">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
           <ScrollReveal delay={0.08} yOffset={30} threshold={0.2}>
@@ -410,193 +432,16 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         </div>
       </section>
 
-
-      {/* ========================================================================= */}
-      {/* 3. SOBRE NÓS / BENTO STATS SECTION                                       */}
-      {/* ========================================================================= */}
-      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Section Header Tag */}
-        <ScrollReveal threshold={0.15} blur={16} yOffset={25}>
-          <div className="flex flex-col items-center text-center mb-16">
-            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-6 shadow-[0_0_15px_rgba(34,197,94,0.15)]">
-              <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e] animate-pulse" />
-              <span>Sobre nós</span>
-            </div>
-
-            <TextEmergence as="h2" blur={16} yOffset={24} className="font-display text-3xl sm:text-5xl md:text-6xl font-extrabold text-white max-w-3xl leading-[1.15] tracking-tight">
-              A empresa que resolve o que trava o seu negócio{' '}
-              <span className="text-neutral-400">com site, sistema e anúncios.</span>
-            </TextEmergence>
-          </div>
-        </ScrollReveal>
-
-        {/* 4-Card Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          
-          {/* Card 1: 120+ Deliveries (Large Dark Card) */}
-          <ScrollReveal delay={0.05} yOffset={35} className="md:col-span-2">
-            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-[#090b09] p-8 flex flex-col justify-between min-h-[300px] h-full hover:border-[#22c55e]/40 transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-800 bg-black p-1.5">
-                    <TechifyIcon className="h-full w-full" />
-                  </div>
-                  <span className="font-display text-base font-bold text-white">TECHIFY</span>
-                </div>
-                <div className="h-9 w-9 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-[#22c55e]">
-                  <BarChart3 className="h-5 w-5" />
-                </div>
-              </div>
-
-              <div className="mt-12">
-                <AnimatedCounter id="bento_stat_1" targetValue={120} suffix="+" label="Sites, sistemas e campanhas já entregues e no ar com alta conversão." />
-              </div>
-
-              <div className="absolute right-0 bottom-0 w-64 h-64 bg-[radial-gradient(circle_at_bottom_right,rgba(34,197,94,0.12),transparent_70%)] pointer-events-none" />
-            </div>
-          </ScrollReveal>
-
-          {/* Card 2: 100% Prazo Cumprido */}
-          <ScrollReveal delay={0.15} yOffset={35}>
-            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-950 p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
-              <div>
-                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
-                  <EditableText id="bento_card2_tag" defaultText="Prazo combinado é prazo cumprido" title="Tag Prazo" />
-                </p>
-                <div className="mt-3">
-                  <AnimatedCounter id="bento_stat_2" targetValue={100} suffix="%" label="" />
-                </div>
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-neutral-900">
-                <p className="text-xs italic text-neutral-400 leading-relaxed">
-                  <EditableText
-                    id="bento_card2_quote"
-                    defaultText="“O time da Techify entregou nosso produto com qualidade e no prazo. Comunicação clara do início ao fim.”"
-                    title="Depoimento Prazo"
-                    isMultiline={true}
-                  />
-                </p>
-              </div>
-            </div>
-          </ScrollReveal>
-
-          {/* Card 3: 40+ Sites e Sistemas no Ar (Green Accent Card) */}
-          <ScrollReveal delay={0.25} yOffset={35}>
-            <div className="relative overflow-hidden rounded-3xl border border-[#22c55e]/40 bg-[#06240d] p-8 flex flex-col justify-between text-white h-full shadow-[0_0_25px_rgba(34,197,94,0.15)]">
-              <div>
-                <p className="text-xs font-semibold text-[#86efac] uppercase tracking-wider">
-                  <EditableText id="bento_card3_tag" defaultText="Sites e sistemas no ar" title="Tag Sistemas" />
-                </p>
-                <div className="mt-3 text-4xl sm:text-5xl font-black text-white">
-                  <AnimatedCounter id="bento_stat_3" targetValue={40} suffix="+" label="" />
-                </div>
-              </div>
-
-              <p className="mt-8 text-xs font-medium text-[#bbf7d0] leading-relaxed">
-                <EditableText
-                  id="bento_card3_desc"
-                  defaultText="No ar, funcionando e com suporte técnico garantido depois da entrega."
-                  title="Descrição Sistemas no Ar"
-                />
-              </p>
-            </div>
-          </ScrollReveal>
-
-          {/* Card 4: 100+ Empresas Atendidas */}
-          <ScrollReveal delay={0.3} yOffset={35} className="md:col-span-3 lg:col-span-4">
-            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-[#050505] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-[#22c55e]/40 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-[#0a1a0c] border border-[#22c55e]/30 flex items-center justify-center text-[#22c55e]">
-                  <Users className="h-6 w-6" />
-                </div>
-                <div>
-                  <h4 className="text-base font-bold text-white">
-                    <EditableText id="bento_card4_title" defaultText="Empresas e Empreendedores Atendidos" title="Título Empresas Atendidas" />
-                  </h4>
-                  <p className="text-xs text-neutral-400">
-                    <EditableText id="bento_card4_desc" defaultText="Atendimento em todo o Brasil com software de alta performance" title="Subtítulo Empresas Atendidas" />
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <AnimatedCounter id="bento_stat_4" targetValue={100} suffix="+" label="" />
-              </div>
-            </div>
-          </ScrollReveal>
-
-        </div>
-      </section>
-
-
-      {/* ========================================================================= */}
-      {/* 4. DIAGNÓSTICO INTERATIVO (Interação Direta + Envio para Admin)           */}
-      {/* ========================================================================= */}
+      {/* 2.2 Diagnóstico Interativo (Está perdendo cliente por qual dessas três?) */}
       <InteractiveDiagnosisSection onOpenConsultation={onOpenConsultation} />
 
 
       {/* ========================================================================= */}
-      {/* 4.1 CLIENTES ATENDIDOS E SATISFEITOS SLIDER (Mockups Reais de Sites)      */}
+      {/* 3. SEÇÃO DE SOLUÇÃO & DIFERENCIAL                                         */}
       {/* ========================================================================= */}
-      <ClientsSliderSection 
-        onOpenConsultation={onOpenConsultation}
-        onNavigatePortfolio={() => onNavigate('portfolio')}
-      />
-
-
-      {/* ========================================================================= */}
-      {/* 4.2 PACOTES & PLANOS TECHIFY (Site + Designer + Marketing + Redes Sociais) */}
-      {/* ========================================================================= */}
-      <PackagesSection onOpenConsultation={onOpenConsultation} />
-
-
-      {/* ========================================================================= */}
-      {/* 4.3 PORTFÓLIO / PROJETOS ENTREGUES CTA                                    */}
-      {/* ========================================================================= */}
-      <section className="relative w-full py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ScrollReveal threshold={0.15}>
-          <div className="relative overflow-hidden rounded-3xl border border-neutral-800/80 bg-gradient-to-b from-[#080d08] via-neutral-950 to-black p-8 sm:p-14 text-center flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.6)]">
-            
-            {/* Ambient Radial Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[250px] bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.12),transparent_70%)] blur-[70px] pointer-events-none" />
-
-            <div className="relative z-10 inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-1.5 text-xs font-bold text-[#4ade80] mb-5 shadow-[0_0_15px_rgba(34,197,94,0.15)]">
-              <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
-              <span>Nossos Trabalhos & Projetos</span>
-            </div>
-
-            <h2 className="relative z-10 font-display text-3xl sm:text-5xl font-extrabold text-white max-w-3xl leading-tight">
-              Conheça nossos cases e entregas reais <br />
-              <span className="text-[#22c55e] drop-shadow-[0_0_25px_rgba(34,197,94,0.3)]">feitas sob medida para cada cliente.</span>
-            </h2>
-
-            <p className="relative z-10 mt-4 max-w-2xl text-sm sm:text-base text-neutral-400 leading-relaxed font-normal">
-              Explore nossa galeria completa com lojas virtuais, identidades visuais de luxo, plataformas web e sistemas desenvolvidos pela Techify.
-            </p>
-
-            <div className="relative z-10 mt-8">
-              <button
-                onClick={() => onNavigate('portfolio')}
-                className="group relative inline-flex items-center justify-center gap-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-8 py-4 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:shadow-[0_0_40px_rgba(34,197,94,0.6)] cursor-pointer"
-              >
-                <span>ACESSAR PORTFÓLIO COMPLETO</span>
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                  <ArrowUpRight className="h-4 w-4" />
-                </div>
-              </button>
-            </div>
-          </div>
-        </ScrollReveal>
-      </section>
-
-
-      {/* ========================================================================= */}
-      {/* 5. ESPECIALIDADE (Interactive 2x2 Bento Cards)                            */}
-      {/* ========================================================================= */}
+      
+      {/* 3.1 Especialidade / Cansado de contratar um profissional para cada coisa? */}
       <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
         <ScrollReveal threshold={0.2}>
           <div className="flex flex-col items-center text-center mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-6">
@@ -794,10 +639,178 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         </div>
       </section>
 
+      {/* 3.2 A empresa que resolve o que trava o seu negócio (Bento Stats Section) */}
+      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-neutral-900/80">
+        
+        {/* Section Header Tag */}
+        <ScrollReveal threshold={0.15} blur={16} yOffset={25}>
+          <div className="flex flex-col items-center text-center mb-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-6 shadow-[0_0_15px_rgba(34,197,94,0.15)]">
+              <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e] animate-pulse" />
+              <span>Sobre nós</span>
+            </div>
+
+            <TextEmergence as="h2" blur={16} yOffset={24} className="font-display text-3xl sm:text-5xl md:text-6xl font-extrabold text-white max-w-3xl leading-[1.15] tracking-tight">
+              A empresa que resolve o que trava o seu negócio{' '}
+              <span className="text-neutral-400">com site, sistema e anúncios.</span>
+            </TextEmergence>
+          </div>
+        </ScrollReveal>
+
+        {/* 4-Card Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          
+          {/* Card 1: 120+ Deliveries (Large Dark Card) */}
+          <ScrollReveal delay={0.05} yOffset={35} className="md:col-span-2">
+            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-[#090b09] p-8 flex flex-col justify-between min-h-[300px] h-full hover:border-[#22c55e]/40 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-800 bg-black p-1.5">
+                    <TechifyIcon className="h-full w-full" />
+                  </div>
+                  <span className="font-display text-base font-bold text-white">TECHIFY</span>
+                </div>
+                <div className="h-9 w-9 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-[#22c55e]">
+                  <BarChart3 className="h-5 w-5" />
+                </div>
+              </div>
+
+              <div className="mt-12">
+                <AnimatedCounter id="bento_stat_1" targetValue={120} suffix="+" label="Sites, sistemas e campanhas já entregues e no ar com alta conversão." />
+              </div>
+
+              <div className="absolute right-0 bottom-0 w-64 h-64 bg-[radial-gradient(circle_at_bottom_right,rgba(34,197,94,0.12),transparent_70%)] pointer-events-none" />
+            </div>
+          </ScrollReveal>
+
+          {/* Card 2: 100% Prazo Cumprido */}
+          <ScrollReveal delay={0.15} yOffset={35}>
+            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-950 p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              <div>
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                  <EditableText id="bento_card2_tag" defaultText="Prazo combinado é prazo cumprido" title="Tag Prazo" />
+                </p>
+                <div className="mt-3">
+                  <AnimatedCounter id="bento_stat_2" targetValue={100} suffix="%" label="" />
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-neutral-900">
+                <p className="text-xs italic text-neutral-400 leading-relaxed">
+                  <EditableText
+                    id="bento_card2_quote"
+                    defaultText="“O time da Techify entregou nosso produto com qualidade e no prazo. Comunicação clara do início ao fim.”"
+                    title="Depoimento Prazo"
+                    isMultiline={true}
+                  />
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Card 3: 40+ Sites e Sistemas no Ar (Green Accent Card) */}
+          <ScrollReveal delay={0.25} yOffset={35}>
+            <div className="relative overflow-hidden rounded-3xl border border-[#22c55e]/40 bg-[#06240d] p-8 flex flex-col justify-between text-white h-full shadow-[0_0_25px_rgba(34,197,94,0.15)]">
+              <div>
+                <p className="text-xs font-semibold text-[#86efac] uppercase tracking-wider">
+                  <EditableText id="bento_card3_tag" defaultText="Sites e sistemas no ar" title="Tag Sistemas" />
+                </p>
+                <div className="mt-3 text-4xl sm:text-5xl font-black text-white">
+                  <AnimatedCounter id="bento_stat_3" targetValue={40} suffix="+" label="" />
+                </div>
+              </div>
+
+              <p className="mt-8 text-xs font-medium text-[#bbf7d0] leading-relaxed">
+                <EditableText
+                  id="bento_card3_desc"
+                  defaultText="No ar, funcionando e com suporte técnico garantido depois da entrega."
+                  title="Descrição Sistemas no Ar"
+                />
+              </p>
+            </div>
+          </ScrollReveal>
+
+          {/* Card 4: 100+ Empresas Atendidas */}
+          <ScrollReveal delay={0.3} yOffset={35} className="md:col-span-3 lg:col-span-4">
+            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-[#050505] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-[#22c55e]/40 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-[#0a1a0c] border border-[#22c55e]/30 flex items-center justify-center text-[#22c55e]">
+                  <Users className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-white">
+                    <EditableText id="bento_card4_title" defaultText="Empresas e Empreendedores Atendidos" title="Título Empresas Atendidas" />
+                  </h4>
+                  <p className="text-xs text-neutral-400">
+                    <EditableText id="bento_card4_desc" defaultText="Atendimento em todo o Brasil com software de alta performance" title="Subtítulo Empresas Atendidas" />
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <AnimatedCounter id="bento_stat_4" targetValue={100} suffix="+" label="" />
+              </div>
+            </div>
+          </ScrollReveal>
+
+        </div>
+      </section>
+
 
       {/* ========================================================================= */}
-      {/* 6. DEPOIMENTOS & PRINTS REAIS DE FEEDBACKS                                */}
+      {/* 4. SEÇÃO DE PRODUTOS, PLANOS E ENTREGÁVEIS                                */}
       {/* ========================================================================= */}
+      <PackagesSection onOpenConsultation={onOpenConsultation} />
+
+
+      {/* ========================================================================= */}
+      {/* 5. SEÇÃO DE PROVA SOCIAL E AUTORIDADE                                     */}
+      {/* ========================================================================= */}
+      
+      {/* 5.1 Clientes Atendidos Slider (Mockups Reais de Sites e Sistemas) */}
+      <ClientsSliderSection 
+        onOpenConsultation={onOpenConsultation}
+        onNavigatePortfolio={() => onNavigate('portfolio')}
+      />
+
+      {/* 5.2 Cases & Portfólio CTA */}
+      <section className="relative w-full py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ScrollReveal threshold={0.15}>
+          <div className="relative overflow-hidden rounded-3xl border border-neutral-800/80 bg-gradient-to-b from-[#080d08] via-neutral-950 to-black p-8 sm:p-14 text-center flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.6)]">
+            
+            {/* Ambient Radial Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[250px] bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.12),transparent_70%)] blur-[70px] pointer-events-none" />
+
+            <div className="relative z-10 inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-1.5 text-xs font-bold text-[#4ade80] mb-5 shadow-[0_0_15px_rgba(34,197,94,0.15)]">
+              <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
+              <span>Nossos Trabalhos & Projetos</span>
+            </div>
+
+            <h2 className="relative z-10 font-display text-3xl sm:text-5xl font-extrabold text-white max-w-3xl leading-tight">
+              Conheça nossos cases e entregas reais <br />
+              <span className="text-[#22c55e] drop-shadow-[0_0_25px_rgba(34,197,94,0.3)]">feitas sob medida para cada cliente.</span>
+            </h2>
+
+            <p className="relative z-10 mt-4 max-w-2xl text-sm sm:text-base text-neutral-400 leading-relaxed font-normal">
+              Explore nossa galeria completa com lojas virtuais, identidades visuais de luxo, plataformas web e sistemas desenvolvidos pela Techify.
+            </p>
+
+            <div className="relative z-10 mt-8">
+              <button
+                onClick={() => onNavigate('portfolio')}
+                className="group relative inline-flex items-center justify-center gap-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-8 py-4 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:shadow-[0_0_40px_rgba(34,197,94,0.6)] cursor-pointer"
+              >
+                <span>ACESSAR PORTFÓLIO COMPLETO</span>
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                  <ArrowUpRight className="h-4 w-4" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* 5.3 Feedbacks & Depoimentos Reais de Clientes */}
       <section className="relative w-full py-20 bg-neutral-950/60 border-y border-neutral-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
@@ -929,11 +942,106 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         </div>
       </section>
 
+      {/* 5.4 Apresentação da Equipe (Conheça nosso time) */}
+      <section className="relative w-full py-20 sm:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ScrollReveal threshold={0.2}>
+          <div className="mb-14">
+            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-4">
+              <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
+              <span>Nosso Time</span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+              <div>
+                <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-white">
+                  Conheça nosso time
+                </h2>
+                <p className="text-sm text-neutral-400 mt-2 max-w-2xl font-normal">
+                  Especialistas dedicados a transformar desafios técnicos em crescimento e receita para sua empresa.
+                </p>
+              </div>
+
+              <button
+                onClick={() => onOpenConsultation()}
+                className="group inline-flex items-center gap-2 rounded-full bg-black hover:bg-neutral-900 border border-neutral-700 px-6 py-3 text-xs font-bold text-white transition-all cursor-pointer w-fit"
+              >
+                <span>FALE CONOSCO</span>
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#22c55e] text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                  <ArrowUpRight className="h-3 w-3 stroke-[2.5]" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </ScrollReveal>
+
+        {/* 4 Team Member Cards with Visual Photos & Inline Editing */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {teamMembers.map((member, idx) => (
+            <ScrollReveal key={member.id || idx} delay={idx * 0.1} yOffset={30}>
+              <div className="group relative rounded-3xl border border-neutral-800 bg-[#090b09] p-5 flex flex-col justify-between hover:border-[#22c55e]/50 hover:bg-[#0c120c] transition-all duration-300 shadow-xl h-full">
+                <div>
+                  {/* Large Portrait Image Container */}
+                  <div className="relative h-64 sm:h-72 w-full rounded-2xl bg-neutral-900 border border-neutral-800/80 overflow-hidden mb-4 shadow-lg group-hover:border-[#22c55e]/40 transition-all">
+                    <EditableImage
+                      id={`team_avatar_${member.id || idx}`}
+                      defaultSrc={member.avatar}
+                      alt={member.name}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      title={`Foto de ${member.name}`}
+                    />
+                    
+                    {/* Subtle gradient vignette at bottom */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+
+                    {/* Corner Action Icon */}
+                    <div className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/80 border border-neutral-700 text-neutral-300 backdrop-blur-sm group-hover:text-[#4ade80] group-hover:border-[#22c55e]/50 transition-all">
+                      <ArrowUpRight className="h-4 w-4" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <h3 className="font-display text-lg font-bold text-white group-hover:text-[#4ade80] transition-colors leading-snug">
+                        <EditableText
+                          id={`team_name_${member.id || idx}`}
+                          defaultText={member.name}
+                          title={`Nome: ${member.name}`}
+                        />
+                      </h3>
+                      <p className="mt-0.5 text-xs font-semibold text-[#a3e635]">
+                        <EditableText
+                          id={`team_role_${member.id || idx}`}
+                          defaultText={member.role}
+                          title={`Cargo: ${member.name}`}
+                        />
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-neutral-900/80">
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    <EditableText
+                      id={`team_desc_${member.id || idx}`}
+                      defaultText={member.description}
+                      title={`Bio: ${member.name}`}
+                      isMultiline={true}
+                    />
+                  </p>
+                </div>
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
+
 
       {/* ========================================================================= */}
-      {/* 7. BLOG & ARTIGOS / DÚVIDAS DOS DONOS DE NEGÓCIO                         */}
+      {/* 6. SEÇÃO DE DÚVIDAS E FECHAMENTO                                          */}
       {/* ========================================================================= */}
-      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      {/* 6.1 FAQ / Blog & Artigos (As dúvidas que todo dono de negócio tem) */}
+      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-neutral-900">
         <ScrollReveal threshold={0.2}>
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-16 gap-6">
             <div>
