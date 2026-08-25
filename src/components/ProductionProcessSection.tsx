@@ -251,60 +251,6 @@ export default function ProductionProcessSection({ onOpenConsultation }: Product
           })}
         </div>
 
-        {/* Interactive Active Stage Motion Spotlight Detail Banner */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep.number}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="mt-8 rounded-2xl border border-neutral-800/90 bg-gradient-to-r from-[#071308] via-neutral-950 to-black p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_0_40px_rgba(0,0,0,0.7)]"
-          >
-            <div className="flex items-center gap-4 sm:gap-5 w-full md:w-auto">
-              <div className="h-14 w-14 rounded-2xl bg-[#22c55e]/10 border border-[#22c55e]/30 flex items-center justify-center text-[#22c55e] shrink-0 shadow-[0_0_20px_rgba(34,197,94,0.15)]">
-                <currentStep.icon className="h-7 w-7" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-mono font-bold uppercase text-[#a3e635] bg-[#a3e635]/10 px-2.5 py-0.5 rounded-md border border-[#a3e635]/20">
-                    Etapa em Destaque: {currentStep.number}
-                  </span>
-                  <span className="text-xs text-neutral-400 font-medium">
-                    {currentStep.metrics.label}: <strong className="text-white">{currentStep.metrics.value}</strong>
-                  </span>
-                </div>
-                <h4 className="font-display text-lg sm:text-xl font-bold text-white">
-                  {currentStep.title} — {currentStep.tag}
-                </h4>
-              </div>
-            </div>
-
-            {/* Deliverables Pills + CTA */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-start md:justify-end">
-              {currentStep.deliverables.map((item, i) => (
-                <span 
-                  key={i} 
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300"
-                >
-                  <CheckCircle2 className="h-3 w-3 text-[#22c55e]" />
-                  <span>{item}</span>
-                </span>
-              ))}
-
-              {onOpenConsultation && (
-                <button
-                  onClick={() => onOpenConsultation('producao_motion')}
-                  className="ml-0 sm:ml-2 inline-flex items-center gap-2 rounded-full bg-[#22c55e] hover:bg-[#16a34a] text-black px-5 py-2.5 text-xs font-bold transition-all shadow-[0_0_20px_rgba(34,197,94,0.35)] cursor-pointer"
-                >
-                  <span>INICIAR PROJETO NESSA ETAPA</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-
       </div>
     </section>
   );

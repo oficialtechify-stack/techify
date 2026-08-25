@@ -177,8 +177,28 @@ export async function saveGeneralContentToFirestore(content: Partial<SiteGeneral
   localStorage.setItem(CONTENT_CACHE_KEY, JSON.stringify(updated));
   window.dispatchEvent(new CustomEvent('techify-content-updated', { detail: updated }));
 
+  // Save to general document
   await setDoc(doc(db, "site_content", "general"), {
     ...updated,
     updatedAt: new Date().toISOString()
   }, { merge: true });
+
+  // Keep inline_overrides texts in sync with general fields
+  const inlineUpdates: Record<string, string> = {};
+  if (content.heroHeadline1 !== undefined) inlineUpdates.hero_title_1 = content.heroHeadline1;
+  if (content.heroHeadline2 !== undefined) inlineUpdates.hero_title_2 = content.heroHeadline2;
+  if (content.heroDescription !== undefined) inlineUpdates.hero_description_main = content.heroDescription;
+  if (content.heroCtaPrimary !== undefined) inlineUpdates.hero_cta_primary = content.heroCtaPrimary;
+  if (content.heroCtaSecondary !== undefined) inlineUpdates.hero_cta_secondary = content.heroCtaSecondary;
+
+  if (Object.keys(inlineUpdates).length > 0) {
+    try {
+      await setDoc(doc(db, "site_content", "inline_overrides"), {
+        texts: inlineUpdates,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (err) {
+      console.warn("Could not sync inline_overrides:", err);
+    }
+  }
 }
