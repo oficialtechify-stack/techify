@@ -6,7 +6,7 @@
   <link href="https://cdn.prod.website-files.com" rel="preconnect" crossorigin="anonymous"/>
   <link href="https://cdn.zajno.com" rel="preconnect" crossorigin="anonymous"/>
   <title>Techify Motion - Princípios de Animação, UI/UX Dinâmico & Alta Performance</title>
-  <meta content="Techify Motion é o laboratório interativo de engenharia de movimento, micro-interações de alta conversão e princípios de animação digital da Techify." name="description"/>
+  <meta content="Laboratório interativo de engenharia de movimento, micro-interações de alta conversão e princípios de animação digital da Techify." name="description"/>
   <meta content="width=device-width, initial-scale=1" name="viewport"/>
   
   <!-- Webflow Original CSS -->
@@ -63,7 +63,7 @@
 
     /* Fixed Text and Overlap Adjustments */
     .p1, .p2, .p3, .h1, .h2, .h3, .h4, .h5, .h6 {
-      line-height: 1.35 !important;
+      line-height: 1.4 !important;
       word-break: break-word;
     }
     .text-wrap {
@@ -71,26 +71,39 @@
       position: relative;
       z-index: 2;
     }
+    
+    /* Card Styles - Showcase Only (No Ver Case button) */
     .card-link {
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       text-decoration: none !important;
-      display: block;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
-      border: 0.02rem solid rgba(255,255,255,0.08);
+      border: 0.02rem solid rgba(255,255,255,0.12);
       border-radius: 0.16rem;
-      background: #111014;
+      background: #141318;
+      cursor: default;
     }
     .card-link:hover {
       border-color: #22c55e !important;
       transform: translateY(-4px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
-    .card-link:hover .btn-link,
-    .logo-text-sections:hover,
-    .nav-toggle:hover .toggle-label,
-    .splide__slide.is-active .slide-inner-label {
-      text-decoration: none;
-      color: #22c55e;
+    .card-link .p3 {
+      color: #e2e8f0 !important;
+      font-size: 0.13rem !important;
+      line-height: 1.45 !important;
+      padding: 0.12rem 0.14rem !important;
+      margin: 0 !important;
+      display: block;
+      font-weight: 400;
     }
+    .card-link .flex-display.is-implementation {
+      padding: 0 !important;
+      width: 100%;
+      display: block !important;
+    }
+
     .w-nav-menu {
       display: flex !important;
     }
@@ -104,7 +117,9 @@
       position: relative;
       overflow: hidden;
       background: #16151a;
-      border-radius: 0.12rem;
+      border-radius: 0.14rem 0.14rem 0 0;
+      width: 100%;
+      aspect-ratio: 16/10;
     }
     .a-lesson-video video,
     .card-video video {
@@ -203,7 +218,7 @@
       display: none;
     }
 
-    /* Techify Logo Styling */
+    /* Brand Header Badge */
     .techify-brand-badge {
       display: inline-flex;
       align-items: center;
@@ -229,6 +244,35 @@
       letter-spacing: 0.04em;
       text-transform: uppercase;
       margin-left: 0.06rem;
+    }
+
+    /* Resources Items Clean */
+    .resources-item {
+      display: flex;
+      align-items: center;
+      padding: 0.12rem 0.16rem;
+      border-radius: 0.12rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      margin-bottom: 0.08rem;
+      transition: all 0.2s ease;
+    }
+    .resources-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+    .resources-item__dot {
+      width: 6px;
+      height: 6px;
+      background: #22c55e;
+      border-radius: 50%;
+      margin-right: 0.1rem;
+      flex-shrink: 0;
+    }
+    .resources-item__text .p3 {
+      color: #e2e8f0 !important;
+      font-size: 0.125rem !important;
+      line-height: 1.4 !important;
     }
 
     /* Responsive Font Scale */
@@ -384,7 +428,7 @@
     </div>
   </div>
 
-  <!-- MAIN WRAPPER -->
+  <!-- MAIN CONTENT -->
   <div class="main">
     
     <!-- HERO SECTION -->
@@ -402,13 +446,13 @@
         <div class="div-block-4">
           <div class="text-wrap is-hero">
             <div class="p1 white">
-              A engenharia de animação UI/UX da Techify valoriza cada detalhe estratégico da sua marca, guiando o cliente até a conversão.
+              A animação de UI/UX enfatiza os detalhes aos quais os usuários devem prestar atenção, guiando-os com naturalidade pela interface da Techify.
             </div>
           </div>
         </div>
         <div class="content-wrap is-hero">
           <div class="h3 white">
-            O motion design de alta fidelidade torna a navegação inesquecível, fluida e com máxima taxa de retenção.
+            Uma animação bem projetada torna toda a experiência do usuário mais memorável, fluida e envolvente.
           </div>
         </div>
       </section>
@@ -428,9 +472,9 @@
               </div>
             </div>
             <div class="anim-smoke"></div>
-            <div class="anim-shape is-also"><div class="anim-text-wrap"><div class="anim-text">O Motion</div></div></div>
-            <div class="anim-shape is-your"><div class="anim-text-wrap"><div class="anim-text">da Techify</div></div></div>
-            <div class="anim-shape is-controls"><div class="anim-text-wrap"><div class="anim-text">orienta a</div></div></div>
+            <div class="anim-shape is-also"><div class="anim-text-wrap"><div class="anim-text">Ela também</div></div></div>
+            <div class="anim-shape is-your"><div class="anim-text-wrap"><div class="anim-text">sua</div></div></div>
+            <div class="anim-shape is-controls"><div class="anim-text-wrap"><div class="anim-text">controla</div></div></div>
             <div class="anim-shape is-attention"><div class="anim-text-wrap"><div class="anim-text">atenção</div></div></div>
           </div>
           
@@ -451,14 +495,14 @@
           </div>
         </div>
 
-        <!-- UI Slider Track -->
+        <!-- 6 INTRO VIDEOS TRACK -->
         <div class="ui-wrap">
           <div class="ui first">
             <div class="ui-track">
               <div class="section-track">
                 <div class="ui-text">
                   <div class="text-wrap is-animation">
-                    <div class="h6 white">A animação digital da Techify traduz a personalidade e autoridade do seu produto</div>
+                    <div class="h6 white">A animação de UI/UX captura a atmosfera e o tom de um produto, conectando-o com impacto ao público-alvo.</div>
                   </div>
                 </div>
                 <div class="section-slider ui-slider">
@@ -473,12 +517,59 @@
                         </div>
                       </div>
                       <div class="section-slide-text">
-                        <div class="p3-bold" style="color: #22c55e; margin-bottom: 0.02rem;">E-COMMERCE &amp; FITNESS</div>
-                        <div class="p3">Animações de entrada e micro-interações que transmitem energia e impulsionam as vendas de produtos.</div>
+                        <div class="p3">Aqui, a animação confere um ritmo dinâmico e enérgico a uma plataforma fitness.</div>
                       </div>
                     </div>
                   </div>
 
+                  <div class="section-slide ui-slide">
+                    <div class="section-slide-wrap">
+                      <div class="section-slide-img-wrap">
+                        <div class="section-slide-video w-embed">
+                          <video width="100%" height="100%" autoplay loop muted playsinline>
+                            <source type='video/mp4; codecs="hvc1"' src="https://cdn.zajno.com/dev/motion/videos/slider/optimise/2_Game-hevc-1.mov"/>
+                            <source type="video/webm" src="https://cdn.zajno.com/dev/motion/videos/slider/optimise/2_Game-hevc_VP9.webm"/>
+                          </video>
+                        </div>
+                      </div>
+                      <div class="section-slide-text">
+                        <div class="p3">Ela também eleva aplicações e jogos a um novo patamar de engajamento...</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="section-slide ui-slide">
+                    <div class="section-slide-wrap">
+                      <div class="section-slide-img-wrap">
+                        <div class="section-slide-video w-embed">
+                          <video width="100%" height="100%" autoplay loop muted playsinline>
+                            <source type='video/mp4; codecs="hvc1"' src="https://cdn.zajno.com/dev/motion/videos/slider/optimise/3_House_og.mov"/>
+                            <source type="video/webm" src="https://cdn.zajno.com/dev/motion/videos/slider/optimise/3_House_og_VP9.webm"/>
+                          </video>
+                        </div>
+                      </div>
+                      <div class="section-slide-text">
+                        <div class="p3">Um estúdio de arquitetura transmite sofisticação combinando técnicas complementares de movimento.</div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+            <div class="ui-ball"></div>
+          </div>
+
+          <div class="ui">
+            <div class="ui-track">
+              <div class="section-track">
+                <div class="ui-text">
+                  <div class="text-wrap is-animation">
+                    <div class="h6 white">A animação estimula a interação intuitiva, convidando os usuários a explorar cada detalhe.</div>
+                  </div>
+                </div>
+                <div class="section-slider ui-slider">
+                  
                   <div class="section-slide ui-slide">
                     <div class="section-slide-wrap">
                       <div class="section-slide-img-wrap">
@@ -489,8 +580,7 @@
                         </div>
                       </div>
                       <div class="section-slide-text">
-                        <div class="p3-bold" style="color: #22c55e; margin-bottom: 0.02rem;">SLIDERS &amp; NAVEGAÇÃO 3D</div>
-                        <div class="p3">Indicadores cinéticos sugerem como usar sliders, filtros rápidos e a navegação fluida de checkout.</div>
+                        <div class="p3">A animação indica intuitivamente como interagir com sliders e componentes de navegação.</div>
                       </div>
                     </div>
                   </div>
@@ -505,8 +595,22 @@
                         </div>
                       </div>
                       <div class="section-slide-text">
-                        <div class="p3-bold" style="color: #22c55e; margin-bottom: 0.02rem;">PLATAFORMAS DINÂMICAS</div>
-                        <div class="p3">O movimento progressivo guia o olhar de um elemento chave de conteúdo diretamente para o botão de ação.</div>
+                        <div class="p3">O movimento conduz o olhar de um elemento visual chave para o próximo de forma contínua.</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="section-slide ui-slide">
+                    <div class="section-slide-wrap">
+                      <div class="section-slide-img-wrap">
+                        <div class="section-slide-video w-embed">
+                          <video width="100%" height="100%" autoplay loop muted playsinline>
+                            <source src="https://cdn.zajno.com/dev/motion/videos/slider/optimise/6_Eyeloader_og_H.264.mp4" type="video/mp4">
+                          </video>
+                        </div>
+                      </div>
+                      <div class="section-slide-text">
+                        <div class="p3">A animação desdobra progressivamente as informações visuais que o usuário visualiza na tela.</div>
                       </div>
                     </div>
                   </div>
@@ -514,7 +618,6 @@
                 </div>
               </div>
             </div>
-            <div class="ui-ball"></div>
           </div>
         </div>
       </section>
@@ -524,7 +627,7 @@
     <div class="nav nav-light">
       <section id="interactive" class="section is-interactive">
         <div class="content-wrap is-interactive">
-          <h2 class="h2">Interatividade Techify</h2>
+          <h2 class="h2">Interatividade</h2>
         </div>
         <div class="height-section is-interactive">
           <div class="track-flex is-interactive">
@@ -532,15 +635,15 @@
               
               <div class="horizontal-item">
                 <div class="h-item-content">
-                  <div class="p3-bold">A Techify projeta dois tipos de <br/>interfaces interativas:</div>
-                  <div class="p3"><span class="p3-bold">Tempo Real:</span> respondem instantaneamente ao movimento físico do cursor ou toque.</div>
-                  <div class="p3"><span class="p3-bold">Pós-Interação:</span> acionam transições calculadas após o clique, consolidando a decisão.</div>
+                  <div class="p3-bold">Existem dois tipos fundamentais<br/>de interfaces interativas:</div>
+                  <div class="p3"><span class="p3-bold">Em tempo real:</span> respondem instantaneamente conforme os usuários interagem.</div>
+                  <div class="p3"><span class="p3-bold">Assíncronas (Não em tempo real):</span> respondem com elegância após a ação ter ocorrido.</div>
                 </div>
               </div>
 
               <div class="horizontal-item">
                 <div class="h-item-content">
-                  <div class="p3">Tempo Real &bull; Mova o cursor aqui (Física de Mola)</div>
+                  <div class="p3">Em tempo real (Física de Molas)</div>
                 </div>
                 <div id="canvas" class="item-canvas" style="position: relative; width: 100%; height: 100%; min-height: 2.5rem;">
                   <canvas id="spring-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
@@ -549,7 +652,7 @@
 
               <div class="horizontal-item">
                 <div class="h-item-content">
-                  <div class="p3">Pós-Interação &bull; Passe o cursor para disparar</div>
+                  <div class="p3">Assíncrono (Micro-interação Lottie)</div>
                 </div>
                 <div data-is-ix2-target="1" class="h-item-lottie" data-animation-type="lottie" data-src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/64187ee0d634cb715e836e02_not_real_time.json" data-loop="0" data-direction="1" data-autoplay="0" data-renderer="svg"></div>
                 <div id="notrealtime" class="h-lottie-hover" style="cursor: pointer;"></div>
@@ -565,9 +668,9 @@
     <div class="nav nav-dark">
       <section id="techniques" class="section is-techniques">
         <div class="list-wrap is-techniques">
-          <div class="list-item is-techniques first"><div>Engenharia de</div></div>
-          <div class="list-item is-techniques second"><div>Motion UI</div></div>
-          <div class="list-item is-techniques third"><div>Techify</div></div>
+          <div class="list-item is-techniques first"><div>Técnicas</div></div>
+          <div class="list-item is-techniques second"><div>de animação</div></div>
+          <div class="list-item is-techniques third"><div>de interface</div></div>
         </div>
         <div class="bg-divider is-techniques"></div>
         <div class="bg-image is-star first"></div>
@@ -575,14 +678,14 @@
         <div class="content-wrap is-techniques">
           <div class="text-wrap is-techniques">
             <div class="p1 white">
-              Cada site e plataforma desenvolvidos pela Techify combina princípios universais da animação com tecnologia de ponta em WebGL, Canvas e Framer Motion para gerar conexões emocionais e resultados comerciais reais.
+              Toda animação de interface utiliza um repertório refinado de técnicas para tornar sites e aplicações mais cativantes e eficientes. Muitas dessas técnicas têm raízes na era de ouro dos desenhos animados tradicionais — agora adaptadas para a engenharia de alta conversão da Techify.
             </div>
           </div>
         </div>
       </section>
     </div>
 
-    <!-- LESSONS / PRINCIPLES -->
+    <!-- LESSONS / PRINCIPLES (ALL 8 COMPLETE) -->
     <section id="lessons" class="section is-lessons">
       
       <!-- 1. EASING -->
@@ -598,15 +701,16 @@
               <div class="hero-content">
                 <div class="flex-display is-hero">
                   <div class="label-1 is-lesson">1</div>
-                  <div class="hero-title"><h4 class="h4">FUNDAMENTOS DE EASING</h4></div>
+                  <div class="hero-title"><h4 class="h4">OS FUNDAMENTOS DO EASING</h4></div>
                 </div>
                 <div class="text-wrap is-hero-desc">
                   <div class="p2">
-                    No mundo real, o movimento nunca é linear: os objetos ganham velocidade gradativamente ao iniciar e desaceleram ao parar. Na Techify, calibramos curvas de aceleração que tornam a navegação orgânica e prazerosa.
+                    Na natureza, a velocidade do movimento nunca é linear: objetos ganham velocidade ao começar a se mover e desaceleram suavemente ao parar. O Easing é a técnica que nos permite transmitir essa física natural no ambiente digital.
                   </div>
                 </div>
               </div>
-
+              
+              <!-- Easing Carousel (Linear, Ease, Ease-in, Ease-out, Cubic) -->
               <div class="splide-container">
                 <div class="hero_right">
                   <div class="splide splide2">
@@ -616,54 +720,33 @@
                         <div class="splide__slide">
                           <div class="slide-inner-label">Linear</div>
                           <div class="slide-lottie active" data-animation-type="lottie" data-src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/63dbc8b62b483f54221ad660_linear.json" data-loop="1" data-direction="1" data-autoplay="1" data-renderer="svg"></div>
-                          <div class="slide-lottie not-active" data-animation-type="lottie" data-src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/63dbc8b62b483f54221ad660_linear.json" data-loop="0" data-direction="1" data-autoplay="1" data-renderer="svg"></div>
-                          <div class="text1">Com easing linear, o objeto viaja em velocidade constante, sem aceleração ou desaceleração.</div>
+                          <div class="text1">Com o easing linear, o objeto se desloca a uma velocidade rigorosamente constante, sem aceleração ou frenagem.</div>
                         </div>
 
                         <div class="splide__slide">
                           <div class="slide-inner-label">Ease</div>
                           <div class="slide-lottie active" data-animation-type="lottie" data-src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/63c5b8b2cd7afa60ac078553_ease.json" data-loop="1" data-direction="1" data-autoplay="1" data-renderer="svg"></div>
-                          <div class="slide-lottie not-active" data-animation-type="lottie" data-src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/63c5b8b2cd7afa60ac078553_ease.json" data-loop="0" data-direction="1" data-autoplay="1" data-renderer="svg"></div>
-                          <div class="text1">Aqui o objeto acelera levemente no início e amortece suavemente no ponto final.</div>
+                          <div class="text1">Aqui o objeto acelera levemente no início e desacelera de maneira suave e controlada no final.</div>
                         </div>
 
                         <div class="splide__slide">
                           <div class="slide-inner-label">Ease-in</div>
                           <div class="slide-lottie active" data-animation-type="lottie" data-src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/63dd090b6103039af6cce1b8_ease_in.json" data-loop="1" data-direction="1" data-autoplay="1" data-renderer="svg"></div>
-                          <div class="slide-lottie not-active" data-animation-type="lottie" data-src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/63dd090b6103039af6cce1b8_ease_in.json" data-loop="0" data-direction="1" data-autoplay="1" data-renderer="svg"></div>
-                          <div class="text1">Começa devagar e acelera progressivamente à medida que ganha potência.</div>
+                          <div class="text1">Inicia o deslocamento com lentidão gradual e acelera progressivamente conforme o movimento continua.</div>
                         </div>
 
                         <div class="splide__slide">
                           <div class="slide-inner-label">Ease-out</div>
                           <div class="slide-lottie active" data-animation-type="lottie" data-src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/63dd0b66b2f0831f5163e696_ease_out.json" data-loop="1" data-direction="1" data-autoplay="1" data-renderer="svg"></div>
-                          <div class="slide-lottie not-active" data-animation-type="lottie" data-src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/63dd0b66b2f0831f5163e696_ease_out.json" data-loop="0" data-direction="1" data-autoplay="1" data-renderer="svg"></div>
-                          <div class="text1">O oposto do ease-in: chega com agilidade e desacelera com extrema elegância no destino.</div>
+                          <div class="text1">O oposto do ease-in — parte em alta velocidade e desacelera com extrema suavidade na chegada.</div>
                         </div>
 
                         <div class="splide__slide">
                           <div class="slide-inner-label">Cubic</div>
                           <div class="slide-lottie active" data-animation-type="lottie" data-src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/63dd0b9fdcb85a2de10cbabf_cubic.json" data-loop="1" data-direction="1" data-autoplay="1" data-renderer="svg"></div>
-                          <div class="slide-lottie not-active" data-animation-type="lottie" data-src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/63dd0b9fdcb85a2de10cbabf_cubic.json" data-loop="0" data-direction="1" data-autoplay="1" data-renderer="svg"></div>
-                          <div class="text1">Curva Bezier personalizada para dinamismo de marcas modernas e interfaces de luxo.</div>
+                          <div class="text1">O cúbico é similar ao ease, porém com períodos mais marcados de aceleração e frenagem, tornando a transição intermediária mais dinâmica.</div>
                         </div>
 
-                      </div>
-                    </div>
-                    <div class="splide__arrows">
-                      <div class="embed w-embed">
-                        <button class="splide__arrow splide__arrow--prev" style="cursor: pointer;">
-                          <svg width="100%" height="100%" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M14.8812 0L0 16L14.8812 32L17.0745 29.9594L5.48433 17.498H32V14.502H5.48433L17.0745 2.04055L14.8812 0Z" fill="currentColor"/>
-                          </svg>
-                        </button>
-                      </div>
-                      <div class="embed w-embed">
-                        <button class="splide__arrow splide__arrow--next" style="cursor: pointer;">
-                          <svg width="100%" height="100%" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M17.1188 0L32 16L17.1188 32L14.9255 29.9594L26.5157 17.498H0V14.502H26.5157L14.9255 2.04055L17.1188 0Z" fill="currentColor"/>
-                          </svg>
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -672,20 +755,21 @@
                 <div class="hero_left">
                   <div class="hero_content">
                     <div class="hero_wrap">
-                      <div class="hero_text">Com easing linear, o objeto viaja em velocidade constante, sem aceleração ou desaceleração.</div>
+                      <div class="hero_text">Com o easing linear, o objeto se desloca a uma velocidade rigorosamente constante, sem aceleração ou frenagem.</div>
                     </div>
                   </div>
                 </div>
               </div>
+
             </div>
 
-            <!-- Implementation examples 1 -->
+            <!-- Implementation Examples (No View/Ver Case buttons) -->
             <div class="lesson-item is-implementation">
-              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de Implementação</h3></div>
+              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de implementação</h3></div>
               <div class="sticky-container is-implementation">
                 <div class="list-wrap is-implementation">
                   
-                  <a href="https://dribbble.com/shots/19273514-Fly-Dashboard-Design-for-NFT-Creators" target="_blank" rel="noreferrer" class="card-link w-inline-block">
+                  <div class="card-link w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a09ff1e16493db95fc759_Fly_Dashboard_desktop_00000.png">
@@ -695,14 +779,11 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a09ff1e16493db95fc759_Fly_Dashboard_desktop_00000.png" loading="eager" alt="" class="card-video-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Ease-in e ease-out aplicados a movimentos de câmera e transformação de objetos de interface em dashboards Techify.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">Ease-in/ease-out também pode ser aplicado a movimentos de câmera e transformações de componentes na UI.</div>
                     </div>
-                  </a>
+                  </div>
 
-                  <a href="https://dribbble.com/shots/18163851-Keep-Website" target="_blank" rel="noreferrer" class="card-link is-second w-inline-block">
+                  <div class="card-link is-second w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a09ff970b270fc28d55d8_Keep%20Website_desktop_00000.png">
@@ -712,14 +793,11 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a09ff970b270fc28d55d8_Keep%20Website_desktop_00000.png" loading="eager" alt="" class="card-video-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Veja como títulos e textos institucionais deslizam suavemente para o campo de visão com retenção máxima.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">Observe a fluidez com que a tipografia e o conteúdo textual deslizam suavemente para o campo de visão.</div>
                     </div>
-                  </a>
+                  </div>
 
-                  <a href="https://dribbble.com/shots/19220690-PalmPalm-Website-Animation" target="_blank" rel="noreferrer" class="card-link is-third w-inline-block">
+                  <div class="card-link is-third w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a00858d286f01c4d2e9_PalmPalm%20Website_desktop_00000.png">
@@ -729,12 +807,9 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a00858d286f01c4d2e9_PalmPalm%20Website_desktop_00000.png" loading="eager" alt="" class="card-video-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Controle da cadência e surgimento de ícones e ilustrações vetoriais interativas.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">Aqui vemos como as curvas de aceleração guiam o surgimento de conteúdo, ícones e elementos visuais da Techify.</div>
                     </div>
-                  </a>
+                  </div>
 
                 </div>
               </div>
@@ -746,7 +821,7 @@
               <div class="classic-anim_musk">
                 <div class="classic-anim_container is-easing">
                   <div class="classic-anim_content">
-                    <h2 class="h2-secondary">Exemplo da Física Clássica</h2>
+                    <h2 class="h2-secondary">Um exemplo da animação clássica</h2>
                     <div class="a-lesson-list">
                       <div class="a-lesson-item">
                         <div class="a-lesson-item_overflow-hidden">
@@ -764,8 +839,8 @@
                     <div class="a-lesson-item_sticky">
                       <div class="a-lesson-item">
                         <div class="a-lesson-text-wrap">
-                          <div class="p3-bold" style="color: #22c55e;">Slow In &amp; Slow Out (Desaceleração Suave)</div>
-                          <div class="p3">Pense em como um carro arranca e para. No início, ele ganha momento gradativamente antes de atingir velocidade total. Ao frear, a inércia reduz suavemente. Na Techify, calibramos essa física em cada transição.</div>
+                          <div class="p3-bold" style="color: #22c55e;">Desaceleração e Aceleração gradual (Slow in &amp; slow out)</div>
+                          <div class="p3">Pense em como um veículo arranca e para. Primeiro ele ganha tração com lentidão antes de atingir velocidade. Ao frear, o processo se inverte gradualmente.</div>
                         </div>
                       </div>
                       <div class="a-lesson-item margin-40">
@@ -778,7 +853,7 @@
                           <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/64410b27a34d276b64caae3c_1_CAR_EASING_COMPARISON_00000.webp" loading="eager" alt="" class="a-lesson-img"/>
                         </div>
                         <div class="a-lesson-text-wrap">
-                          <div class="p3">Adicionar amortecimento realista cria uma sensação imediata de sofisticação e profissionalismo.</div>
+                          <div class="p3">Na animação, esse efeito orgânico é obtido distribuindo mais quadros no início e no fim da ação. Aplicar este princípio confere naturalidade e vida aos elementos digitais.</div>
                         </div>
                       </div>
                     </div>
@@ -804,22 +879,22 @@
               <div class="hero-content">
                 <div class="flex-display is-hero">
                   <div class="label-1 is-lesson">2</div>
-                  <div class="hero-title"><h4 class="h4">OFFSET <br/>&amp; DELAY (STAGGER)</h4></div>
+                  <div class="hero-title"><h4 class="h4">OFFSET E DELAY (STAGGER)</h4></div>
                 </div>
                 <div class="text-wrap is-hero-desc">
                   <div class="p2">
-                    Um leve atraso progressivo (stagger) entre múltiplos objetos cria uma sensação de leveza e profundidade multicamadas. Essa técnica guia o fluxo de leitura do cliente, indicando claramente a hierarquia dos elementos.
+                    Um pequeno intervalo escalonado entre dois ou mais objetos cria uma sensação de leveza e profundidade multicamadas. Essa técnica também ajuda a guiar a atenção do usuário, evidenciando a hierarquia da interface.
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="lesson-item is-implementation">
-              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de Implementação</h3></div>
+              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de implementação</h3></div>
               <div class="sticky-container is-implementation">
                 <div class="list-wrap is-implementation">
                   
-                  <a href="https://dribbble.com/shots/15757198-Flower-Delivery-Mobile-App-Animation" target="_blank" rel="noreferrer" class="card-link w-inline-block">
+                  <div class="card-link w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a552563701d949b511a_Flower%20Delivery_desktop_00000.png">
@@ -829,14 +904,11 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a552563701d949b511a_Flower%20Delivery_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Elementos de conteúdo surgem um a um, adicionando suavidade ao movimento e cadência elegante.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">Aqui, os elementos aparecem em cascata progressiva, adicionando fluidez e sensação tátil ao movimento.</div>
                     </div>
-                  </a>
+                  </div>
 
-                  <a href="https://dribbble.com/shots/12515946-PlayStation-5-Promo-Website" target="_blank" rel="noreferrer" class="card-link is-second w-inline-block">
+                  <div class="card-link is-second w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a5437053f78159b41d8_PlayStation%205%20Promo_desktop_00000.png">
@@ -846,14 +918,11 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a5437053f78159b41d8_PlayStation%205%20Promo_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">A chegada sequencial dá a cada elemento o seu devido destaque na composição visual.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">A revelação sequencial concede a cada bloco de informação o tempo necessário para ser apreciado e assimilado.</div>
                     </div>
-                  </a>
+                  </div>
 
-                  <a href="https://dribbble.com/shots/19220690-PalmPalm-Website-Animation" target="_blank" rel="noreferrer" class="card-link is-third w-inline-block">
+                  <div class="card-link is-third w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a569c36d05db87e20f1_IMA-HOME%20Early_desktop_00000.png">
@@ -863,23 +932,21 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a569c36d05db87e20f1_IMA-HOME%20Early_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">A revelação progressiva mantém os olhos do usuário engajados até o rodapé da página.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">O surgimento escalonado dos cards cria um ritmo harmonioso que convida à leitura contínua até o rodapé.</div>
                     </div>
-                  </a>
+                  </div>
 
                 </div>
               </div>
               <div class="overlay-bg"></div>
             </div>
 
+            <!-- Classic Animation Delay Demo -->
             <div class="classic-anim_wrap">
               <div class="classic-anim_musk">
                 <div class="classic-anim_container is-delay">
                   <div class="classic-anim_content">
-                    <h2 class="h2-secondary">Exemplo da Animação Clássica</h2>
+                    <h2 class="h2-secondary">Um exemplo da animação clássica</h2>
                     <div class="a-lesson-list">
                       <div class="a-lesson-item">
                         <div class="a-lesson-item_overflow-hidden">
@@ -897,8 +964,8 @@
                     <div class="a-lesson-item_sticky">
                       <div class="a-lesson-item margin-40">
                         <div class="a-lesson-text-wrap">
-                          <div class="p3-bold" style="color: #22c55e;">Follow Through &amp; Ação Sobreposta</div>
-                          <div class="p3">Quando um corpo entra em repouso após estar em movimento, partes diferentes desaceleram em momentos distintos. Aplicamos este 5º princípio clássico da Disney em listas e modais interativos da Techify.</div>
+                          <div class="p3-bold" style="color: #22c55e;">Continuidade e Ação Sobreposta (Follow through &amp; overlapping action)</div>
+                          <div class="p3">Quando um objeto em movimento para, suas diferentes partes não cessam o deslocamento no mesmo instante. Esse é o 5º princípio da animação da Disney.<br/><br/>Se um personagem corre, seus braços e pernas movem-se com frequências diferentes do tronco. Ao frear bruscamente, o cabelo e tecidos continuam em movimento por alguns quadros extras. Na Techify, aplicamos essa física orgânica para tornar os fluxos de interface dinâmicos e vivos.</div>
                         </div>
                       </div>
                     </div>
@@ -924,22 +991,22 @@
               <div class="hero-content">
                 <div class="flex-display is-hero">
                   <div class="label-1 is-lesson">3</div>
-                  <div class="hero-title"><h4 class="h4">FADE-IN &amp; REVELAÇÃO</h4></div>
+                  <div class="hero-title"><h4 class="h4">FADE-IN &amp; FADE-OUT</h4></div>
                 </div>
                 <div class="text-wrap is-hero-desc">
                   <div class="p2">
-                    Transição sutil entre transparência e opacidade total. É a técnica mais elegante para gerenciar o ciclo de vida de modais, notificações, filtros e trocas de seção sem quebras visuais bruscas.
+                    Fade-in e fade-out é o aparecimento e desaparecimento de elementos através da transição entre transparência e opacidade. Sendo o recurso mais versátil do design de interação, atinge sua máxima elegância quando combinado com transições sutis de posição ou escala.
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="lesson-item is-implementation">
-              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de Implementação</h3></div>
+              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de implementação</h3></div>
               <div class="sticky-container is-implementation">
                 <div class="list-wrap is-implementation">
                   
-                  <a href="https://dribbble.com/shots/19773761-Royal-Caribbean-s-Icon-of-the-Seas-Microsite" target="_blank" rel="noreferrer" class="card-link w-inline-block">
+                  <div class="card-link w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a9527427fbc6eec5f56_Royal%20Caribbean%27s%20Icon_desktop_00000.png">
@@ -949,14 +1016,11 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a9527427fbc6eec5f56_Royal%20Caribbean%27s%20Icon_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Textos e imagens surgindo sob uma máscara com transição suave de opacidade.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">Aqui observamos o texto surgindo sob uma máscara antes de desvanecer suavemente na troca de cena.</div>
                     </div>
-                  </a>
+                  </div>
 
-                  <a href="https://dribbble.com/shots/19944514-OpenColony-Website" target="_blank" rel="noreferrer" class="card-link is-second w-inline-block">
+                  <div class="card-link is-second w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a94a803e38292be822c_OpenColony%20Website_desktop_00000.png">
@@ -966,12 +1030,23 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a94a803e38292be822c_OpenColony%20Website_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Fade sincronizado com deslocamento sutil de posição para cartões de produtos.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">Animações conjugadas de opacidade e eixo Y criam uma entrada fluida para os blocos de conteúdo textual.</div>
                     </div>
-                  </a>
+                  </div>
+
+                  <div class="card-link is-third w-inline-block">
+                    <div class="card-video-item">
+                      <div class="card-video is-implementation w-embed">
+                        <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a94858d282b25c4da81_Siren%20Website%20Design_desktop_00000.png">
+                          <source src="https://cdn.zajno.com/dev/motion/videos/Lessons/lesson-3/Siren Website Design_desktop_H.264.mp4" type="video/mp4">
+                        </video>
+                      </div>
+                      <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a94858d282b25c4da81_Siren%20Website%20Design_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
+                    </div>
+                    <div class="flex-display is-implementation">
+                      <div class="p3">Para diferenciar elementos adjacentes, animamos um com opacidade e posição simultâneas, e o outro apenas com opacidade pura.</div>
+                    </div>
+                  </div>
 
                 </div>
               </div>
@@ -998,18 +1073,18 @@
                 </div>
                 <div class="text-wrap is-hero-desc">
                   <div class="p2">
-                    Transformar a geometria de um componente em outro mantém a continuidade cognitiva do usuário, evitando telas brancas de carregamento e aumentando o engajamento.
+                    Técnica de metamorfose contínua de uma forma para outra (por exemplo, um ícone circular expandindo em um card fotográfico). Isso gera continuidade visual inquebrável e prende a atenção durante as transições de tela.
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="lesson-item is-implementation">
-              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de Implementação</h3></div>
+              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de implementação</h3></div>
               <div class="sticky-container is-implementation">
                 <div class="list-wrap is-implementation">
                   
-                  <a href="https://dribbble.com/shots/19220148-Mobile-House-Website-Animation" target="_blank" rel="noreferrer" class="card-link w-inline-block">
+                  <div class="card-link w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0ad44c81327e2fdada9b_Mobile%20House_desktop_00000.png">
@@ -1019,14 +1094,11 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0ad44c81327e2fdada9b_Mobile%20House_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Metamorfose fluida de containers e cartões que mudam de formato durante o scroll.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">Aqui o container da mídia transmuta organicamente sua geometria mantendo o foco no produto.</div>
                     </div>
-                  </a>
+                  </div>
 
-                  <a href="https://dribbble.com/shots/16780619-3D-Animation-for-the-Online-Museum-of-Old-Games" target="_blank" rel="noreferrer" class="card-link is-second w-inline-block">
+                  <div class="card-link is-second w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0ad4d9f5fbcc7deddb24_Online%20Museum%20of%20Old_desktop_00011.png">
@@ -1036,12 +1108,23 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0ad4d9f5fbcc7deddb24_Online%20Museum%20of%20Old_desktop_00011.png" loading="eager" alt="" class="a-lesson-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Expansão de thumbnail para visualizador de detalhes sem troca de página.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">Fusão precisa de mascaramento e interpolação dimensional na expansão de miniaturas para o viewport full.</div>
                     </div>
-                  </a>
+                  </div>
+
+                  <div class="card-link is-third w-inline-block">
+                    <div class="card-video-item">
+                      <div class="card-video is-implementation w-embed">
+                        <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0ad3c6872ccd4ba156fd_The%20Heritage%20Museum_desktop_00000.png">
+                          <source src="https://cdn.zajno.com/dev/motion/videos/Lessons/lesson-4/The Heritage Museum_desktop_H.264.mp4" type="video/mp4">
+                        </video>
+                      </div>
+                      <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0ad3c6872ccd4ba156fd_The%20Heritage%20Museum_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
+                    </div>
+                    <div class="flex-display is-implementation">
+                      <div class="p3">Os vetores que emolduram a imagem transformam-se de geometrias irregulares em grids simétricos em tempo real.</div>
+                    </div>
+                  </div>
 
                 </div>
               </div>
@@ -1064,22 +1147,22 @@
               <div class="hero-content">
                 <div class="flex-display is-hero">
                   <div class="label-1 is-lesson">5</div>
-                  <div class="hero-title"><h4 class="h4">MASKING &amp; CLIP-PATH</h4></div>
+                  <div class="hero-title"><h4 class="h4">MASCARAMENTO (MASKING)</h4></div>
                 </div>
                 <div class="text-wrap is-hero-desc">
                   <div class="p2">
-                    Revela elementos progressivamente através de máscaras e janelas geométricas, criando uma sensação moderna de camadas em movimento.
+                    O mascaramento utiliza formas geométricas ou vetoriais como janelas de recorte para imagens e vídeos. O conteúdo dentro da máscara pode ser escalado ou transladado, gerando sensação de profundidade e amplitude espacial.
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="lesson-item is-implementation">
-              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de Implementação</h3></div>
+              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de implementação</h3></div>
               <div class="sticky-container is-implementation">
                 <div class="list-wrap is-implementation">
                   
-                  <a href="https://dribbble.com/shots/16788118-Design-Conference-Promo-Animation" target="_blank" rel="noreferrer" class="card-link w-inline-block">
+                  <div class="card-link w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b0b4c8132d5cedadccc_Design%20Conference%20Promo_desktop_00000.png">
@@ -1089,12 +1172,37 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b0b4c8132d5cedadccc_Design%20Conference%20Promo_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Máscaras dinâmicas que deslocam o foco visual durante o hover do usuário.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">O mascaramento dinâmico faz a fotografia se deslocar sutilmente dentro de seu perímetro, casando perfeitamente com o scroll.</div>
                     </div>
-                  </a>
+                  </div>
+
+                  <div class="card-link is-second w-inline-block">
+                    <div class="card-video-item">
+                      <div class="card-video is-implementation w-embed">
+                        <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b0a13c4d70936d0da82_Homepage%20Animation_desktop_00000.png">
+                          <source src="https://cdn.zajno.com/dev/motion/videos/Lessons/lesson-5/Homepage Animation_desktop_H.264.mp4" type="video/mp4">
+                        </video>
+                      </div>
+                      <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b0a13c4d70936d0da82_Homepage%20Animation_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
+                    </div>
+                    <div class="flex-display is-implementation">
+                      <div class="p3">Revelação de imagem com efeito de cortina suave sincronizada com os gestos do cursor.</div>
+                    </div>
+                  </div>
+
+                  <div class="card-link is-third w-inline-block">
+                    <div class="card-video-item">
+                      <div class="card-video is-implementation w-embed">
+                        <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b0c27663958092cc3d3_Website%20animation_desktop_00000.png">
+                          <source src="https://cdn.zajno.com/dev/motion/videos/Lessons/lesson-5/Website animation_desktop_H.264.mp4" type="video/mp4">
+                        </video>
+                      </div>
+                      <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b0c27663958092cc3d3_Website%20animation_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
+                    </div>
+                    <div class="flex-display is-implementation">
+                      <div class="p3">Transições de máscara fluida proporcionam sofisticação gráfica e acabamento de alto padrão ao site.</div>
+                    </div>
+                  </div>
 
                 </div>
               </div>
@@ -1122,22 +1230,36 @@
               <div class="hero-content">
                 <div class="flex-display is-hero">
                   <div class="label-1 is-lesson">6</div>
-                  <div class="hero-title"><h4 class="h4">DIMENSÃO &amp; ESPAÇO 3D</h4></div>
+                  <div class="hero-title"><h4 class="h4">DIMENSIONALIDADE</h4></div>
                 </div>
                 <div class="text-wrap is-hero-desc">
                   <div class="p2">
-                    Simula volume no espaço 2D através de rotações tridimensionais, sombras calculadas e perspectiva de câmera em profundidade.
+                    Entre as formas de transmitir volume e espaço, a dimensionalidade flutuante é a mais cativante. Ela transforma a interação com elementos 3D em algo intuitivo, imersivo e com alta taxa de engajamento do visitante.
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="lesson-item is-implementation">
-              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de Implementação</h3></div>
+              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de implementação</h3></div>
               <div class="sticky-container is-implementation">
                 <div class="list-wrap is-implementation">
                   
-                  <a href="https://dribbble.com/shots/15276396--Crappy-Explanation-80s-Vinyl-Records-Store" target="_blank" rel="noreferrer" class="card-link w-inline-block">
+                  <div class="card-link w-inline-block">
+                    <div class="card-video-item">
+                      <div class="card-video is-implementation w-embed">
+                        <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a9527427fbc6eec5f56_Royal%20Caribbean%27s%20Icon_desktop_00000.png">
+                          <source src="https://cdn.zajno.com/dev/motion/videos/Lessons/lesson-6/Royal Caribbean_s Icon_desktop_H.264.mp4" type="video/mp4">
+                        </video>
+                      </div>
+                      <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0a9527427fbc6eec5f56_Royal%20Caribbean%27s%20Icon_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
+                    </div>
+                    <div class="flex-display is-implementation">
+                      <div class="p3">A navegação espacial 3D em torno do navio cria um horizonte imersivo onde a tipografia flutua em órbita natural.</div>
+                    </div>
+                  </div>
+
+                  <div class="card-link is-second w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b54c9e2e8ca6c8fd6f9_Crappy%20Explanation_desktop_00000.png">
@@ -1147,12 +1269,23 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b54c9e2e8ca6c8fd6f9_Crappy%20Explanation_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Folhear discos ou produtos com física angular realista e iluminação adaptativa.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">A sensação física de folhear itens em um arquivo físico transportada para o espaço digital com realismo tátil.</div>
                     </div>
-                  </a>
+                  </div>
+
+                  <div class="card-link is-third w-inline-block">
+                    <div class="card-video-item">
+                      <div class="card-video is-implementation w-embed">
+                        <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b5213c4d72d64d0dcc1_Social%20Network%20Feed_desktop_00000.png">
+                          <source src="https://cdn.zajno.com/dev/motion/videos/Lessons/lesson-6/Social Network Feed_desktop_H.264.mp4" type="video/mp4">
+                        </video>
+                      </div>
+                      <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b5213c4d72d64d0dcc1_Social%20Network%20Feed_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
+                    </div>
+                    <div class="flex-display is-implementation">
+                      <div class="p3">Rolagem tridimensional em carrossel de cartões proporcionando profundidade óptica real.</div>
+                    </div>
+                  </div>
 
                 </div>
               </div>
@@ -1175,22 +1308,22 @@
               <div class="hero-content">
                 <div class="flex-display is-hero">
                   <div class="label-1 is-lesson">7</div>
-                  <div class="hero-title"><h4 class="h4">PARALLAX EM CAMADAS</h4></div>
+                  <div class="hero-title"><h4 class="h4">PARALLAX MULTICAMADAS</h4></div>
                 </div>
                 <div class="text-wrap is-hero-desc">
                   <div class="p2">
-                    Primeiro e segundo planos movendo-se a velocidades relativas distintas durante a rolagem, criando imersão cinematográfica imediata.
+                    Dispostos em diferentes camadas de profundidade, objetos movem-se com velocidades relativas distintas nos eixos X e Y: quanto mais distante o plano, menor o deslocamento. O resultado é uma rica ilusão tridimensional de amplitude.
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="lesson-item is-implementation">
-              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de Implementação</h3></div>
+              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de implementação</h3></div>
               <div class="sticky-container is-implementation">
                 <div class="list-wrap is-implementation">
                   
-                  <a href="https://dribbble.com/shots/19663094-Milkinside-wallet-iOS-app" target="_blank" rel="noreferrer" class="card-link w-inline-block">
+                  <div class="card-link w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b8b9335c6660d24b571_milkinside_desktop_00000.png">
@@ -1200,12 +1333,37 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b8b9335c6660d24b571_milkinside_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Cartões translúcidos e gráficos flutuantes que respondem suavemente ao scroll.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">Conforme o painel fosco translúcido sobe, os cards de fundo deslocam-se com menor intensidade, intensificando a sensação 3D.</div>
                     </div>
-                  </a>
+                  </div>
+
+                  <div class="card-link is-second w-inline-block">
+                    <div class="card-video-item">
+                      <div class="card-video is-implementation w-embed">
+                        <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b8cc9e2e8f90b8fd8e9_breathtaking_desktop_00000.png">
+                          <source src="https://cdn.zajno.com/dev/motion/videos/Lessons/lesson-7/breathtaking_desktop_H.264.mp4" type="video/mp4">
+                        </video>
+                      </div>
+                      <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b8cc9e2e8f90b8fd8e9_breathtaking_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
+                    </div>
+                    <div class="flex-display is-implementation">
+                      <div class="p3">O primeiro plano nítido move-se velozmente em contraste com a paisagem suavemente desfocada ao fundo.</div>
+                    </div>
+                  </div>
+
+                  <div class="card-link is-third w-inline-block">
+                    <div class="card-video-item">
+                      <div class="card-video is-implementation w-embed">
+                        <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b8a13c4d77a29d0ddbb_The%20Ways%20We%20Work_desktop_00000.png">
+                          <source src="https://cdn.zajno.com/dev/motion/videos/Lessons/lesson-7/The Ways We Work_desktop_H.264.mp4" type="video/mp4">
+                        </video>
+                      </div>
+                      <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0b8a13c4d77a29d0ddbb_The%20Ways%20We%20Work_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
+                    </div>
+                    <div class="flex-display is-implementation">
+                      <div class="p3">No parallax interativo, a posição do mouse dita a inclinação das camadas com elegância e dinamismo.</div>
+                    </div>
+                  </div>
 
                 </div>
               </div>
@@ -1228,22 +1386,22 @@
               <div class="hero-content">
                 <div class="flex-display is-hero">
                   <div class="label-1 is-lesson">8</div>
-                  <div class="hero-title"><h4 class="h4">ZOOM &amp; FOCO</h4></div>
+                  <div class="hero-title"><h4 class="h4">ZOOM &amp; ESCALA</h4></div>
                 </div>
                 <div class="text-wrap is-hero-desc">
                   <div class="p2">
-                    Aproximação em micro-detalhes e recuo estratégico para uma visão macro da arquitetura de navegação.
+                    Essa técnica confere continuidade à narrativa visual, estabelecendo uma transição fluida entre visão macro e microdetalhes do produto. O zoom cria imersão e antecipa o conteúdo de forma cinematográfica.
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="lesson-item is-implementation is-last">
-              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de Implementação</h3></div>
+              <div class="title-wrap is-implementation"><h3 class="h3">Exemplos de implementação</h3></div>
               <div class="sticky-container is-implementation is-last">
                 <div class="list-wrap is-implementation">
                   
-                  <a href="https://dribbble.com/shots/14412832-Landing-page-concept-with-zoom-in-transition" target="_blank" rel="noreferrer" class="card-link w-inline-block">
+                  <div class="card-link w-inline-block">
                     <div class="card-video-item">
                       <div class="card-video is-implementation w-embed">
                         <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0bfef0acdd24d5d32339_Landing%20page%20concept_desktop_00000.png">
@@ -1253,12 +1411,37 @@
                       <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0bfef0acdd24d5d32339_Landing%20page%20concept_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
                     </div>
                     <div class="flex-display is-implementation">
-                      <div class="text-wrap is-implementation">
-                        <div class="p3">Transições sem corte entre seções, promovendo uma experiência contínua e rica.</div>
-                      </div>
-                      <div class="btn-link is-implementation"><div>Ver Case</div></div>
+                      <div class="p3">O zoom progressivo orienta os olhos do usuário diretamente para a proposta de valor essencial.</div>
                     </div>
-                  </a>
+                  </div>
+
+                  <div class="card-link is-second w-inline-block">
+                    <div class="card-video-item">
+                      <div class="card-video is-implementation w-embed">
+                        <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0bfd541e0031c1d5e4bc__Music%20Podcasts%20Website_desktop_00000.png">
+                          <source src="https://cdn.zajno.com/dev/motion/videos/Lessons/lesson-8/ Music Podcasts Website_desktop_H.264.mp4" type="video/mp4">
+                        </video>
+                      </div>
+                      <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0bfd541e0031c1d5e4bc__Music%20Podcasts%20Website_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
+                    </div>
+                    <div class="flex-display is-implementation">
+                      <div class="p3">Aqui temos a sensação não de mudar de página bruscamente, mas de navegar por uma experiência fluida e sem atritos.</div>
+                    </div>
+                  </div>
+
+                  <div class="card-link is-third w-inline-block">
+                    <div class="card-video-item">
+                      <div class="card-video is-implementation w-embed">
+                        <video loop autoplay muted playsinline poster="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0bfd4c81322174daea9c_Bike%20Shop%20Interaction_desktop_00000.png">
+                          <source src="https://cdn.zajno.com/dev/motion/videos/Lessons/lesson-8/Bike Shop Interaction_desktop_H.264.mp4" type="video/mp4">
+                        </video>
+                      </div>
+                      <img src="https://cdn.prod.website-files.com/6384fe1e68c38ac8097a7e47/644a0bfd4c81322174daea9c_Bike%20Shop%20Interaction_desktop_00000.png" loading="eager" alt="" class="a-lesson-img"/>
+                    </div>
+                    <div class="flex-display is-implementation">
+                      <div class="p3">Animações de aproximação de câmera exibem o produto em detalhes de alta fidelidade a cada interação.</div>
+                    </div>
+                  </div>
 
                 </div>
               </div>
@@ -1276,7 +1459,7 @@
       </div>
     </section>
 
-    <!-- RESOURCES SECTION -->
+    <!-- RESOURCES & SOURCES SECTION (Image Masonry + Lists, Clean Without External Links) -->
     <section id="resources" class="nav nav-light">
       <div class="resources">
         <div class="resources-track">
@@ -1293,7 +1476,17 @@
                 </div>
               </div>
               <div class="arrow-title-wrap">
-                <div>&amp; Cursos</div>
+                <div>&amp; Estudo</div>
+                <div class="resources-arrow">
+                  <div class="resources-arrow-icon w-embed">
+                    <svg viewBox="0 0 199 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M179.832 83.9968L128.752 134.924L135.81 142L199 79L135.81 16L128.752 23.0764L179.832 74.0032H13V83.9968H179.832Z" fill="#0C0B0B"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div class="arrow-title-wrap">
+                <div>Techify</div>
                 <div class="resources-arrow">
                   <div class="resources-arrow-icon w-embed">
                     <svg viewBox="0 0 199 190" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1305,53 +1498,125 @@
             </div>
           </div>
           <div class="resources-student">
-            <div class="text-block-3">Você é sempre um estudante, nunca um mestre definitivo</div>
+            <div class="text-block-3">A excelência técnica nasce da evolução contínua</div>
           </div>
           <div class="resources-full">
             <div class="resources-wrapp">
+              
+              <!-- Images Wall -->
+              <div class="resources-images">
+                <div class="resources-images__list w-dyn-list">
+                  <div role="list" class="w-dyn-items">
+                    <div role="listitem" class="resources-images__item w-dyn-item"><img loading="lazy" alt="" src="https://cdn.prod.website-files.com/63d28a87a842c31fc5041dff/6436c75ee325a466babc5a68_www.schoolofmotion.com%402.png" class="image"/></div>
+                    <div role="listitem" class="resources-images__item w-dyn-item"><img loading="lazy" alt="" src="https://cdn.prod.website-files.com/63d28a87a842c31fc5041dff/6436c738973705ef4796db8a_www.benmarriott.com%402.png" class="image"/></div>
+                    <div role="listitem" class="resources-images__item w-dyn-item"><img loading="lazy" alt="" src="https://cdn.prod.website-files.com/63d28a87a842c31fc5041dff/6436c69f6b8dbc79e6e1c40c_www.domestika.org%402.png" class="image"/></div>
+                    <div role="listitem" class="resources-images__item w-dyn-item"><img loading="lazy" alt="" src="https://cdn.prod.website-files.com/63d28a87a842c31fc5041dff/6436c71d51332f4266b8207a_www.millionframes.com%402.png" class="image"/></div>
+                    <div role="listitem" class="resources-images__item w-dyn-item"><img loading="lazy" alt="" src="https://cdn.prod.website-files.com/63d28a87a842c31fc5041dff/6436c4184c43d6fde6557b11_www.awwwards.com%402.png" class="image"/></div>
+                    <div role="listitem" class="resources-images__item w-dyn-item"><img loading="lazy" alt="" src="https://cdn.prod.website-files.com/63d28a87a842c31fc5041dff/6436c3ff7e8480e3fe375285_www.udemy.com%402.png" class="image"/></div>
+                    <div role="listitem" class="resources-images__item w-dyn-item"><img loading="lazy" alt="" src="https://cdn.prod.website-files.com/63d28a87a842c31fc5041dff/6436c3e399d6a1bc65108689_motiondesign.school%402.png" class="image"/></div>
+                    <div role="listitem" class="resources-images__item w-dyn-item"><img loading="lazy" alt="" src="https://cdn.prod.website-files.com/63d28a87a842c31fc5041dff/6436c39a1ef89802e8eafa72_careerfoundry.com%402.png" class="image"/></div>
+                    <div role="listitem" class="resources-images__item w-dyn-item"><img loading="lazy" alt="" src="https://cdn.prod.website-files.com/63d28a87a842c31fc5041dff/6436c3c986cd0911e246ff4c_prjctr.com%402.png" class="image"/></div>
+                    <div role="listitem" class="resources-images__item w-dyn-item"><img loading="lazy" alt="" src="https://cdn.prod.website-files.com/63d28a87a842c31fc5041dff/6436c6d5bac3fb6c9763a0ac_www.uxinmotion.com%402.png" class="image"/></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- List of references -->
               <div class="resources-content">
                 <div class="resources-header">
                   <div class="resources-header__item">
-                    <div class="resources-header__text"><h5 class="h5">Cursos Recomendados</h5></div>
-                    <div class="resources-header__count"><div>6</div></div>
+                    <div class="resources-header__text"><h5 class="h5">Cursos &amp; Métodos</h5></div>
+                    <div class="resources-header__count"><div>10</div></div>
+                  </div>
+                  <div class="resources-header__item">
+                    <div class="resources-header__text"><h5 class="h5">Referências</h5></div>
+                    <div class="resources-header__count"><div>4</div></div>
                   </div>
                 </div>
+
                 <div class="resources-lists">
                   <div class="resources-list w-dyn-list">
                     <div role="list" class="w-dyn-items">
                       
                       <div role="listitem" class="resources-item w-dyn-item">
-                        <a href="https://www.uxinmotion.com/" target="_blank" rel="noreferrer" class="resources-link w-inline-block">
-                          <div class="resources-item__name">
-                            <div class="resources-item__dot"></div>
-                            <div class="resources-item__text"><div class="p3">UX in Motion &bull; Animação de interfaces aplicada ao design de produtos digitais.</div></div>
-                          </div>
-                          <div class="resources-item__button"><div>Acessar</div></div>
-                        </a>
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">UX in Motion. Princípios de animação de UI e microinterações.</div></div>
                       </div>
 
                       <div role="listitem" class="resources-item w-dyn-item">
-                        <a href="https://motiondesign.school/" target="_blank" rel="noreferrer" class="resources-link w-inline-block">
-                          <div class="resources-item__name">
-                            <div class="resources-item__dot"></div>
-                            <div class="resources-item__text"><div class="p3">Motion Design School &bull; Domínio de física e princípios de movimento.</div></div>
-                          </div>
-                          <div class="resources-item__button"><div>Acessar</div></div>
-                        </a>
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">UI / UX Animation. Metodologia internacional de prototipação interativa.</div></div>
                       </div>
 
                       <div role="listitem" class="resources-item w-dyn-item">
-                        <a href="https://www.schoolofmotion.com/" target="_blank" rel="noreferrer" class="resources-link w-inline-block">
-                          <div class="resources-item__name">
-                            <div class="resources-item__dot"></div>
-                            <div class="resources-item__text"><div class="p3">School of Motion &bull; Cursos avançados para diretores de arte e animadores.</div></div>
-                          </div>
-                          <div class="resources-item__button"><div>Acessar</div></div>
-                        </a>
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">UI Animation Mastery. O guia definitivo de física vetorial para web.</div></div>
+                      </div>
+
+                      <div role="listitem" class="resources-item w-dyn-item">
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">Motion Design School. Especialização em curvas bezier e motion storytelling.</div></div>
+                      </div>
+
+                      <div role="listitem" class="resources-item w-dyn-item">
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">Animações de Alto Desempenho e Interações Web com GSAP e Lottie.</div></div>
+                      </div>
+
+                      <div role="listitem" class="resources-item w-dyn-item">
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">Guia Awwwards de Prototipagem e Microinterações de Alta Conversão.</div></div>
+                      </div>
+
+                      <div role="listitem" class="resources-item w-dyn-item">
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">Millionframes. Engenharia de componentes e prototipagem tátil.</div></div>
+                      </div>
+
+                      <div role="listitem" class="resources-item w-dyn-item">
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">Domestika. Domínio em animação 2D e vetores orgânicos.</div></div>
+                      </div>
+
+                      <div role="listitem" class="resources-item w-dyn-item">
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">Ben Marriot. Técnicas avançadas de pós-produção e timing de movimento.</div></div>
+                      </div>
+
+                      <div role="listitem" class="resources-item w-dyn-item">
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">School of Motion. Engenharia de animação para interfaces digitais.</div></div>
                       </div>
 
                     </div>
                   </div>
+
+                  <div class="resources-list w-dyn-list">
+                    <div role="list" class="w-dyn-items">
+                      
+                      <div role="listitem" class="resources-item w-dyn-item">
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">Animação na UI: Como Criar Motion Design que Converte (Aela School).</div></div>
+                      </div>
+
+                      <div role="listitem" class="resources-item w-dyn-item">
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">Aplicação de Motion Design na Experiência do Usuário (Infinum).</div></div>
+                      </div>
+
+                      <div role="listitem" class="resources-item w-dyn-item">
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">Os 12 Princípios Clássicos da Animação adaptados para Interfaces Modernas.</div></div>
+                      </div>
+
+                      <div role="listitem" class="resources-item w-dyn-item">
+                        <div class="resources-item__dot"></div>
+                        <div class="resources-item__text"><div class="p3">Manifesto UX in Motion: Usabilidade através do movimento funcional.</div></div>
+                      </div>
+
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -1373,22 +1638,23 @@
         <div class="footer-content">
           <div class="footer-list">
             <div class="footer-item _1">
-              <h5 class="h5">Techify<br/>Motion<br/>Lab</h5>
+              <h5 class="h5">Princípios de<br/>motion design<br/>Techify</h5>
             </div>
             <div class="flex-display is-footer">
               <div class="footer-item _2">
                 <div class="f-navigation">
-                  <div class="f-label">Navegação</div>
+                  <div class="f-label">N.</div>
                   <div class="f-navigation-list is-menu">
                     <a href="#hero" class="f-link w-inline-block"><div>Introdução</div></a>
-                    <a href="#easing" class="f-link w-inline-block"><div>1. Easing</div></a>
-                    <a href="#delay" class="f-link w-inline-block"><div>2. Delay</div></a>
-                    <a href="#fade" class="f-link w-inline-block"><div>3. Fade</div></a>
-                    <a href="#morph" class="f-link w-inline-block"><div>4. Morph</div></a>
-                    <a href="#masking" class="f-link w-inline-block"><div>5. Masking</div></a>
-                    <a href="#dimension" class="f-link w-inline-block"><div>6. Dimensão</div></a>
-                    <a href="#parallax" class="f-link w-inline-block"><div>7. Parallax</div></a>
-                    <a href="#zoom" class="f-link w-inline-block"><div>8. Zoom</div></a>
+                    <a href="#easing" class="f-link w-inline-block"><div>Easing</div></a>
+                    <a href="#delay" class="f-link w-inline-block"><div>Delay</div></a>
+                    <a href="#fade" class="f-link w-inline-block"><div>Fade In / Out</div></a>
+                    <a href="#morph" class="f-link w-inline-block"><div>Morph &amp; Transform</div></a>
+                    <a href="#masking" class="f-link w-inline-block"><div>Mascaramento</div></a>
+                    <a href="#dimension" class="f-link w-inline-block"><div>Dimensionalidade</div></a>
+                    <a href="#parallax" class="f-link w-inline-block"><div>Parallax</div></a>
+                    <a href="#zoom" class="f-link w-inline-block"><div>Zoom</div></a>
+                    <a href="#resources" class="f-link w-inline-block"><div>Fontes &amp; Métodos</div></a>
                   </div>
                 </div>
               </div>
@@ -1397,7 +1663,7 @@
           <div class="footer-info">
             <div class="f-info-container">
               <div class="zajno-label is-desktop">
-                Laboratório de Motion &bull; Integrado na <span style="color: #22c55e;">Techify</span>
+                Techify Motion Lab &bull; <span style="color: #22c55e;">Engenharia de Alta Conversão</span>
               </div>
               <div>&copy; 2026 Techify Studio. Todos os direitos reservados.</div>
             </div>
@@ -1443,7 +1709,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@latest/bundled/lenis.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@2.4.21/dist/js/splide.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.9.6/lottie.min.js"></script>
 
   <!-- INTERACTIVE SCRIPTS -->
@@ -1466,7 +1731,7 @@
         requestAnimationFrame(raf);
       }
     } catch(e) {
-      console.log('Lenis smooth scroll fallback initialized');
+      console.log('Lenis scroll initialized');
     }
 
     // Audio Engine
@@ -1548,7 +1813,7 @@
         });
       }
     } catch(err) {
-      console.log("Splide initialization info:", err);
+      console.log("Splide initialization:", err);
     }
 
     // Spring Canvas Physics Simulation in Interactive Section
