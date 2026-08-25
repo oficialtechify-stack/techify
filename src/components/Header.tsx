@@ -20,8 +20,8 @@ export default function Header({ activeTab, setActiveTab, onOpenConsultation, on
     { id: 'sobre-nos', label: 'SOBRE NÓS', icon: Users },
     { id: 'portfolio', label: 'PORTFÓLIO', icon: Globe },
     { id: 'apps', label: 'APPS', icon: Layers, isNew: true },
+    { id: 'academia', label: 'TECHIFY MOTION', icon: Sparkles, isNew: true },
     { id: 'carreiras', label: 'CARREIRAS', icon: Briefcase },
-    { id: 'academia', label: 'ACADEMIA', icon: GraduationCap, inDev: true },
   ];
 
   const navItems = isAdmin 

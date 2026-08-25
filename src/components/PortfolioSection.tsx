@@ -48,6 +48,7 @@ const CATEGORIES = [
 interface PortfolioSectionProps {
   onBackToHome?: () => void;
   onLaunchDemo?: (projectId: string) => void;
+  onOpenConsultation?: (serviceName?: string) => void;
 }
 
 // Helper function to guarantee secure HTTPS protocol on all external links
