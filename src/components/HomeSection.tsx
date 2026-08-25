@@ -28,12 +28,7 @@ import {
   Send,
   Image as ImageIcon,
   ZoomIn,
-  X,
-  Plus,
-  Upload,
-  Trash2,
-  Edit3,
-  Loader2
+  X
 } from 'lucide-react';
 import { PROJECTS, SERVICES } from '../data';
 import AnimatedGradient from './AnimatedGradient';
@@ -46,15 +41,10 @@ import ClientsSliderSection from './ClientsSliderSection';
 import PackagesSection from './PackagesSection';
 import TextEmergence from './TextEmergence';
 import InteractiveDiagnosisSection from './InteractiveDiagnosisSection';
-import SpecialtyBentoSection from './SpecialtyBentoSection';
-import ProductionProcessSection from './ProductionProcessSection';
 import { EditableText, EditableNumber, EditableIcon, EditableImage } from './InlineEditProvider';
-import { getCachedGeneralContent, getCachedFeedbacks, getCachedTeamMembers, SiteGeneralContent, FeedbackImage, TeamMember, saveFeedbacksToFirestore } from '../lib/siteContent';
+import { getCachedGeneralContent, getCachedFeedbacks, SiteGeneralContent, FeedbackImage } from '../lib/siteContent';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { compressImageFile } from '../lib/imageUtils';
-import { toast } from './Toast';
-import { useAdminAuth } from '../lib/adminAuth';
 
 interface AnimatedCounterProps {
   targetValue: number;
@@ -103,132 +93,14 @@ interface HomeSectionProps {
 }
 
 export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSectionProps) {
-  const { isAdmin } = useAdminAuth();
   const containerRef = useRef<HTMLDivElement>(null);
-  const feedbackFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedArticle, setSelectedArticle] = useState<number | null>(null);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [generalContent, setGeneralContent] = useState<SiteGeneralContent>(getCachedGeneralContent);
   const [feedbacks, setFeedbacks] = useState<FeedbackImage[]>(getCachedFeedbacks);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(getCachedTeamMembers);
   const [selectedFeedbackImage, setSelectedFeedbackImage] = useState<FeedbackImage | null>(null);
 
-  // Manual Feedback Modal state
-  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
-  const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
-  const [feedbackImageUrl, setFeedbackImageUrl] = useState('');
-  const [feedbackClientName, setFeedbackClientName] = useState('');
-  const [feedbackProjectName, setFeedbackProjectName] = useState('');
-  const [feedbackComment, setFeedbackComment] = useState('');
-  const [feedbackRating, setFeedbackRating] = useState(5);
-  const [feedbackDate, setFeedbackDate] = useState('');
-  const [isUploadingFeedback, setIsUploadingFeedback] = useState(false);
-  const [isSavingFeedback, setIsSavingFeedback] = useState(false);
-
-  const handleOpenFeedbackModal = (fb?: FeedbackImage) => {
-    if (fb) {
-      setEditingFeedbackId(fb.id);
-      setFeedbackImageUrl(fb.imageUrl);
-      setFeedbackClientName(fb.clientName || '');
-      setFeedbackProjectName(fb.projectName || '');
-      setFeedbackComment(fb.comment || '');
-      setFeedbackRating(fb.rating || 5);
-      setFeedbackDate(fb.date || '');
-    } else {
-      setEditingFeedbackId(null);
-      setFeedbackImageUrl('');
-      setFeedbackClientName('');
-      setFeedbackProjectName('');
-      setFeedbackComment('');
-      setFeedbackRating(5);
-      setFeedbackDate(new Date().toLocaleDateString('pt-BR'));
-    }
-    setIsFeedbackModalOpen(true);
-  };
-
-  const handleFeedbackFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsUploadingFeedback(true);
-    try {
-      const base64 = await compressImageFile(file, 1200, 1200, 0.88);
-      setFeedbackImageUrl(base64);
-      toast.success("Print Carregado", "Imagem pronta para salvar no site.");
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro no Upload", "Não foi possível processar o arquivo.");
-    } finally {
-      setIsUploadingFeedback(false);
-    }
-  };
-
-  const handleSaveFeedbackSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!feedbackImageUrl.trim()) {
-      toast.warning("Imagem Obrigatória", "Por favor selecione ou insira a URL do print/feedback.");
-      return;
-    }
-    setIsSavingFeedback(true);
-    try {
-      let updated: FeedbackImage[];
-      if (editingFeedbackId) {
-        updated = feedbacks.map(item =>
-          item.id === editingFeedbackId
-            ? {
-                ...item,
-                imageUrl: feedbackImageUrl.trim(),
-                clientName: feedbackClientName.trim() || 'Cliente Satisfeito',
-                projectName: feedbackProjectName.trim(),
-                comment: feedbackComment.trim(),
-                rating: feedbackRating,
-                date: feedbackDate.trim() || new Date().toLocaleDateString('pt-BR')
-              }
-            : item
-        );
-        toast.success("Feedback Atualizado", "As alterações foram salvas no banco de dados.");
-      } else {
-        const newFb: FeedbackImage = {
-          id: 'fb-' + Date.now(),
-          imageUrl: feedbackImageUrl.trim(),
-          clientName: feedbackClientName.trim() || 'Cliente Satisfeito',
-          projectName: feedbackProjectName.trim(),
-          comment: feedbackComment.trim(),
-          rating: feedbackRating,
-          date: feedbackDate.trim() || new Date().toLocaleDateString('pt-BR'),
-          createdAt: new Date().toISOString()
-        };
-        updated = [newFb, ...feedbacks];
-        toast.success("Feedback Publicado", "O print de feedback foi publicado e salvo no banco de dados.");
-      }
-      setFeedbacks(updated);
-      await saveFeedbacksToFirestore(updated);
-      setIsFeedbackModalOpen(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao Salvar", "Não foi possível salvar o feedback.");
-    } finally {
-      setIsSavingFeedback(false);
-    }
-  };
-
-  const handleDeleteFeedbackItem = async (id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (!window.confirm("Deseja realmente remover este print de feedback?")) return;
-    try {
-      const updated = feedbacks.filter(fb => fb.id !== id);
-      setFeedbacks(updated);
-      await saveFeedbacksToFirestore(updated);
-      if (selectedFeedbackImage?.id === id) {
-        setSelectedFeedbackImage(null);
-      }
-      toast.info("Feedback Removido", "O print foi removido com sucesso.");
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao Excluir", "Não foi possível remover o print.");
-    }
-  };
-
-  // Sync general content, feedbacks and team members from Firestore and local cache in real-time
+  // Sync general content and feedbacks from Firestore and local cache in real-time
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "site_content", "general"), (snap) => {
       if (snap.exists()) {
@@ -246,15 +118,6 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       }
     }, (err) => console.warn('Firestore feedbacks offline:', err.message));
 
-    const unsubTeam = onSnapshot(doc(db, "site_content", "team"), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (Array.isArray(data.members) && data.members.length > 0) {
-          setTeamMembers(data.members);
-        }
-      }
-    }, (err) => console.warn('Firestore team offline:', err.message));
-
     const handleContentUpdate = (e: Event) => {
       const customEvt = e as CustomEvent<SiteGeneralContent>;
       if (customEvt.detail) {
@@ -269,24 +132,14 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       }
     };
 
-    const handleTeamUpdate = (e: Event) => {
-      const customEvt = e as CustomEvent<TeamMember[]>;
-      if (customEvt.detail) {
-        setTeamMembers(customEvt.detail);
-      }
-    };
-
     window.addEventListener('techify-content-updated', handleContentUpdate);
     window.addEventListener('techify-feedbacks-updated', handleFeedbacksUpdate);
-    window.addEventListener('techify-team-updated', handleTeamUpdate);
 
     return () => {
       unsub();
       unsubFeedbacks();
-      unsubTeam();
       window.removeEventListener('techify-content-updated', handleContentUpdate);
       window.removeEventListener('techify-feedbacks-updated', handleFeedbacksUpdate);
-      window.removeEventListener('techify-team-updated', handleTeamUpdate);
     };
   }, []);
 
@@ -519,10 +372,8 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
       </ScrollReveal>
 
       {/* ========================================================================= */}
-      {/* 2. SEÇÃO DE CONSCIENTIZAÇÃO DA DOR                                        */}
+      {/* 2.1 PRESENÇA NO GOOGLE & CONVERSÃO (Destaque Estratégico Fixo)            */}
       {/* ========================================================================= */}
-      
-      {/* 2.1 Presença no Google & Conversão */}
       <section className="relative w-full py-16 sm:py-24 bg-gradient-to-b from-black via-[#060f07]/60 to-black border-b border-neutral-900/80 overflow-hidden">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
           <ScrollReveal delay={0.08} yOffset={30} threshold={0.2}>
@@ -559,22 +410,11 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         </div>
       </section>
 
-      {/* 2.2 Diagnóstico Interativo (Está perdendo cliente por qual dessas três?) */}
-      <InteractiveDiagnosisSection onOpenConsultation={onOpenConsultation} />
-
 
       {/* ========================================================================= */}
-      {/* 3. SEÇÃO DE SOLUÇÃO & DIFERENCIAL                                         */}
+      {/* 3. SOBRE NÓS / BENTO STATS SECTION                                       */}
       {/* ========================================================================= */}
-      
-      {/* 3.1 Especialidade / Cansado de contratar um profissional para cada coisa? (4 Cards com Animações Motion Avançadas) */}
-      <SpecialtyBentoSection onOpenConsultation={onOpenConsultation} />
-
-      {/* 3.2 Como Funciona Nossa Produção (Pipeline com 5 Etapas e Motion Interativo) */}
-      <ProductionProcessSection onOpenConsultation={onOpenConsultation} />
-
-      {/* 3.2 A empresa que resolve o que trava o seu negócio (Bento Stats Section) */}
-      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-neutral-900/80">
+      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header Tag */}
         <ScrollReveal threshold={0.15} blur={16} yOffset={25}>
@@ -692,22 +532,29 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
 
 
       {/* ========================================================================= */}
-      {/* 4. SEÇÃO DE PRODUTOS, PLANOS E ENTREGÁVEIS                                */}
+      {/* 4. DIAGNÓSTICO INTERATIVO (Interação Direta + Envio para Admin)           */}
       {/* ========================================================================= */}
-      <PackagesSection onOpenConsultation={onOpenConsultation} />
+      <InteractiveDiagnosisSection onOpenConsultation={onOpenConsultation} />
 
 
       {/* ========================================================================= */}
-      {/* 5. SEÇÃO DE PROVA SOCIAL E AUTORIDADE                                     */}
+      {/* 4.1 CLIENTES ATENDIDOS E SATISFEITOS SLIDER (Mockups Reais de Sites)      */}
       {/* ========================================================================= */}
-      
-      {/* 5.1 Clientes Atendidos Slider (Mockups Reais de Sites e Sistemas) */}
       <ClientsSliderSection 
         onOpenConsultation={onOpenConsultation}
         onNavigatePortfolio={() => onNavigate('portfolio')}
       />
 
-      {/* 5.2 Cases & Portfólio CTA */}
+
+      {/* ========================================================================= */}
+      {/* 4.2 PACOTES & PLANOS TECHIFY (Site + Designer + Marketing + Redes Sociais) */}
+      {/* ========================================================================= */}
+      <PackagesSection onOpenConsultation={onOpenConsultation} />
+
+
+      {/* ========================================================================= */}
+      {/* 4.3 PORTFÓLIO / PROJETOS ENTREGUES CTA                                    */}
+      {/* ========================================================================= */}
       <section className="relative w-full py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal threshold={0.15}>
           <div className="relative overflow-hidden rounded-3xl border border-neutral-800/80 bg-gradient-to-b from-[#080d08] via-neutral-950 to-black p-8 sm:p-14 text-center flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.6)]">
@@ -744,7 +591,213 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         </ScrollReveal>
       </section>
 
-      {/* 5.3 Feedbacks & Depoimentos Reais de Clientes */}
+
+      {/* ========================================================================= */}
+      {/* 5. ESPECIALIDADE (Interactive 2x2 Bento Cards)                            */}
+      {/* ========================================================================= */}
+      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <ScrollReveal threshold={0.2}>
+          <div className="flex flex-col items-center text-center mb-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-6">
+              <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
+              <span>Especialidade</span>
+            </div>
+
+            <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-white max-w-3xl leading-tight">
+              Cansado de contratar um profissional para cada coisa?
+            </h2>
+
+            <p className="mt-4 max-w-2xl text-sm sm:text-base text-neutral-400 leading-relaxed font-normal">
+              Um faz o site, outro some com a senha, um terceiro cuida do anúncio e ninguém se entende. Na Techify é um time completo, do começo ao fim, com alguém de prontidão para te atender.
+            </p>
+          </div>
+        </ScrollReveal>
+
+        {/* 2x2 Interactive Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          {/* Bento 1: Menos trabalho na mão (Mockup financeiro animado) */}
+          <ScrollReveal delay={0.1} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              {/* Interactive Billing Card Mockup */}
+              <div className="rounded-2xl border border-neutral-800/80 bg-neutral-950 p-5 mb-8 shadow-inner">
+                <div className="flex items-center justify-between text-xs text-neutral-400 mb-2">
+                  <span>Cobrança mensal automatizada</span>
+                  <span className="text-[#22c55e] font-bold">R$ 4.900 / R$ 10.000</span>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full h-2 rounded-full bg-neutral-900 overflow-hidden mb-5">
+                  <div className="h-full bg-gradient-to-r from-[#22c55e] to-[#4ade80] rounded-full w-[49%]" />
+                </div>
+
+                {/* List of automated entries */}
+                <div className="space-y-2.5">
+                  {[
+                    { name: 'Plano Pro Anual', date: 'Hoje às 14:32', val: 'R$ 1.200' },
+                    { name: 'Licença Corporativa', date: 'Ontem às 18:10', val: 'R$ 2.450' },
+                    { name: 'Manutenção Mensal', date: '12 de Agosto', val: 'R$ 850' },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800/50 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-lg bg-[#22c55e]/10 text-[#22c55e] flex items-center justify-center">
+                          <Check className="h-3.5 w-3.5" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white">{item.name}</p>
+                          <p className="text-[10px] text-neutral-500">{item.date}</p>
+                        </div>
+                      </div>
+                      <span className="font-bold text-[#4ade80]">{item.val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Menos trabalho na mão</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Tarefa repetida no manual consome o dia do seu time. Automatizamos processos para sobrar tempo para o que realmente importa: vender.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Bento 2: Site e loja virtual (Bar chart + Badge) */}
+          <ScrollReveal delay={0.2} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              {/* Visual Growth Chart */}
+              <div className="rounded-2xl border border-neutral-800/80 bg-neutral-950 p-6 mb-8 flex flex-col justify-between min-h-[220px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white">Você sabe de onde vem cada venda?</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#22c55e]/20 text-[#4ade80] font-bold">
+                    +142% conversão
+                  </span>
+                </div>
+
+                {/* Bar Growth Visualization */}
+                <div className="flex items-end justify-between gap-2 h-28 pt-4">
+                  {[
+                    { year: '2021', h: '25%' },
+                    { year: '2022', h: '40%' },
+                    { year: '2023', h: '60%' },
+                    { year: '2024', h: '78%' },
+                    { year: '2025', h: '95%' },
+                    { year: '2026', h: '100%', active: true },
+                  ].map((bar, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                      <div 
+                        style={{ height: bar.h }} 
+                        className={`w-full rounded-md transition-all ${
+                          bar.active 
+                            ? 'bg-[#22c55e] shadow-[0_0_12px_#22c55e]' 
+                            : 'bg-neutral-800 hover:bg-neutral-700'
+                        }`} 
+                      />
+                      <span className={`text-[10px] ${bar.active ? 'text-[#4ade80] font-bold' : 'text-neutral-500'}`}>
+                        {bar.year}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 text-[11px] font-medium text-neutral-400 bg-neutral-900/50 p-2 rounded-lg border border-neutral-800/50">
+                  Estratégia, Design e Tecnologia de ponta unificados.
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Site e loja virtual</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Sites e e-commerces que carregam instantaneamente em qualquer celular e aguentam o crescimento acelerado do seu negócio sem travar.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Bento 3: Sistema de gestão (Live Stats + Marquee Badges) */}
+          <ScrollReveal delay={0.1} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              <div className="rounded-2xl border border-neutral-800/80 bg-neutral-950 p-5 mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs text-neutral-400 font-medium">Desempenho Geral</p>
+                    <p className="text-3xl font-black text-white mt-1">+49% <span className="text-xs text-[#4ade80] font-bold">+2.5% semana</span></p>
+                  </div>
+                  <div className="h-10 w-10 rounded-xl bg-[#22c55e]/10 text-[#22c55e] flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5" />
+                  </div>
+                </div>
+
+                {/* Tag Badges Carousel */}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {[
+                    'Preço fechado',
+                    'Prazo por escrito',
+                    'Suporte pós-entrega',
+                    'Sem fidelidade',
+                    'Aparece no Google',
+                    'Sem dor de cabeça'
+                  ].map((tag, idx) => (
+                    <span key={idx} className="rounded-full bg-neutral-900 border border-neutral-800 px-3 py-1 text-[10px] font-semibold text-neutral-300">
+                      ✓ {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Sistema de gestão sob medida</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Estoque, vendas, mensalidades e clientes num lugar só, feito exatamente sob medida para as necessidades do seu negócio.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Bento 4: Anúncios que trazem cliente (Radar Orbit com Leads) */}
+          <ScrollReveal delay={0.2} yOffset={35}>
+            <div className="rounded-3xl border border-neutral-800 bg-[#080808] p-6 sm:p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
+              {/* Orbital Radar Visual */}
+              <div className="relative h-52 rounded-2xl border border-neutral-800/80 bg-neutral-950 p-4 mb-8 flex items-center justify-center overflow-hidden">
+                {/* Concentric Rings */}
+                <div className="absolute w-44 h-44 rounded-full border border-neutral-800/60" />
+                <div className="absolute w-28 h-28 rounded-full border border-[#22c55e]/20" />
+                
+                {/* Center Logo */}
+                <div className="relative z-10 h-12 w-12 rounded-full bg-black border border-[#22c55e] p-2 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.4)]">
+                  <TechifyIcon className="h-full w-full" />
+                </div>
+
+                {/* Floating Lead Pills */}
+                <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-neutral-900/90 border border-neutral-800 px-2.5 py-1 rounded-full text-[10px] font-medium text-white shadow-lg animate-bounce" style={{ animationDuration: '3s' }}>
+                  <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
+                  <span>Alexandre H. <strong className="text-[#4ade80]">+6%</strong></span>
+                </div>
+
+                <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-neutral-900/90 border border-neutral-800 px-2.5 py-1 rounded-full text-[10px] font-medium text-white shadow-lg animate-bounce" style={{ animationDuration: '4s' }}>
+                  <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
+                  <span>Raimundo P. <strong className="text-[#4ade80]">+4.5%</strong></span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-display text-xl font-bold text-white mb-2">Anúncio que traz cliente</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  Anúncios estratégicos no Google e Instagram para o cliente certo achar sua empresa exatamente na hora em que está buscando comprar.
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+
+        </div>
+      </section>
+
+
+      {/* ========================================================================= */}
+      {/* 6. DEPOIMENTOS & PRINTS REAIS DE FEEDBACKS                                */}
+      {/* ========================================================================= */}
       <section className="relative w-full py-20 bg-neutral-950/60 border-y border-neutral-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
@@ -763,21 +816,13 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => handleOpenFeedbackModal()}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-4 sm:px-5 py-2 text-xs font-black text-black transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:scale-105"
-                >
-                  <Plus className="h-4 w-4 stroke-[2.5]" />
-                  <span>Adicionar Print de Feedback</span>
-                </button>
-
-                {feedbacks.length > 0 && (
-                  <span className="text-xs font-semibold text-neutral-400 border-l border-neutral-800 pl-3">
-                    {feedbacks.length} {feedbacks.length === 1 ? 'print salvo' : 'prints salvos'}
+              {feedbacks.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-neutral-400">
+                    {feedbacks.length} {feedbacks.length === 1 ? 'print autenticado' : 'prints autenticados'}
                   </span>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </ScrollReveal>
 
@@ -797,10 +842,10 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
                         className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 border border-[#22c55e]/60 text-xs font-bold text-[#a3e635] shadow-lg">
-                          <ZoomIn className="h-3.5 w-3.5" />
-                          <span>Ampliar</span>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/80 border border-[#22c55e]/60 text-xs font-bold text-[#a3e635] shadow-lg">
+                          <ZoomIn className="h-4 w-4" />
+                          <span>Clique para ampliar print</span>
                         </div>
                       </div>
                       
@@ -808,27 +853,6 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
                       <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-[#22c55e]/40 text-[11px] font-bold text-emerald-400">
                         <ShieldCheck className="h-3.5 w-3.5" />
                         <span>Verificado</span>
-                      </div>
-
-                      {/* Admin Quick Action Controls */}
-                      <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenFeedbackModal(fb);
-                          }}
-                          className="h-7 w-7 rounded-lg bg-black/80 hover:bg-[#a3e635] text-white hover:text-black border border-neutral-700 flex items-center justify-center text-xs transition-colors"
-                          title="Editar Feedback"
-                        >
-                          <Edit3 className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteFeedbackItem(fb.id, e)}
-                          className="h-7 w-7 rounded-lg bg-black/80 hover:bg-red-500 text-white border border-neutral-700 flex items-center justify-center text-xs transition-colors"
-                          title="Excluir Feedback"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
                       </div>
                     </div>
 
@@ -881,22 +905,21 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
                   Feedbacks 100% Autênticos
                 </h3>
                 <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-lg mb-6">
-                  Aqui exibimos prints e capturas reais de conversas no WhatsApp com nossos clientes, garantindo transparência e resultados comprovados.
+                  Aqui exibimos prints e capturas reais de conversas com nossos clientes, garantindo transparência e resultados comprovados.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <button
-                    onClick={() => handleOpenFeedbackModal()}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-6 py-2.5 text-xs font-black text-black transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:scale-105"
-                  >
-                    <Plus className="h-4 w-4 stroke-[2.5]" />
-                    <span>Adicionar Print de Feedback</span>
-                  </button>
-                  <button
                     onClick={onOpenConsultation}
-                    className="inline-flex items-center gap-2 rounded-full border border-neutral-700 hover:border-neutral-500 bg-neutral-900 px-6 py-2.5 text-xs font-bold text-neutral-200 transition-all cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-6 py-2.5 text-xs font-bold text-black transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.3)]"
                   >
                     <span>Falar com a Equipe</span>
                     <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onNavigate('portfolio')}
+                    className="inline-flex items-center gap-2 rounded-full border border-neutral-700 hover:border-neutral-500 bg-neutral-900 px-6 py-2.5 text-xs font-bold text-neutral-200 transition-all cursor-pointer"
+                  >
+                    <span>Ver Nossos Projetos</span>
                   </button>
                 </div>
               </div>
@@ -906,106 +929,11 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
         </div>
       </section>
 
-      {/* 5.4 Apresentação da Equipe (Conheça nosso time) */}
-      <section className="relative w-full py-20 sm:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ScrollReveal threshold={0.2}>
-          <div className="mb-14">
-            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-4">
-              <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
-              <span>Nosso Time</span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-              <div>
-                <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-white">
-                  Conheça nosso time
-                </h2>
-                <p className="text-sm text-neutral-400 mt-2 max-w-2xl font-normal">
-                  Especialistas dedicados a transformar desafios técnicos em crescimento e receita para sua empresa.
-                </p>
-              </div>
-
-              <button
-                onClick={() => onOpenConsultation()}
-                className="group inline-flex items-center gap-2 rounded-full bg-black hover:bg-neutral-900 border border-neutral-700 px-6 py-3 text-xs font-bold text-white transition-all cursor-pointer w-fit"
-              >
-                <span>FALE CONOSCO</span>
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#22c55e] text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                  <ArrowUpRight className="h-3 w-3 stroke-[2.5]" />
-                </div>
-              </button>
-            </div>
-          </div>
-        </ScrollReveal>
-
-        {/* 4 Team Member Cards with Visual Photos & Inline Editing */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {teamMembers.map((member, idx) => (
-            <ScrollReveal key={member.id || idx} delay={idx * 0.1} yOffset={30}>
-              <div className="group relative rounded-3xl border border-neutral-800 bg-[#090b09] p-5 flex flex-col justify-between hover:border-[#22c55e]/50 hover:bg-[#0c120c] transition-all duration-300 shadow-xl h-full">
-                <div>
-                  {/* Large Portrait Image Container */}
-                  <div className="relative h-64 sm:h-72 w-full rounded-2xl bg-neutral-900 border border-neutral-800/80 overflow-hidden mb-4 shadow-lg group-hover:border-[#22c55e]/40 transition-all">
-                    <EditableImage
-                      id={`team_avatar_${member.id || idx}`}
-                      defaultSrc={member.avatar}
-                      alt={member.name}
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      title={`Foto de ${member.name}`}
-                    />
-                    
-                    {/* Subtle gradient vignette at bottom */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-
-                    {/* Corner Action Icon */}
-                    <div className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/80 border border-neutral-700 text-neutral-300 backdrop-blur-sm group-hover:text-[#4ade80] group-hover:border-[#22c55e]/50 transition-all">
-                      <ArrowUpRight className="h-4 w-4" />
-                    </div>
-                  </div>
-
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h3 className="font-display text-lg font-bold text-white group-hover:text-[#4ade80] transition-colors leading-snug">
-                        <EditableText
-                          id={`team_name_${member.id || idx}`}
-                          defaultText={member.name}
-                          title={`Nome: ${member.name}`}
-                        />
-                      </h3>
-                      <p className="mt-0.5 text-xs font-semibold text-[#a3e635]">
-                        <EditableText
-                          id={`team_role_${member.id || idx}`}
-                          defaultText={member.role}
-                          title={`Cargo: ${member.name}`}
-                        />
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-neutral-900/80">
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    <EditableText
-                      id={`team_desc_${member.id || idx}`}
-                      defaultText={member.description}
-                      title={`Bio: ${member.name}`}
-                      isMultiline={true}
-                    />
-                  </p>
-                </div>
-              </div>
-            </ScrollReveal>
-          ))}
-        </div>
-      </section>
-
 
       {/* ========================================================================= */}
-      {/* 6. SEÇÃO DE DÚVIDAS E FECHAMENTO                                          */}
+      {/* 7. BLOG & ARTIGOS / DÚVIDAS DOS DONOS DE NEGÓCIO                         */}
       {/* ========================================================================= */}
-      
-      {/* 6.1 FAQ / Blog & Artigos (As dúvidas que todo dono de negócio tem) */}
-      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-neutral-900">
+      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal threshold={0.2}>
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-16 gap-6">
             <div>
@@ -1199,25 +1127,12 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      const itemToEdit = selectedFeedbackImage;
-                      setSelectedFeedbackImage(null);
-                      handleOpenFeedbackModal(itemToEdit);
-                    }}
-                    className="h-8 px-3 rounded-full border border-neutral-700 bg-neutral-800 flex items-center gap-1.5 text-xs text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors cursor-pointer"
-                  >
-                    <Edit3 className="h-3.5 w-3.5" />
-                    <span>Editar</span>
-                  </button>
-                  <button
-                    onClick={() => setSelectedFeedbackImage(null)}
-                    className="h-8 w-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors cursor-pointer"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => setSelectedFeedbackImage(null)}
+                  className="h-8 w-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
 
               {/* High-res Image Preview */}
@@ -1255,246 +1170,6 @@ export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSect
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Direct Add / Edit Feedback Print Modal */}
-      <AnimatePresence>
-        {isFeedbackModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsFeedbackModalOpen(false)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-w-xl w-full rounded-3xl border border-neutral-800 bg-[#0d0f0d] p-6 sm:p-8 shadow-2xl overflow-hidden my-8"
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#22c55e]/10 text-[#22c55e]">
-                    <Upload className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white">
-                      {editingFeedbackId ? 'Editar Print de Feedback' : 'Adicionar Print de Feedback'}
-                    </h3>
-                    <p className="text-xs text-neutral-400">
-                      Faça upload do print do WhatsApp ou insira a URL da imagem.
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setIsFeedbackModalOpen(false)}
-                  className="h-7 w-7 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Form Content */}
-              <form onSubmit={handleSaveFeedbackSubmit} className="mt-6 space-y-4">
-                {/* Upload Zone / URL */}
-                <div>
-                  <label className="block text-xs font-bold text-neutral-300 mb-2">
-                    Print / Imagem do Feedback *
-                  </label>
-                  
-                  <input
-                    type="file"
-                    ref={feedbackFileInputRef}
-                    onChange={handleFeedbackFileUpload}
-                    accept="image/*"
-                    className="hidden"
-                  />
-
-                  {feedbackImageUrl ? (
-                    <div className="relative rounded-2xl border border-neutral-700 bg-neutral-900 p-2 overflow-hidden flex flex-col items-center">
-                      <img
-                        src={feedbackImageUrl}
-                        alt="Preview Feedback"
-                        className="max-h-48 w-full object-contain rounded-xl"
-                      />
-                      <div className="mt-2 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => feedbackFileInputRef.current?.click()}
-                          className="px-3 py-1 text-xs rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200"
-                        >
-                          Trocar Imagem
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFeedbackImageUrl('')}
-                          className="px-3 py-1 text-xs rounded-lg bg-red-950/60 hover:bg-red-900/80 text-red-300"
-                        >
-                          Remover
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => feedbackFileInputRef.current?.click()}
-                      className="border-2 border-dashed border-neutral-700 hover:border-[#22c55e]/60 rounded-2xl p-6 text-center cursor-pointer bg-neutral-900/50 hover:bg-neutral-900 transition-colors flex flex-col items-center justify-center gap-2"
-                    >
-                      {isUploadingFeedback ? (
-                        <div className="flex flex-col items-center gap-2 text-xs text-neutral-400">
-                          <Loader2 className="h-6 w-6 animate-spin text-[#22c55e]" />
-                          <span>Comprimindo e carregando print...</span>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="h-10 w-10 rounded-full bg-[#22c55e]/10 text-[#22c55e] flex items-center justify-center">
-                            <Upload className="h-5 w-5" />
-                          </div>
-                          <span className="text-xs font-bold text-white">
-                            Clique para escolher a imagem do computador/celular
-                          </span>
-                          <span className="text-[11px] text-neutral-400">
-                            Formatos PNG, JPG, WEBP (será otimizada automaticamente)
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Or Manual URL */}
-                  <div className="mt-2">
-                    <span className="text-[11px] text-neutral-500 block mb-1">Ou cole o link direto da imagem:</span>
-                    <input
-                      type="url"
-                      value={feedbackImageUrl}
-                      onChange={(e) => setFeedbackImageUrl(e.target.value)}
-                      placeholder="https://exemplo.com/print-feedback.png"
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-white placeholder-neutral-500 focus:border-[#22c55e] focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Client Name & Project */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-300 mb-1">
-                      Nome do Cliente
-                    </label>
-                    <input
-                      type="text"
-                      value={feedbackClientName}
-                      onChange={(e) => setFeedbackClientName(e.target.value)}
-                      placeholder="Ex: Rodrigo Mendes"
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-white placeholder-neutral-500 focus:border-[#22c55e] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-300 mb-1">
-                      Projeto / Empresa
-                    </label>
-                    <input
-                      type="text"
-                      value={feedbackProjectName}
-                      onChange={(e) => setFeedbackProjectName(e.target.value)}
-                      placeholder="Ex: E-commerce & Tráfego"
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-white placeholder-neutral-500 focus:border-[#22c55e] focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Rating & Date */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-300 mb-1">
-                      Avaliação (Estrelas)
-                    </label>
-                    <div className="flex items-center gap-1.5 py-1.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setFeedbackRating(star)}
-                          className="text-neutral-600 hover:scale-110 transition-transform"
-                        >
-                          <Star
-                            className={`h-5 w-5 ${
-                              star <= feedbackRating
-                                ? 'text-[#facc15] fill-current'
-                                : 'text-neutral-600'
-                            }`}
-                          />
-                        </button>
-                      ))}
-                      <span className="ml-2 text-xs text-neutral-400 font-mono">
-                        {feedbackRating} / 5
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-300 mb-1">
-                      Data do Feedback
-                    </label>
-                    <input
-                      type="text"
-                      value={feedbackDate}
-                      onChange={(e) => setFeedbackDate(e.target.value)}
-                      placeholder="Ex: 14/02/2025"
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-white placeholder-neutral-500 focus:border-[#22c55e] focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Comment / Quote */}
-                <div>
-                  <label className="block text-xs font-bold text-neutral-300 mb-1">
-                    Depoimento / Destaque (Opcional)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={feedbackComment}
-                    onChange={(e) => setFeedbackComment(e.target.value)}
-                    placeholder="Ex: Excelente suporte e entrega impecável antes do prazo combinado."
-                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-white placeholder-neutral-500 focus:border-[#22c55e] focus:outline-none resize-none"
-                  />
-                </div>
-
-                {/* Submit Actions */}
-                <div className="pt-3 flex items-center justify-end gap-3 border-t border-neutral-800">
-                  <button
-                    type="button"
-                    onClick={() => setIsFeedbackModalOpen(false)}
-                    className="px-4 py-2 text-xs font-bold text-neutral-400 hover:text-white rounded-xl transition-colors cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={isSavingFeedback || !feedbackImageUrl.trim()}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#22c55e] hover:bg-[#16a34a] disabled:opacity-50 px-6 py-2.5 text-xs font-black text-black transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                  >
-                    {isSavingFeedback ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Salvando no Banco...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 stroke-[3]" />
-                        <span>Salvar Feedback</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
             </motion.div>
           </motion.div>
         )}

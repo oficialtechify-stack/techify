@@ -125,6 +125,13 @@ export default function PackagesSection({ onOpenConsultation }: PackagesSectionP
         {/* Section Header */}
         <ScrollReveal threshold={0.2}>
           <div className="flex flex-col items-center text-center mb-16 sm:mb-20">
+            
+            {/* Top Pill */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-1.5 text-xs font-bold text-[#4ade80] mb-5 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+              <Sparkles className="h-4 w-4" />
+              <span>PACOTES & CONDIÇÕES EXCLUSIVAS TECHIFY</span>
+            </div>
+
             <h2 className="font-display text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-white max-w-4xl leading-[1.15]">
               Soluções Integradas com <br className="hidden sm:inline" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4ade80] via-[#22c55e] to-[#a3e635] drop-shadow-[0_0_30px_rgba(34,197,94,0.35)]">

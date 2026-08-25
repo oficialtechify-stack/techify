@@ -123,7 +123,7 @@ interface InteractiveDiagnosisSectionProps {
 }
 
 export default function InteractiveDiagnosisSection({ onOpenConsultation }: InteractiveDiagnosisSectionProps) {
-  const [selectedOptionId, setSelectedOptionId] = useState<OptionData['id']>('sem_site');
+  const [selectedOptionId, setSelectedOptionId] = useState<OptionData['id'] | null>(null);
   const [isSubmittingToAdmin, setIsSubmittingToAdmin] = useState(false);
   const [hasSentDiagnosis, setHasSentDiagnosis] = useState(false);
   const [lastSavedId, setLastSavedId] = useState<string | null>(null);
@@ -227,6 +227,11 @@ export default function InteractiveDiagnosisSection({ onOpenConsultation }: Inte
         
         {/* Section Header */}
         <div className="flex flex-col items-center text-center mb-12 sm:mb-16">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#a3e635]/30 bg-[#a3e635]/10 px-4 py-1.5 text-xs font-bold text-[#a3e635] mb-5 shadow-[0_0_15px_rgba(163,230,53,0.15)]">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Diagnóstico Rápido Interativo</span>
+          </div>
+
           <h2 className="font-display text-3xl sm:text-5xl md:text-6xl font-extrabold text-white max-w-4xl leading-[1.15] tracking-tight">
             Está perdendo cliente por qual desses três?
           </h2>
@@ -473,7 +478,25 @@ export default function InteractiveDiagnosisSection({ onOpenConsultation }: Inte
 
               </div>
             </motion.div>
-          ) : null}
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="rounded-2xl border border-dashed border-neutral-800/80 bg-black/40 p-8 text-center"
+            >
+              <div className="flex flex-col items-center justify-center gap-2">
+                <div className="h-10 w-10 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400">
+                  <Sparkles className="h-5 w-5 text-[#a3e635]" />
+                </div>
+                <p className="text-sm font-semibold text-neutral-300">
+                  Selecione acima uma das 4 opções para liberar a solução personalizada
+                </p>
+                <p className="text-xs text-neutral-500 max-w-md">
+                  Nossa engenharia preparou um diagnóstico específico mostrando como superar cada gargalo e alavancar suas vendas.
+                </p>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
       </div>
