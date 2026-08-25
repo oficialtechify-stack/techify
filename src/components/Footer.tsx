@@ -172,6 +172,12 @@ export default function Footer({ onNavigate, onOpenConsultation, onOpenAdminLogi
                   </button>
                 </li>
                 <li>
+                  <button onClick={() => onNavigate('academia')} className="hover:text-white transition-colors cursor-pointer text-left flex items-center gap-1.5">
+                    <span>Techify Motion</span>
+                    <span className="text-[9px] font-extrabold bg-[#22c55e]/20 text-[#4ade80] px-1.5 py-0.2 rounded-full">LAB</span>
+                  </button>
+                </li>
+                <li>
                   <button onClick={() => onNavigate('sobre-nos')} className="hover:text-white transition-colors cursor-pointer text-left">
                     Sobre nós
                   </button>
