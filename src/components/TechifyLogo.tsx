@@ -57,7 +57,7 @@ export default function TechifyLogo({
         referrerPolicy="no-referrer"
       />
       {showText && (
-        <span className={`font-display uppercase ${textClassName}`}>
+        <span className={`font-display uppercase leading-tight ${textClassName}`}>
           TECHIFY
         </span>
       )}

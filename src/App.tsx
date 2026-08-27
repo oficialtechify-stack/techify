@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import HomeSection from './components/HomeSection';
 import AboutSection from './components/AboutSection';
-import PortfolioSection from './components/PortfolioSection';
 import AppsSection from './components/AppsSection';
 import MotionLabSection from './components/MotionLabSection';
 import CareersSection from './components/CareersSection';
@@ -23,6 +22,39 @@ export default function App() {
     setSelectedService(serviceName);
     setIsConsultationOpen(true);
   };
+
+  // Keyboard shortcut: Ctrl + A (or Cmd + A) opens the Admin login modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+        const activeEl = document.activeElement;
+        const isEditingInput = activeEl && (
+          activeEl.tagName === 'INPUT' || 
+          activeEl.tagName === 'TEXTAREA' || 
+          (activeEl as HTMLElement).isContentEditable
+        );
+
+        // If the user isn't actively typing in an input field, intercept Ctrl+A to open Admin Login
+        if (!isEditingInput) {
+          e.preventDefault();
+          setIsAdminLoginOpen(true);
+        }
+      }
+    };
+
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data && e.data.type === 'TECHIFY_OPEN_ADMIN') {
+        setIsAdminLoginOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
 
   return (
     <ToastProvider>
@@ -53,19 +85,13 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'portfolio' && (
-              <PortfolioSection 
-                onOpenConsultation={handleOpenConsultation} 
-              />
-            )}
-
             {activeTab === 'apps' && (
               <AppsSection 
                 onOpenConsultation={handleOpenConsultation} 
               />
             )}
 
-            {/* MOTION LAB: Exact Motion Principles Site */}
+            {/* TECHIFY MOTION: Full Interactive Motion Principles, Projects & Lab */}
             {activeTab === 'academia' && (
               <MotionLabSection 
                 onNavigate={setActiveTab} 
@@ -83,7 +109,7 @@ export default function App() {
           </main>
 
           {/* Footer (Rendered across Techify tabs) */}
-          {activeTab !== 'academia' && activeTab !== 'admin' && (
+          {activeTab !== 'admin' && (
             <Footer 
               onNavigate={setActiveTab} 
               onOpenConsultation={handleOpenConsultation} 

@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
-  ShieldCheck, 
-  ArrowRight
+  ShieldCheck 
 } from 'lucide-react';
 import ScrollReveal from './ScrollReveal';
 
@@ -227,55 +226,7 @@ export default function ClientsSliderSection({
                   loading="eager"
                 />
               </div>
-
-              {/* Project Details Box - Hidden on mobile */}
-              <div className="hidden sm:flex mt-4 sm:mt-6 flex-col sm:flex-row items-center justify-between gap-3 w-full max-w-3xl rounded-2xl border border-neutral-800/80 bg-[#0c0e0c]/90 px-6 py-4 backdrop-blur-md min-h-[84px]">
-                <div className="text-center sm:text-left">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#22c55e]">
-                      {currentProject.category}
-                    </span>
-                    {currentProject.tags?.map((tag, i) => (
-                      <span key={i} className="inline-block px-2 py-0.5 rounded-md bg-neutral-900 border border-neutral-800 text-[10px] font-semibold text-neutral-300">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <h3 className="font-display text-base sm:text-lg font-bold text-white">
-                    {currentProject.title}
-                  </h3>
-                  {currentProject.subtitle && (
-                    <p className="text-xs text-neutral-400 mt-0.5">
-                      {currentProject.subtitle}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  onClick={onOpenConsultation}
-                  className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[#22c55e] hover:bg-[#16a34a] px-5 py-2.5 text-xs font-black text-black transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)] cursor-pointer"
-                >
-                  <span>Quero um Site Assim</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
             </div>
-          </div>
-
-          {/* Dots Pagination Navigation - Hidden on mobile */}
-          <div className="hidden sm:flex items-center justify-center gap-2 mt-8">
-            {CLIENT_SLIDES.map((slide, idx) => (
-              <button
-                key={slide.id}
-                onClick={() => setCurrentIndex(idx)}
-                aria-label={`Ir para slide ${idx + 1}`}
-                className={`transition-all duration-300 rounded-full cursor-pointer ${
-                  idx === currentIndex 
-                    ? 'h-3 w-8 bg-[#22c55e] shadow-[0_0_12px_rgba(34,197,94,0.6)]' 
-                    : 'h-2.5 w-2.5 bg-neutral-700 hover:bg-neutral-500'
-                }`}
-              />
-            ))}
           </div>
 
         </div>

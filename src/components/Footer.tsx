@@ -156,13 +156,19 @@ export default function Footer({ onNavigate, onOpenConsultation, onOpenAdminLogi
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => onNavigate('portfolio')} className="hover:text-white transition-colors cursor-pointer text-left">
-                    Serviços
+                  <button onClick={() => {
+                    onNavigate('inicio');
+                    setTimeout(() => {
+                      const el = document.getElementById('planos');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                  }} className="hover:text-white transition-colors cursor-pointer text-left">
+                    Planos & Preços
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => onNavigate('portfolio')} className="hover:text-white transition-colors cursor-pointer text-left">
-                    Portfólio
+                  <button onClick={() => onNavigate('sobre-nos')} className="hover:text-white transition-colors cursor-pointer text-left">
+                    Sobre Nós
                   </button>
                 </li>
                 <li>

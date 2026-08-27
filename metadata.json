@@ -1,6 +1,6 @@
 {
   "name": "Techify",
-  "description": "Plataforma de inovação digital, criação de sites de alta performance, apps e Motion Lab.",
+  "description": "Techify - Software & Design Lab: Desenvolvimento de sites e sistemas, design de alto impacto, aplicativos e marketing estratégico.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

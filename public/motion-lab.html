@@ -26,11 +26,13 @@
 
   <style>
     html {
-      font-size: 6.94444vw;
+      font-size: clamp(14px, 6.94444vw, 100px);
       background-color: #0c0b0b;
       color: #ffffff;
       overflow-x: hidden;
       scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     body {
       background-color: #0c0b0b;
@@ -39,6 +41,8 @@
       padding: 0;
       overflow-x: hidden;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
     }
     ::-webkit-scrollbar {
       height: 0;
@@ -48,6 +52,7 @@
     * {
       scrollbar-width: none;
       -ms-overflow-style: none;
+      box-sizing: border-box;
     }
     
     /* Smooth scroll with Lenis */
@@ -61,15 +66,51 @@
       overflow: hidden;
     }
 
-    /* Fixed Text and Overlap Adjustments */
+    /* Fixed Text and Centering Adjustments */
     .p1, .p2, .p3, .h1, .h2, .h3, .h4, .h5, .h6 {
-      line-height: 1.4 !important;
-      word-break: break-word;
+      line-height: 1.45 !important;
+      word-break: normal;
+      overflow-wrap: break-word;
     }
     .text-wrap {
       max-width: 100%;
       position: relative;
       z-index: 2;
+    }
+    .text-wrap.is-hero {
+      max-width: 88%;
+      margin: 0 auto;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+    }
+    .p1.white {
+      text-align: center !important;
+      margin: 0 auto !important;
+      line-height: 1.5 !important;
+      max-width: 12rem;
+    }
+    .content-wrap.is-hero {
+      text-align: center !important;
+      margin: 0.2rem auto 0 auto !important;
+      max-width: 85%;
+      display: flex;
+      justify-content: center;
+    }
+    .h3.white {
+      text-align: center !important;
+      margin: 0 auto !important;
+      line-height: 1.4 !important;
+      max-width: 11rem;
+    }
+    .div-block-4 {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+      width: 100% !important;
+      margin: 0 auto !important;
     }
     
     /* Card Styles - Showcase Only (No Ver Case button) */
@@ -83,6 +124,7 @@
       border-radius: 0.16rem;
       background: #141318;
       cursor: default;
+      max-width: 100%;
     }
     .card-link:hover {
       border-color: #22c55e !important;
@@ -275,47 +317,536 @@
       line-height: 1.4 !important;
     }
 
-    /* Responsive Font Scale */
-    @media (max-width: 991px) {
-      html {
-        font-size: 13.0208333vw;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .embed-path .anim-ball.is-intro,
-      .embed-path_mobile .anim-ball.is-intro,
-      .embed-path_tablet .anim-ball.is-intro {
-        top: 0;
-        left: 35.5%;
-        -webkit-transform: translate(-50%, -50%);
-        -ms-transform: translate(-50%, -50%);
-        transform: translate(-50%, -50%);
-      }
-      .ui-text {
-        margin-top: 0.18rem;
-        align-self: center;
-        transform: translateY(50%);
-      }
-      video.is-tablet {
-        display: block;
-      }
-      .classic-anim_wrap::before,
-      video.is-desktop,
-      video.is-mobile {
-        display: none;
+    /* ==========================================================================
+       Techify Motion Lab Universal Responsive & Anti-Overlap Architecture
+       ========================================================================== */
+
+    /* 1. Reset all conflicting Webflow negative margins, viewport height locks and pinned sticky states */
+    .lesson,
+    .lesson.is-easing,
+    .lesson.is-delay,
+    .lesson.is-fade,
+    .lesson.is-morph,
+    .lesson.is-masking,
+    .lesson.is-dimension,
+    .lesson.is-parallax,
+    .lesson.is-zoom,
+    .lesson-list,
+    .lesson-item,
+    .lesson-item.is-implementation,
+    .lesson-item.is-implementation.is-last,
+    .lesson-item.is-examples,
+    .lesson-item.is-examples-2,
+    .sticky-container,
+    .sticky-container.is-implementation,
+    .sticky-container.is-implementation.is-last,
+    .a-lesson-item_heigh,
+    .a-lesson-item_heigh.is-easing,
+    .a-lesson-item_heigh.is-delay,
+    .a-lesson-item_sticky,
+    .classic-anim_wrap,
+    .classic-anim_musk,
+    .classic-anim_container,
+    .classic-anim_content,
+    .hero-animation,
+    .section.is-lessons,
+    .section.is-techniques,
+    .section.is-interactive,
+    .section.is-ui,
+    .section.is-concept,
+    .section.is-hero,
+    .height-section {
+      position: relative !important;
+      top: auto !important;
+      bottom: auto !important;
+      left: auto !important;
+      right: auto !important;
+      height: auto !important;
+      min-height: auto !important;
+      max-height: none !important;
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      transform: none !important;
+      overflow: visible !important;
+      display: block !important;
+    }
+
+    /* 2. Hide broken Webflow film strip sticky overlays that produce floating black boxes */
+    .classic-anim_sideimg,
+    .classic-anim_sideimg.is-left,
+    .classic-anim_sideimg.is-right {
+      display: none !important;
+    }
+
+    /* 3. Lesson Sections Spacing & Themes */
+    .section.is-lessons {
+      width: 100% !important;
+      display: block !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .lesson {
+      padding: 70px 24px !important;
+      border-top: 1px solid rgba(0, 0, 0, 0.15) !important;
+      display: block !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .lesson.is-easing { background-color: #c8cfe8 !important; }
+    .lesson.is-delay { background-color: #d2c8e8 !important; }
+    .lesson.is-fade { background-color: #e4e8c8 !important; }
+    .lesson.is-morph { background-color: #c8e8e8 !important; }
+    .lesson.is-masking { background-color: #e8c8e5 !important; }
+    .lesson.is-dimension { background-color: #e8c8c8 !important; }
+    .lesson.is-parallax { background-color: #d6e8c8 !important; }
+    .lesson.is-zoom { background-color: #c2d5d7 !important; }
+
+    .lesson-list {
+      width: 100% !important;
+      max-width: 1240px !important;
+      margin: 0 auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 40px !important;
+      box-sizing: border-box !important;
+    }
+
+    /* 4. Lesson Intro & Hero Visuals */
+    .hero-animation {
+      width: 100% !important;
+      max-width: 480px !important;
+      margin: 0 auto 20px auto !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+    }
+    .hero-visual {
+      width: 100% !important;
+      max-width: 380px !important;
+      height: auto !important;
+    }
+    .hero-content {
+      width: 100% !important;
+      max-width: 840px !important;
+      margin: 0 auto !important;
+      text-align: center !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 16px !important;
+      padding: 0 16px !important;
+      box-sizing: border-box !important;
+    }
+    .flex-display.is-hero {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 16px !important;
+      margin-bottom: 8px !important;
+    }
+    .label-1.is-lesson {
+      font-family: 'Space Grotesk', sans-serif !important;
+      font-size: clamp(28px, 5vw, 44px) !important;
+      font-weight: 800 !important;
+      color: #0c0b0b !important;
+      line-height: 1 !important;
+      width: auto !important;
+      flex: none !important;
+    }
+    .hero-title h4,
+    .hero-title .h4 {
+      font-family: 'Space Grotesk', sans-serif !important;
+      font-size: clamp(20px, 4vw, 34px) !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.02em !important;
+      color: #0c0b0b !important;
+      text-transform: uppercase !important;
+      margin: 0 !important;
+      line-height: 1.2 !important;
+    }
+    .text-wrap.is-hero-desc .p2 {
+      font-family: 'Space Grotesk', -apple-system, sans-serif !important;
+      font-size: clamp(15px, 2vw, 18.5px) !important;
+      line-height: 1.65 !important;
+      color: #1f2937 !important;
+      max-width: 740px !important;
+      margin: 0 auto !important;
+    }
+
+    /* 5. Splide Carousel Inside Lessons */
+    .splide-container {
+      width: 100% !important;
+      max-width: 860px !important;
+      margin: 24px auto !important;
+      padding: 0 16px !important;
+      box-sizing: border-box !important;
+    }
+
+    /* 6. Implementation Projects Grid & Cards (All 3 cards visible on all viewports) */
+    .lesson-item.is-implementation {
+      width: 100% !important;
+      max-width: 1240px !important;
+      margin: 20px auto 0 auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      box-sizing: border-box !important;
+    }
+    .title-wrap.is-implementation {
+      width: 100% !important;
+      text-align: center !important;
+      margin: 0 0 28px 0 !important;
+      position: relative !important;
+    }
+    .title-wrap.is-implementation .h3 {
+      font-family: 'Space Grotesk', sans-serif !important;
+      font-size: clamp(20px, 3.5vw, 30px) !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.02em !important;
+      text-transform: uppercase !important;
+      color: #0c0b0b !important;
+      text-align: center !important;
+      margin: 0 !important;
+    }
+    .sticky-container.is-implementation {
+      width: 100% !important;
+      display: block !important;
+    }
+    .list-wrap.is-implementation {
+      display: grid !important;
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 24px !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 0 40px 0 !important;
+      box-sizing: border-box !important;
+    }
+    @media screen and (max-width: 1024px) {
+      .list-wrap.is-implementation {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 20px !important;
       }
     }
-    @media (max-width: 479px) {
-      html {
-        font-size: 26.66666vw;
-        -webkit-tap-highlight-color: transparent;
+    @media screen and (max-width: 767px) {
+      .list-wrap.is-implementation {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 18px !important;
+        padding: 0 0 30px 0 !important;
       }
-      .classic-anim_wrap::before,
-      video.is-desktop,
-      video.is-tablet {
-        display: none;
+    }
+
+    .card-link,
+    .card-link.is-second,
+    .card-link.is-third,
+    .card-link.w-inline-block,
+    div.card-link,
+    a.card-link {
+      display: flex !important;
+      flex-direction: column !important;
+      width: 100% !important;
+      background: #141318 !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      border-radius: 18px !important;
+      overflow: hidden !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease !important;
+      margin: 0 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: none !important;
+      box-sizing: border-box !important;
+      text-decoration: none !important;
+    }
+    .card-link:hover {
+      transform: translateY(-4px) !important;
+      border-color: rgba(34, 197, 94, 0.5) !important;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .card-video-item {
+      width: 100% !important;
+      aspect-ratio: 16 / 10 !important;
+      background: #09090b !important;
+      position: relative !important;
+      overflow: hidden !important;
+      border-radius: 17px 17px 0 0 !important;
+    }
+    .card-video,
+    .card-video.is-implementation,
+    .card-video video,
+    .card-video-item video,
+    .card-video-item img,
+    .card-video-img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      display: block !important;
+    }
+    .flex-display.is-implementation,
+    .card-link .flex-display.is-implementation {
+      padding: 16px 18px !important;
+      background: #141318 !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+      flex: 1 !important;
+      display: flex !important;
+      align-items: center !important;
+      box-sizing: border-box !important;
+    }
+    .card-link .p3 {
+      font-family: 'Space Grotesk', -apple-system, sans-serif !important;
+      font-size: 14px !important;
+      line-height: 1.5 !important;
+      color: #f3f4f6 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      text-align: left !important;
+      word-break: normal !important;
+      overflow-wrap: break-word !important;
+    }
+
+    /* 7. Classic Animation Demo (Car, Flower, etc. - No overlaps) */
+    .classic-anim_wrap {
+      width: 100% !important;
+      max-width: 1000px !important;
+      margin: 30px auto 0 auto !important;
+      background: transparent !important;
+      box-sizing: border-box !important;
+    }
+    .classic-anim_musk {
+      width: 100% !important;
+      background: rgba(255, 255, 255, 0.45) !important;
+      border: 1px solid rgba(0, 0, 0, 0.15) !important;
+      border-radius: 24px !important;
+      padding: 32px 24px !important;
+      backdrop-filter: blur(12px) !important;
+      box-sizing: border-box !important;
+      display: block !important;
+    }
+    .classic-anim_container {
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 24px !important;
+      background: transparent !important;
+    }
+    .classic-anim_content {
+      width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 16px !important;
+    }
+    .h2-secondary {
+      font-family: 'Playfair Display', serif !important;
+      font-size: clamp(24px, 4vw, 36px) !important;
+      font-weight: 700 !important;
+      color: #0c0b0b !important;
+      text-align: center !important;
+      margin: 0 0 12px 0 !important;
+      line-height: 1.25 !important;
+    }
+    .a-lesson-list {
+      width: 100% !important;
+      max-width: 720px !important;
+      margin: 0 auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 20px !important;
+    }
+    .a-lesson-item {
+      width: 100% !important;
+      margin: 0 auto !important;
+    }
+    .a-lesson-item_overflow-hidden {
+      width: 100% !important;
+      max-width: 720px !important;
+      height: auto !important;
+      aspect-ratio: 16 / 10 !important;
+      border-radius: 16px !important;
+      border: 1px solid rgba(0, 0, 0, 0.25) !important;
+      background: #000 !important;
+      overflow: hidden !important;
+      position: relative !important;
+      margin: 0 auto !important;
+    }
+    .a-lesson-video,
+    .a-lesson-video video,
+    .a-lesson-img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      display: block !important;
+    }
+    .a-lesson-item_heigh,
+    .a-lesson-item_sticky {
+      width: 100% !important;
+      max-width: 720px !important;
+      margin: 16px auto 0 auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 16px !important;
+      position: relative !important;
+      top: auto !important;
+    }
+    .a-lesson-text-wrap {
+      background: rgba(255, 255, 255, 0.88) !important;
+      border: 1px solid rgba(0, 0, 0, 0.12) !important;
+      border-radius: 14px !important;
+      padding: 18px 20px !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+      box-sizing: border-box !important;
+      width: 100% !important;
+    }
+    .a-lesson-text-wrap .p3-bold {
+      font-family: 'Space Grotesk', sans-serif !important;
+      font-weight: 700 !important;
+      font-size: 16px !important;
+      color: #16a34a !important;
+      margin-bottom: 6px !important;
+    }
+    .a-lesson-text-wrap .p3 {
+      font-family: 'Space Grotesk', -apple-system, sans-serif !important;
+      font-size: 14.5px !important;
+      line-height: 1.6 !important;
+      color: #1f2937 !important;
+      margin: 0 !important;
+    }
+
+    /* 8. Interactive Section & Track */
+    .section.is-interactive {
+      padding: 70px 24px !important;
+      background: #0c0b0b !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .content-wrap.is-interactive .h2 {
+      font-family: 'Space Grotesk', sans-serif !important;
+      font-size: clamp(28px, 5vw, 44px) !important;
+      font-weight: 800 !important;
+      color: #ffffff !important;
+      text-align: center !important;
+      margin-bottom: 36px !important;
+    }
+    .track-flex.is-interactive {
+      width: 100% !important;
+      max-width: 1200px !important;
+      margin: 0 auto !important;
+    }
+    .track-padding.is-interactive {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+      gap: 24px !important;
+      width: 100% !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+    }
+    .horizontal-item {
+      background: #18181b !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 18px !important;
+      padding: 24px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 16px !important;
+      height: auto !important;
+      min-height: 280px !important;
+      box-sizing: border-box !important;
+    }
+
+    /* 9. UI Section */
+    .section.is-ui {
+      padding: 70px 24px !important;
+      background: #0c0b0b !important;
+      box-sizing: border-box !important;
+    }
+    .ui-track .section-slider {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+      gap: 20px !important;
+      width: 100% !important;
+      max-width: 1200px !important;
+      margin: 30px auto !important;
+    }
+    .section-slide.ui-slide {
+      background: #18181b !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 16px !important;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    .section-slide-img-wrap {
+      width: 100% !important;
+      aspect-ratio: 16 / 10 !important;
+      background: #000 !important;
+    }
+    .section-slide-video video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+    }
+    .section-slide-text {
+      padding: 14px 16px !important;
+      background: #18181b !important;
+    }
+    .section-slide-text .p3 {
+      font-size: 13.5px !important;
+      line-height: 1.5 !important;
+      color: #e2e8f0 !important;
+    }
+
+    /* 10. Techniques Section */
+    .section.is-techniques {
+      padding: 80px 24px !important;
+      background: #0c0b0b !important;
+      text-align: center !important;
+      box-sizing: border-box !important;
+    }
+    .list-wrap.is-techniques {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      gap: 16px !important;
+      margin-bottom: 30px !important;
+    }
+    .list-item.is-techniques {
+      font-family: 'Space Grotesk', sans-serif !important;
+      font-size: clamp(24px, 4vw, 42px) !important;
+      font-weight: 800 !important;
+      color: #ffffff !important;
+      text-transform: uppercase !important;
+      letter-spacing: -0.02em !important;
+    }
+    .content-wrap.is-techniques {
+      max-width: 860px !important;
+      margin: 0 auto !important;
+    }
+    .text-wrap.is-techniques .p1.white {
+      font-size: clamp(16px, 2.2vw, 22px) !important;
+      line-height: 1.6 !important;
+      color: #e2e8f0 !important;
+      text-align: center !important;
+    }
+
+    /* Mobile fine-tunings */
+    @media screen and (max-width: 640px) {
+      .lesson {
+        padding: 50px 16px !important;
       }
-      video.is-mobile {
-        display: block;
+      .classic-anim_musk {
+        padding: 20px 16px !important;
+      }
+      .card-link .p3 {
+        font-size: 13px !important;
+      }
+      .a-lesson-text-wrap .p3 {
+        font-size: 13.5px !important;
       }
     }
   </style>
@@ -1896,6 +2427,98 @@
       $(".toggle-label").show();
       $(".toggle-label.is-active").hide();
     });
+
+    // Global Keydown Handler for Admin Modal (Ctrl + A / Cmd + A)
+    window.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag !== 'input' && activeTag !== 'textarea') {
+          e.preventDefault();
+          try {
+            window.parent.postMessage({ type: 'TECHIFY_OPEN_ADMIN' }, '*');
+          } catch(err) {}
+        }
+      }
+    });
+
+    // Touch and Visibility Auto-Resume for Videos
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+        document.querySelectorAll('video').forEach(v => {
+          v.play().catch(() => {});
+        });
+      }
+    });
+
+    // Universal Layout Stabilizer (Ensures 100% of projects appear with clean spacing across mobile, notebook & desktop)
+    function stabilizeAllDevicesLayout() {
+      const isMobileOrTablet = window.innerWidth <= 1024;
+      
+      document.querySelectorAll('.lesson-item.is-implementation').forEach(item => {
+        item.style.position = 'relative';
+        item.style.height = 'auto';
+        item.style.maxHeight = 'none';
+        item.style.minHeight = 'auto';
+        item.style.marginTop = '20px';
+        item.style.marginBottom = '0';
+        item.style.transform = 'none';
+      });
+
+      document.querySelectorAll('.sticky-container.is-implementation').forEach(sc => {
+        sc.style.position = 'relative';
+        sc.style.height = 'auto';
+        sc.style.maxHeight = 'none';
+        sc.style.minHeight = 'auto';
+        sc.style.transform = 'none';
+        sc.style.display = 'block';
+        sc.style.width = '100%';
+      });
+
+      document.querySelectorAll('.list-wrap.is-implementation').forEach(el => {
+        el.style.transform = 'none';
+        el.style.width = '100%';
+        el.style.maxWidth = '100%';
+        el.style.margin = '0';
+        if (window.innerWidth <= 767) {
+          el.style.display = 'flex';
+          el.style.flexDirection = 'column';
+          el.style.gap = '18px';
+        } else if (window.innerWidth <= 1024) {
+          el.style.display = 'grid';
+          el.style.gridTemplateColumns = 'repeat(2, 1fr)';
+          el.style.gap = '20px';
+        } else {
+          el.style.display = 'grid';
+          el.style.gridTemplateColumns = 'repeat(3, 1fr)';
+          el.style.gap = '24px';
+        }
+      });
+
+      document.querySelectorAll('.card-link').forEach(card => {
+        card.style.transform = 'none';
+        card.style.opacity = '1';
+        card.style.visibility = 'visible';
+        card.style.position = 'relative';
+        card.style.width = '100%';
+        card.style.maxWidth = '100%';
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+      });
+
+      document.querySelectorAll('.classic-anim_wrap, .classic-anim_musk, .a-lesson-item_heigh, .a-lesson-item_sticky').forEach(el => {
+        el.style.position = 'relative';
+        el.style.height = 'auto';
+        el.style.maxHeight = 'none';
+        el.style.transform = 'none';
+      });
+    }
+
+    window.addEventListener('resize', stabilizeAllDevicesLayout);
+    window.addEventListener('load', stabilizeAllDevicesLayout);
+    document.addEventListener('DOMContentLoaded', stabilizeAllDevicesLayout);
+    setTimeout(stabilizeAllDevicesLayout, 100);
+    setTimeout(stabilizeAllDevicesLayout, 500);
+    setTimeout(stabilizeAllDevicesLayout, 1200);
   </script>
 </body>
 </html>

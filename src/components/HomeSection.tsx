@@ -1,1504 +1,1877 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence, useInView, animate, useScroll, useTransform } from 'motion/react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import NumberFlow from '@number-flow/react';
 import { 
-  Calendar, 
-  ArrowRight, 
-  ArrowUpRight,
   Globe, 
   Palette, 
   Monitor, 
   Zap, 
   Sparkles, 
-  TrendingUp, 
-  Trophy, 
+  Smartphone, 
+  Bot, 
+  BarChart3, 
+  ArrowRight, 
+  Check, 
+  ChevronDown, 
   ShieldCheck, 
-  CheckCircle,
-  Star,
-  Layers,
-  Database,
-  BarChart3,
-  Users,
-  Check,
+  Code2, 
+  Cpu, 
+  Layers, 
+  Eye, 
+  TrendingUp, 
+  Rocket, 
+  HelpCircle,
+  MessageSquare,
   Clock,
-  Layout,
-  MessageCircle,
-  ExternalLink,
-  ChevronLeft,
-  ChevronRight,
-  Send,
-  Image as ImageIcon,
-  ZoomIn,
+  CheckCircle2,
   X,
-  Plus,
-  Upload,
-  Trash2,
+  ExternalLink,
+  Laptop,
   Edit3,
-  Loader2
+  Trash2,
+  Plus,
+  Save,
+  RotateCcw,
+  Pencil,
+  CheckCheck,
+  Flame,
+  Shield,
+  Briefcase,
+  Database,
+  Server
 } from 'lucide-react';
-import { PROJECTS, SERVICES } from '../data';
-import AnimatedGradient from './AnimatedGradient';
-import { GradientWave } from './GradientWave';
-import TechHeroBackground from './TechHeroBackground';
-import { TechifyIcon } from './TechifyLogo';
 import ScrollReveal from './ScrollReveal';
-import ShowcaseCarousel from './ShowcaseCarousel';
 import ClientsSliderSection from './ClientsSliderSection';
-import PackagesSection from './PackagesSection';
-import TextEmergence from './TextEmergence';
-import InteractiveDiagnosisSection from './InteractiveDiagnosisSection';
-import SpecialtyBentoSection from './SpecialtyBentoSection';
-import ProductionProcessSection from './ProductionProcessSection';
-import { EditableText, EditableNumber, EditableIcon, EditableImage } from './InlineEditProvider';
-import { getCachedGeneralContent, getCachedFeedbacks, getCachedTeamMembers, SiteGeneralContent, FeedbackImage, TeamMember, saveFeedbacksToFirestore } from '../lib/siteContent';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { compressImageFile } from '../lib/imageUtils';
-import { toast } from './Toast';
 import { useAdminAuth } from '../lib/adminAuth';
+import { cn } from '../lib/utils';
+import { 
+  HomePageContent, 
+  DEFAULT_HOME_PAGE_CONTENT, 
+  getCachedHomePageContent, 
+  initHomePageListener, 
+  saveHomePageContentToFirestore,
+  HomeServiceItem,
+  HomePlanItem,
+  HomeFaqItem,
+  HomePillarItem
+} from '../lib/homeContent';
+import { toast } from './Toast';
 
-interface AnimatedCounterProps {
-  targetValue: number;
-  suffix?: string;
-  label: string;
-  idx?: number;
-  id?: string;
+// Helper to parse price strings into currency symbol, number amount and suffix for NumberFlow
+function parsePriceData(val: string | number | undefined) {
+  if (val === undefined || val === null) {
+    return { symbol: 'R$ ', amount: 0, suffix: '', hasNumber: false, raw: '' };
+  }
+  if (typeof val === 'number') {
+    return { symbol: '$ ', amount: val, suffix: '', hasNumber: true, raw: String(val) };
+  }
+  const str = String(val).trim();
+  const match = str.match(/^([^\d]*?)\s*([\d]+(?:[.,]\d+)?)\s*(.*)$/);
+  if (match) {
+    const symbol = match[1] || '';
+    const numClean = match[2].replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(numClean);
+    if (!isNaN(num)) {
+      return {
+        symbol: symbol ? (symbol.endsWith(' ') ? symbol : `${symbol} `) : '',
+        amount: num,
+        suffix: match[3] || '',
+        hasNumber: true,
+        raw: str
+      };
+    }
+  }
+  return { symbol: '', amount: 0, suffix: '', hasNumber: false, raw: str };
 }
 
-function AnimatedCounter({ targetValue, suffix = '', label, idx = 0, id = 'stat_counter' }: AnimatedCounterProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: false, amount: 0.2 });
-  const [currentValue, setCurrentValue] = useState(0);
-
-  useEffect(() => {
-    if (isInView) {
-      setCurrentValue(0);
-      const controls = animate(0, targetValue, {
-        duration: 1.8,
-        ease: [0.16, 1, 0.3, 1],
-        onUpdate: (latest) => {
-          setCurrentValue(Math.floor(latest));
-        },
-      });
-      return () => controls.stop();
-    } else {
-      setCurrentValue(0);
-    }
-  }, [isInView, targetValue]);
-
+// Interactive Pricing Toggle Switch with layoutId animation
+const PricingSwitch = ({
+  isYearly,
+  onToggle,
+  className,
+}: {
+  isYearly: boolean;
+  onToggle: (yearly: boolean) => void;
+  className?: string;
+}) => {
   return (
-    <div ref={ref}>
-      <EditableNumber
-        id={id}
-        defaultValue={currentValue}
-        defaultSuffix={suffix}
-        defaultLabel={label}
-      />
+    <div className={cn("flex justify-center", className)}>
+      <div className="relative z-10 mx-auto flex w-fit rounded-full bg-neutral-900 border border-neutral-800 p-1">
+        <button
+          type="button"
+          onClick={() => onToggle(false)}
+          className={cn(
+            "relative z-10 w-fit sm:h-12 cursor-pointer h-10 rounded-full sm:px-6 px-3 sm:py-2 py-1 text-xs sm:text-sm font-semibold transition-colors",
+            !isYearly ? "text-white" : "text-neutral-400 hover:text-white"
+          )}
+        >
+          {!isYearly && (
+            <motion.span
+              layoutId="pricing-switch-bubble"
+              className="absolute top-0 left-0 sm:h-12 h-10 w-full rounded-full border-2 border-neutral-700 bg-gradient-to-t from-neutral-800 via-neutral-750 to-neutral-700 shadow-md"
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            />
+          )}
+          <span className="relative">Mensal</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onToggle(true)}
+          className={cn(
+            "relative z-10 w-fit cursor-pointer sm:h-12 h-10 flex-shrink-0 rounded-full sm:px-6 px-3 sm:py-2 py-1 text-xs sm:text-sm font-semibold transition-colors",
+            isYearly ? "text-white" : "text-neutral-400 hover:text-white"
+          )}
+        >
+          {isYearly && (
+            <motion.span
+              layoutId="pricing-switch-bubble"
+              className="absolute top-0 left-0 sm:h-12 h-10 w-full rounded-full border-2 border-neutral-700 bg-gradient-to-t from-neutral-800 via-neutral-750 to-neutral-700 shadow-md"
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            />
+          )}
+          <span className="relative flex items-center gap-2">
+            Anual
+            <span className="rounded-full bg-[#22c55e]/20 border border-[#22c55e]/40 px-2 py-0.5 text-[10px] sm:text-xs font-bold text-[#4ade80]">
+              Economize 20%
+            </span>
+          </span>
+        </button>
+      </div>
     </div>
   );
-}
+};
+
+// Mapping for dynamic icons
+const ICON_LOOKUP: Record<string, React.ElementType> = {
+  Globe,
+  Palette,
+  Monitor,
+  Zap,
+  Sparkles,
+  Smartphone,
+  Bot,
+  BarChart3,
+  Code2,
+  Cpu,
+  Layers,
+  Eye,
+  TrendingUp,
+  Rocket,
+  Shield,
+  Flame
+};
 
 interface HomeSectionProps {
-  onNavigate: (tab: string) => void;
-  onOpenConsultation: (serviceName?: string) => void;
+  onNavigate?: (tab: string) => void;
+  onOpenConsultation?: (serviceName?: string) => void;
 }
 
 export default function HomeSection({ onNavigate, onOpenConsultation }: HomeSectionProps) {
   const { isAdmin } = useAdminAuth();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const feedbackFileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedArticle, setSelectedArticle] = useState<number | null>(null);
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [generalContent, setGeneralContent] = useState<SiteGeneralContent>(getCachedGeneralContent);
-  const [feedbacks, setFeedbacks] = useState<FeedbackImage[]>(getCachedFeedbacks);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(getCachedTeamMembers);
-  const [selectedFeedbackImage, setSelectedFeedbackImage] = useState<FeedbackImage | null>(null);
+  const [content, setContent] = useState<HomePageContent>(getCachedHomePageContent);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Manual Feedback Modal state
-  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
-  const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
-  const [feedbackImageUrl, setFeedbackImageUrl] = useState('');
-  const [feedbackClientName, setFeedbackClientName] = useState('');
-  const [feedbackProjectName, setFeedbackProjectName] = useState('');
-  const [feedbackComment, setFeedbackComment] = useState('');
-  const [feedbackRating, setFeedbackRating] = useState(5);
-  const [feedbackDate, setFeedbackDate] = useState('');
-  const [isUploadingFeedback, setIsUploadingFeedback] = useState(false);
-  const [isSavingFeedback, setIsSavingFeedback] = useState(false);
+  // Billing Cycle for Plans (Monthly vs Annual with discount)
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
-  const handleOpenFeedbackModal = (fb?: FeedbackImage) => {
-    if (fb) {
-      setEditingFeedbackId(fb.id);
-      setFeedbackImageUrl(fb.imageUrl);
-      setFeedbackClientName(fb.clientName || '');
-      setFeedbackProjectName(fb.projectName || '');
-      setFeedbackComment(fb.comment || '');
-      setFeedbackRating(fb.rating || 5);
-      setFeedbackDate(fb.date || '');
-    } else {
-      setEditingFeedbackId(null);
-      setFeedbackImageUrl('');
-      setFeedbackClientName('');
-      setFeedbackProjectName('');
-      setFeedbackComment('');
-      setFeedbackRating(5);
-      setFeedbackDate(new Date().toLocaleDateString('pt-BR'));
-    }
-    setIsFeedbackModalOpen(true);
-  };
+  // State for active capability pillar tab
+  const [activePillarId, setActivePillarId] = useState<string>('engenharia');
+  
+  // State for selected service filter hover
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
 
-  const handleFeedbackFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsUploadingFeedback(true);
-    try {
-      const base64 = await compressImageFile(file, 1200, 1200, 0.88);
-      setFeedbackImageUrl(base64);
-      toast.success("Print Carregado", "Imagem pronta para salvar no site.");
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro no Upload", "Não foi possível processar o arquivo.");
-    } finally {
-      setIsUploadingFeedback(false);
-    }
-  };
+  // State for FAQ accordions
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
-  const handleSaveFeedbackSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!feedbackImageUrl.trim()) {
-      toast.warning("Imagem Obrigatória", "Por favor selecione ou insira a URL do print/feedback.");
-      return;
-    }
-    setIsSavingFeedback(true);
-    try {
-      let updated: FeedbackImage[];
-      if (editingFeedbackId) {
-        updated = feedbacks.map(item =>
-          item.id === editingFeedbackId
-            ? {
-                ...item,
-                imageUrl: feedbackImageUrl.trim(),
-                clientName: feedbackClientName.trim() || 'Cliente Satisfeito',
-                projectName: feedbackProjectName.trim(),
-                comment: feedbackComment.trim(),
-                rating: feedbackRating,
-                date: feedbackDate.trim() || new Date().toLocaleDateString('pt-BR')
-              }
-            : item
-        );
-        toast.success("Feedback Atualizado", "As alterações foram salvas no banco de dados.");
-      } else {
-        const newFb: FeedbackImage = {
-          id: 'fb-' + Date.now(),
-          imageUrl: feedbackImageUrl.trim(),
-          clientName: feedbackClientName.trim() || 'Cliente Satisfeito',
-          projectName: feedbackProjectName.trim(),
-          comment: feedbackComment.trim(),
-          rating: feedbackRating,
-          date: feedbackDate.trim() || new Date().toLocaleDateString('pt-BR'),
-          createdAt: new Date().toISOString()
-        };
-        updated = [newFb, ...feedbacks];
-        toast.success("Feedback Publicado", "O print de feedback foi publicado e salvo no banco de dados.");
-      }
-      setFeedbacks(updated);
-      await saveFeedbacksToFirestore(updated);
-      setIsFeedbackModalOpen(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao Salvar", "Não foi possível salvar o feedback.");
-    } finally {
-      setIsSavingFeedback(false);
-    }
-  };
-
-  const handleDeleteFeedbackItem = async (id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (!window.confirm("Deseja realmente remover este print de feedback?")) return;
-    try {
-      const updated = feedbacks.filter(fb => fb.id !== id);
-      setFeedbacks(updated);
-      await saveFeedbacksToFirestore(updated);
-      if (selectedFeedbackImage?.id === id) {
-        setSelectedFeedbackImage(null);
-      }
-      toast.info("Feedback Removido", "O print foi removido com sucesso.");
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao Excluir", "Não foi possível remover o print.");
-    }
-  };
-
-  // Sync general content, feedbacks and team members from Firestore and local cache in real-time
-  useEffect(() => {
-    const unsub = onSnapshot(doc(db, "site_content", "general"), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data() as Partial<SiteGeneralContent>;
-        setGeneralContent(prev => ({ ...prev, ...data }));
-      }
-    }, (err) => console.warn('Firestore generalContent offline:', err.message));
-
-    const unsubFeedbacks = onSnapshot(doc(db, "site_content", "feedbacks"), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (Array.isArray(data.feedbacks)) {
-          setFeedbacks(data.feedbacks);
-        }
-      }
-    }, (err) => console.warn('Firestore feedbacks offline:', err.message));
-
-    const unsubTeam = onSnapshot(doc(db, "site_content", "team"), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (Array.isArray(data.members) && data.members.length > 0) {
-          setTeamMembers(data.members);
-        }
-      }
-    }, (err) => console.warn('Firestore team offline:', err.message));
-
-    const handleContentUpdate = (e: Event) => {
-      const customEvt = e as CustomEvent<SiteGeneralContent>;
-      if (customEvt.detail) {
-        setGeneralContent(customEvt.detail);
-      }
-    };
-
-    const handleFeedbacksUpdate = (e: Event) => {
-      const customEvt = e as CustomEvent<FeedbackImage[]>;
-      if (customEvt.detail) {
-        setFeedbacks(customEvt.detail);
-      }
-    };
-
-    const handleTeamUpdate = (e: Event) => {
-      const customEvt = e as CustomEvent<TeamMember[]>;
-      if (customEvt.detail) {
-        setTeamMembers(customEvt.detail);
-      }
-    };
-
-    window.addEventListener('techify-content-updated', handleContentUpdate);
-    window.addEventListener('techify-feedbacks-updated', handleFeedbacksUpdate);
-    window.addEventListener('techify-team-updated', handleTeamUpdate);
-
-    return () => {
-      unsub();
-      unsubFeedbacks();
-      unsubTeam();
-      window.removeEventListener('techify-content-updated', handleContentUpdate);
-      window.removeEventListener('techify-feedbacks-updated', handleFeedbacksUpdate);
-      window.removeEventListener('techify-team-updated', handleTeamUpdate);
-    };
-  }, []);
-
-  // Framer Motion Scroll Parallax Transforms
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"]
+  // ==========================================
+  // MODAL STATES FOR EDITING CMS ITEMS
+  // ==========================================
+  // 1. Text/Field Generic Editor
+  const [textModal, setTextModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    fieldKey: string;
+    subKey?: string;
+    value: string;
+    isMultiline?: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    fieldKey: '',
+    value: '',
+    isMultiline: false
   });
 
-  // Layered Parallax Transformations for deep spatial immersion
-  const yHeroOrb = useTransform(scrollYProgress, [0, 0.35], [0, 140]);
-  const yHeroRing = useTransform(scrollYProgress, [0, 0.35], [0, -90]);
-  const rotateHeroRing = useTransform(scrollYProgress, [0, 0.35], [0, 60]);
-  const scaleHeroOrb = useTransform(scrollYProgress, [0, 0.25], [1, 1.3]);
-  const opacityHeroOrb = useTransform(scrollYProgress, [0, 0.3], [0.4, 0.1]);
-
-  const yPresencaOrb = useTransform(scrollYProgress, [0.08, 0.4], [-60, 100]);
-  const yBentoOrb = useTransform(scrollYProgress, [0.15, 0.55], [80, -90]);
-  const scaleBentoOrb = useTransform(scrollYProgress, [0.15, 0.35, 0.55], [0.85, 1.15, 0.9]);
-  
-  const yServicesGlow = useTransform(scrollYProgress, [0.3, 0.7], [-80, 100]);
-  const rotateServicesGeom = useTransform(scrollYProgress, [0.3, 0.7], [0, -45]);
-
-  const yEspecialidadeGlow = useTransform(scrollYProgress, [0.45, 0.8], [90, -90]);
-  const scaleEspecialidadeGlow = useTransform(scrollYProgress, [0.45, 0.65, 0.85], [0.9, 1.25, 0.85]);
-
-  const yTestimonialsAura = useTransform(scrollYProgress, [0.6, 0.9], [-60, 80]);
-  const yCtaOrb = useTransform(scrollYProgress, [0.75, 1], [80, -50]);
-  const scaleCtaGlow = useTransform(scrollYProgress, [0.75, 0.95, 1], [0.8, 1.3, 1.1]);
-
-  // Client Brands for Marquee
-  const clientLogos = [
-    { name: 'KALDI', type: 'text' },
-    { name: 'HYPE SPORTY', type: 'text' },
-    { name: 'ASME AI', type: 'text' },
-    { name: 'MUGSYS MUGS', type: 'text' },
-    { name: 'EPIC DESIGNER', type: 'text' },
-    { name: 'AGENCYOS', type: 'text' },
-  ];
-
-  // Articles data
-  const articles = [
-    {
-      id: 1,
-      title: 'Quanto custa fazer um site para a sua empresa (e por que os orçamentos variam tanto)',
-      category: 'Sites & Estratégia',
-      readTime: '4 min de leitura',
-      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
-      summary: 'Entenda os fatores decisivos que separam um site profissional de alta conversão de templates genéricos que não trazem retorno para o seu negócio.',
-      content: 'A diferença entre um site de R$ 500 e um projeto profissional de R$ 5.000 está na engenharia de conversão: velocidade de carregamento, SEO estruturado para aparecer nas buscas locais do Google, integração direta com WhatsApp e painel de controle intuitivo.'
-    },
-    {
-      id: 2,
-      title: 'Seu negócio não aparece no Google? Veja o que está acontecendo',
-      category: 'SEO & Tráfego',
-      readTime: '5 min de leitura',
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
-      summary: 'Descubra os 3 principais erros técnicos que impedem empresas locais de serem indexadas na primeira página das pesquisas do Google.',
-      content: 'Quando um cliente busca pelo seu serviço no bairro ou cidade, o algoritmo prioriza sites rápidos, cadastros verificados no Google Meu Negócio e páginas otimizadas para dispositivos móveis com dados estruturados Schema.org.'
-    },
-    {
-      id: 3,
-      title: 'Planilha ou sistema de gestão: quando a planilha começa a custar caro',
-      category: 'Sistemas & Gestão',
-      readTime: '3 min de leitura',
-      image: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=800&q=80',
-      summary: 'Como a perda de dados, erros manuais de faturamento e retrabalho na digitação de pedidos sabotam a margem de lucro de pequenas e médias empresas.',
-      content: 'Planilhas funcionam bem no primeiro mês, mas rapidamente se tornam gargalos: falta de controle de estoque em tempo real, cálculos manuais de mensalidades e risco de perda acidental de arquivos podem custar milhares de reais todo mês.'
+  // 2. Service Modal Editor
+  const [serviceModal, setServiceModal] = useState<{
+    isOpen: boolean;
+    isNew: boolean;
+    service: HomeServiceItem;
+  }>({
+    isOpen: false,
+    isNew: false,
+    service: {
+      id: '',
+      name: '',
+      subtitle: '',
+      description: '',
+      iconName: 'Globe',
+      tag: 'Tech',
+      highlight: false,
+      deliverables: []
     }
-  ];
+  });
+
+  // 3. Plan Modal Editor
+  const [planModal, setPlanModal] = useState<{
+    isOpen: boolean;
+    isNew: boolean;
+    plan: HomePlanItem;
+  }>({
+    isOpen: false,
+    isNew: false,
+    plan: {
+      id: '',
+      name: '',
+      badge: '',
+      popular: false,
+      monthlyPrice: '',
+      annualPrice: '',
+      periodText: '',
+      description: '',
+      features: [],
+      ctaText: '',
+      whatsappMessage: ''
+    }
+  });
+
+  // 4. FAQ Modal Editor
+  const [faqModal, setFaqModal] = useState<{
+    isOpen: boolean;
+    isNew: boolean;
+    faq: HomeFaqItem;
+  }>({
+    isOpen: false,
+    isNew: false,
+    faq: {
+      id: '',
+      question: '',
+      answer: ''
+    }
+  });
+
+  // Sync with Firestore real-time
+  useEffect(() => {
+    const unsub = initHomePageListener((newContent) => {
+      setContent(newContent);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleStartConsultation = (serviceName: string = 'Consultoria Techify') => {
+    if (onOpenConsultation) {
+      onOpenConsultation(serviceName);
+    } else if (onNavigate) {
+      onNavigate('apps');
+    }
+  };
+
+  // ==========================================
+  // SAVE / SYNC ACTIONS
+  // ==========================================
+  const handleSaveAllToDatabase = async () => {
+    setIsSaving(true);
+    try {
+      await saveHomePageContentToFirestore(content);
+      setHasUnsavedChanges(false);
+      toast.success('Página Salva no Banco de Dados', 'Todas as alterações foram publicadas e sincronizadas com sucesso!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Erro ao Salvar', 'Não foi possível gravar as alterações no Firestore.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleResetToDefault = async () => {
+    if (window.confirm('Tem certeza que deseja restaurar o conteúdo padrão da página inicial?')) {
+      setContent(DEFAULT_HOME_PAGE_CONTENT);
+      setHasUnsavedChanges(true);
+      await saveHomePageContentToFirestore(DEFAULT_HOME_PAGE_CONTENT);
+      toast.info('Conteúdo Restaurado', 'A página inicial voltou para a configuração padrão.');
+    }
+  };
+
+  // ==========================================
+  // GENERIC TEXT MODAL SUBMIT
+  // ==========================================
+  const handleSaveTextModal = (e: React.FormEvent) => {
+    e.preventDefault();
+    const { fieldKey, subKey, value } = textModal;
+    
+    setContent(prev => {
+      const updated = { ...prev };
+      if (subKey) {
+        (updated as any)[fieldKey] = {
+          ...(updated as any)[fieldKey],
+          [subKey]: value
+        };
+      } else {
+        (updated as any)[fieldKey] = value;
+      }
+      return updated;
+    });
+
+    setHasUnsavedChanges(true);
+    setTextModal(prev => ({ ...prev, isOpen: false }));
+    toast.success('Texto Atualizado', 'Alteração salva localmente. Clique em "Salvar Página" para persistir no banco.');
+  };
+
+  // ==========================================
+  // SERVICES ACTIONS (ADD, EDIT, DELETE)
+  // ==========================================
+  const handleSaveService = (e: React.FormEvent) => {
+    e.preventDefault();
+    const current = serviceModal.service;
+    if (!current.name.trim()) {
+      toast.error('Campo Obrigatório', 'Informe o nome do serviço.');
+      return;
+    }
+
+    setContent(prev => {
+      const existing = [...prev.services];
+      if (serviceModal.isNew) {
+        const newService: HomeServiceItem = {
+          ...current,
+          id: current.id || `service_${Date.now()}`
+        };
+        return { ...prev, services: [...existing, newService] };
+      } else {
+        const index = existing.findIndex(s => s.id === current.id);
+        if (index !== -1) {
+          existing[index] = current;
+        }
+        return { ...prev, services: existing };
+      }
+    });
+
+    setHasUnsavedChanges(true);
+    setServiceModal(prev => ({ ...prev, isOpen: false }));
+    toast.success(serviceModal.isNew ? 'Serviço Criado' : 'Serviço Atualizado', 'Clique em "Salvar Página" no topo para gravar no banco.');
+  };
+
+  const handleDeleteService = (serviceId: string, name: string) => {
+    if (window.confirm(`Deseja realmente excluir o serviço "${name}"?`)) {
+      setContent(prev => ({
+        ...prev,
+        services: prev.services.filter(s => s.id !== serviceId)
+      }));
+      setHasUnsavedChanges(true);
+      toast.info('Serviço Removido', `O serviço "${name}" foi excluído da lista.`);
+    }
+  };
+
+  // ==========================================
+  // PLANS ACTIONS (ADD, EDIT, DELETE)
+  // ==========================================
+  const handleSavePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const current = planModal.plan;
+    if (!current.name.trim()) {
+      toast.error('Campo Obrigatório', 'Informe o nome do plano.');
+      return;
+    }
+
+    let updatedPlans: HomePlanItem[] = [];
+    setContent(prev => {
+      const existing = [...prev.plans];
+      if (planModal.isNew) {
+        const newPlan: HomePlanItem = {
+          ...current,
+          id: current.id || `plan_${Date.now()}`
+        };
+        updatedPlans = [...existing, newPlan];
+      } else {
+        const index = existing.findIndex(p => p.id === current.id);
+        if (index !== -1) {
+          existing[index] = current;
+        } else {
+          existing.push(current);
+        }
+        updatedPlans = existing;
+      }
+      return { ...prev, plans: updatedPlans };
+    });
+
+    setHasUnsavedChanges(true);
+    setPlanModal(prev => ({ ...prev, isOpen: false }));
+    toast.success(planModal.isNew ? 'Plano Criado' : 'Plano Atualizado', 'Alterações salvas com sucesso!');
+
+    // Auto-save to Firestore
+    try {
+      await saveHomePageContentToFirestore({
+        ...content,
+        plans: updatedPlans
+      });
+    } catch (err) {
+      console.warn('Auto-save plan error:', err);
+    }
+  };
+
+  const handleDeletePlan = async (planId: string, name: string) => {
+    if (window.confirm(`Deseja realmente excluir o plano "${name}"?`)) {
+      const newPlans = content.plans.filter(p => p.id !== planId);
+      setContent(prev => ({
+        ...prev,
+        plans: newPlans
+      }));
+      setHasUnsavedChanges(true);
+      toast.info('Plano Removido', `O plano "${name}" foi excluído.`);
+
+      try {
+        await saveHomePageContentToFirestore({
+          ...content,
+          plans: newPlans
+        });
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+  };
+
+  // ==========================================
+  // FAQ ACTIONS (ADD, EDIT, DELETE)
+  // ==========================================
+  const handleSaveFaq = (e: React.FormEvent) => {
+    e.preventDefault();
+    const current = faqModal.faq;
+    if (!current.question.trim() || !current.answer.trim()) {
+      toast.error('Campos Obrigatórios', 'Preencha a pergunta e a resposta.');
+      return;
+    }
+
+    setContent(prev => {
+      const existing = [...prev.faqs];
+      if (faqModal.isNew) {
+        const newFaq: HomeFaqItem = {
+          ...current,
+          id: current.id || `faq_${Date.now()}`
+        };
+        return { ...prev, faqs: [...existing, newFaq] };
+      } else {
+        const index = existing.findIndex(f => f.id === current.id);
+        if (index !== -1) {
+          existing[index] = current;
+        }
+        return { ...prev, faqs: existing };
+      }
+    });
+
+    setHasUnsavedChanges(true);
+    setFaqModal(prev => ({ ...prev, isOpen: false }));
+    toast.success(faqModal.isNew ? 'Dúvida Criada' : 'Dúvida Atualizada', 'Lembre-se de salvar para sincronizar com o banco.');
+  };
+
+  const handleDeleteFaq = (faqId: string) => {
+    if (window.confirm('Deseja realmente excluir esta dúvida do FAQ?')) {
+      setContent(prev => ({
+        ...prev,
+        faqs: prev.faqs.filter(f => f.id !== faqId)
+      }));
+      setHasUnsavedChanges(true);
+      toast.info('FAQ Removido', 'A pergunta foi removida da lista.');
+    }
+  };
 
   return (
-    <div ref={containerRef} className="relative w-full overflow-hidden bg-black text-white selection:bg-[#22c55e]/30 selection:text-white">
+    <div className="relative w-full overflow-hidden bg-black text-white selection:bg-[#22c55e]/30 selection:text-white">
       
-      {/* Global Background Parallax Ambient Glow Blobs */}
-      <motion.div 
-        style={{ y: yHeroOrb, scale: scaleHeroOrb, opacity: opacityHeroOrb }}
-        className="pointer-events-none fixed -top-40 left-1/2 -translate-x-1/2 w-[750px] h-[500px] rounded-full bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.18),transparent_70%)] blur-[90px] z-0"
-      />
-      <motion.div 
-        style={{ y: yBentoOrb, scale: scaleBentoOrb }}
-        className="pointer-events-none absolute top-[28%] -right-32 w-[550px] h-[550px] rounded-full bg-[radial-gradient(circle_at_center,rgba(74,222,128,0.08),transparent_70%)] blur-[100px] z-0"
-      />
-      <motion.div 
-        style={{ y: yEspecialidadeGlow, scale: scaleEspecialidadeGlow }}
-        className="pointer-events-none absolute top-[58%] -left-32 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.07),transparent_70%)] blur-[110px] z-0"
-      />
-      <motion.div 
-        style={{ y: yCtaOrb, scale: scaleCtaGlow }}
-        className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 w-[800px] h-[450px] rounded-full bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.12),transparent_70%)] blur-[120px] z-0"
-      />
-      
+      {/* Background Subtle Gradient Glows */}
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-b from-[#22c55e]/12 via-[#22c55e]/4 to-transparent blur-[130px] -z-10" />
+
       {/* ========================================================================= */}
-      {/* 1. HERO SECTION (Tech Cyber Constellation & Deep Spatial Background)       */}
+      {/* FLOATING ADMIN LIVE-EDIT TOOLBAR */}
       {/* ========================================================================= */}
-      <TechHeroBackground className="min-h-[90vh] flex flex-col justify-between items-center pt-10 sm:pt-14 pb-16">
+      {isAdmin && (
+        <div className="sticky top-20 z-50 mx-auto max-w-5xl px-4 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#22c55e]/50 bg-black/95 px-4 py-2.5 shadow-[0_10px_35px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+            <div className="flex items-center gap-2">
+              <div className={`h-2.5 w-2.5 rounded-full ${isEditMode ? 'bg-[#22c55e] animate-pulse' : 'bg-neutral-600'}`} />
+              <span className="text-xs font-bold text-white uppercase tracking-wider">
+                Painel do Editor Techify
+              </span>
+              {hasUnsavedChanges && (
+                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-amber-500/40">
+                  Alterações Pendentes
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsEditMode(!isEditMode)}
+                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                  isEditMode 
+                    ? 'bg-[#22c55e] text-black shadow-[0_0_15px_rgba(34,197,94,0.4)]' 
+                    : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                }`}
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+                <span>{isEditMode ? 'Modo Edição Ativo' : 'Ativar Edição Visual'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveAllToDatabase}
+                disabled={isSaving}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#16a34a] hover:to-[#15803d] px-4 py-1.5 text-xs font-black text-black shadow-[0_0_20px_rgba(34,197,94,0.5)] transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Save className="h-3.5 w-3.5" />
+                <span>{isSaving ? 'Salvando...' : 'Salvar Página'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetToDefault}
+                className="inline-flex items-center gap-1 rounded-xl border border-neutral-700 bg-neutral-900 px-2.5 py-1.5 text-[11px] font-bold text-neutral-400 hover:text-white hover:border-neutral-500 transition-colors cursor-pointer"
+                title="Restaurar conteúdo original"
+              >
+                <RotateCcw className="h-3 w-3" />
+                <span>Restaurar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 1. HERO SECTION */}
+      {/* ========================================================================= */}
+      <section className="relative mx-auto max-w-6xl px-4 pt-16 pb-16 sm:pt-20 sm:pb-24 text-center">
         
-        {/* Parallax Cyber Orbs */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          <motion.div 
-            style={{ y: yHeroOrb }}
-            className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,rgba(163,230,53,0.08),transparent_70%)]" 
-          />
-
-          {/* Floating Parallax Cyber Ring */}
-          <motion.div
-            style={{ y: yHeroRing, rotate: rotateHeroRing }}
-            className="pointer-events-none absolute -top-16 left-8 sm:left-24 w-72 h-72 rounded-full border border-[#a3e635]/15 opacity-25 [border-dasharray:8px]"
-          />
-          <motion.div
-            style={{ y: yHeroOrb, rotate: rotateServicesGeom }}
-            className="pointer-events-none absolute top-32 right-10 sm:right-32 w-48 h-48 rounded-full border border-[#4ade80]/10 opacity-20"
-          />
+        {/* Subtle Constellation / Particle Glow Area */}
+        <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center opacity-40">
+          <div className="h-[450px] w-[800px] rounded-full bg-gradient-to-b from-[#22c55e]/15 via-[#10b981]/5 to-transparent blur-[100px]" />
         </div>
 
-        {/* Hero Header & Copy */}
-        <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center pt-6 sm:pt-10">
-          
-          {/* Main Headline with Smooth Emergence */}
-          <TextEmergence delay={0.1} yOffset={25} duration={0.8} blur={16}>
-            <h1 className="font-display text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl pt-1 sm:pt-2">
-              <span className="block text-white text-3xl sm:text-5xl md:text-6xl mb-2 sm:mb-3 font-extrabold tracking-tight">
-                <EditableText 
-                  id="hero_title_1" 
-                  defaultText={generalContent.heroHeadline1 || "A Solução Definitiva"} 
-                  title="Título Hero Linha 1" 
-                />
-              </span>
-              <span className="block text-[#a3e635] tracking-tight uppercase drop-shadow-[0_0_35px_rgba(163,230,53,0.35)] font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl leading-[1.08] hover:drop-shadow-[0_0_45px_rgba(163,230,53,0.6)] transition-all">
-                <EditableText 
-                  id="hero_title_2" 
-                  defaultText={generalContent.heroHeadline2 || "ESTRUTURA COMPLETA PARA SUA EMPRESA CRESCER"} 
-                  title="Título Hero Linha 2" 
-                />
-              </span>
+        {/* Top Eyebrow Heading: "A Solução Definitiva" */}
+        <ScrollReveal yOffset={-12} duration={0.5} once={true}>
+          <div className="relative inline-block mb-3 sm:mb-4 group">
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white font-['Bricolage_Grotesque','Plus_Jakarta_Sans',sans-serif]">
+              {content.hero.eyebrow}
+            </h2>
+            {isEditMode && (
+              <button
+                onClick={() => setTextModal({
+                  isOpen: true,
+                  title: 'Editar Título Superior do Hero',
+                  fieldKey: 'hero',
+                  subKey: 'eyebrow',
+                  value: content.hero.eyebrow,
+                  isMultiline: false
+                })}
+                className="absolute -top-2 -right-8 p-1.5 rounded-lg bg-[#22c55e] text-black shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                title="Editar Texto"
+              >
+                <Pencil className="h-3 w-3 stroke-[2.5]" />
+              </button>
+            )}
+          </div>
+        </ScrollReveal>
+
+        {/* Main Punch Headline */}
+        <ScrollReveal yOffset={15} delay={0.1} duration={0.6} once={true}>
+          <div className="relative inline-block max-w-5xl mx-auto group">
+            <h1 className="font-['Bricolage_Grotesque','Syne',sans-serif] text-4xl sm:text-6xl lg:text-7xl xl:text-[80px] font-black uppercase tracking-tight text-[#4ade80] sm:leading-[1.08] drop-shadow-[0_0_35px_rgba(74,222,128,0.35)]">
+              {content.hero.headline1} <br />
+              {content.hero.headline2} <br />
+              {content.hero.headline3}
             </h1>
-          </TextEmergence>
+            {isEditMode && (
+              <button
+                onClick={() => setTextModal({
+                  isOpen: true,
+                  title: 'Editar Frase Principal (Linha 1)',
+                  fieldKey: 'hero',
+                  subKey: 'headline1',
+                  value: content.hero.headline1,
+                  isMultiline: false
+                })}
+                className="absolute top-2 -right-8 p-1.5 rounded-lg bg-[#22c55e] text-black shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                title="Editar Headline"
+              >
+                <Pencil className="h-3 w-3 stroke-[2.5]" />
+              </button>
+            )}
+          </div>
+        </ScrollReveal>
 
-          {/* Subtitle with Emergence */}
-          <TextEmergence delay={0.25} yOffset={18} duration={0.7} blur={10}>
-            <p className="max-w-3xl text-sm sm:text-base md:text-lg text-neutral-300 leading-relaxed font-normal mt-6">
-              <EditableText
-                id="hero_description_main"
-                defaultText={generalContent.heroDescription || "Unimos desenvolvimento de sites e sistemas, design de alto impacto e marketing estratégico. Uma experiência completa conduzida por um time pronto para acelerar seus resultados. Nossa equipe de especialistas cuida de toda a sua estratégia digital para o seu negócio escalar."}
-                title="Descrição do Hero"
-                isMultiline={true}
-              />
+        {/* Hero Subtitle */}
+        <ScrollReveal yOffset={15} delay={0.2} duration={0.6} once={true}>
+          <div className="relative inline-block max-w-3xl mx-auto group mt-7">
+            <p className="text-sm sm:text-base lg:text-lg text-neutral-300 leading-relaxed font-normal">
+              {content.hero.description}
             </p>
-          </TextEmergence>
+            {isEditMode && (
+              <button
+                onClick={() => setTextModal({
+                  isOpen: true,
+                  title: 'Editar Descrição do Hero',
+                  fieldKey: 'hero',
+                  subKey: 'description',
+                  value: content.hero.description,
+                  isMultiline: true
+                })}
+                className="absolute -top-2 -right-8 p-1.5 rounded-lg bg-[#22c55e] text-black shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                title="Editar Descrição"
+              >
+                <Pencil className="h-3 w-3 stroke-[2.5]" />
+              </button>
+            )}
+          </div>
+        </ScrollReveal>
 
-          {/* Dual Action Buttons */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.35 }}
-            className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
-          >
-            <button
-              onClick={() => onNavigate('portfolio')}
-              className="w-full sm:w-auto rounded-full border border-neutral-800 bg-neutral-900/90 hover:bg-neutral-800 hover:border-[#a3e635]/40 px-7 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-neutral-200 transition-all shadow-md cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+        {/* Hero Action Buttons */}
+        <ScrollReveal yOffset={15} delay={0.3} duration={0.6} once={true}>
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-5 max-w-lg mx-auto">
+            {/* Secondary Action */}
+            <button 
+              id="hero-portfolio-btn"
+              onClick={() => {
+                if (onNavigate) {
+                  onNavigate('apps');
+                } else {
+                  const el = document.getElementById('servicos');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-neutral-700/80 bg-neutral-900/90 hover:bg-neutral-800 hover:border-neutral-600 text-white font-black text-xs uppercase tracking-wider px-8 py-4 transition-all cursor-pointer select-none active:scale-[0.98] shadow-lg"
             >
-              <EditableText
-                id="hero_cta_secondary"
-                defaultText={generalContent.heroCtaSecondary || "VER O QUE JÁ FIZEMOS"}
-                title="Botão Secundário"
-              />
+              <span>{content.hero.ctaSecondary}</span>
             </button>
 
-            <button
-              onClick={onOpenConsultation}
-              className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full bg-[#a3e635] hover:bg-[#84cc16] px-7 py-3.5 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_25px_rgba(163,230,53,0.35)] cursor-pointer hover:shadow-[0_0_35px_rgba(163,230,53,0.6)] hover:scale-[1.02] active:scale-[0.98]"
+            {/* Primary Action */}
+            <button 
+              id="hero-engineer-cta"
+              onClick={() => handleStartConsultation('Falar com Engenheiro Techify')}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[#a3e635] hover:bg-[#84cc16] text-black font-black text-xs uppercase tracking-wider px-8 py-4 shadow-[0_0_30px_rgba(163,230,53,0.4)] hover:shadow-[0_0_40px_rgba(163,230,53,0.6)] transition-all cursor-pointer select-none active:scale-[0.98]"
             >
-              <span>
-                <EditableText
-                  id="hero_cta_primary"
-                  defaultText={generalContent.heroCtaPrimary || "FALAR COM ENGENHEIRO"}
-                  title="Botão Principal"
-                />
+              <span>{content.hero.ctaPrimary}</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black/10 font-bold">
+                ↗
               </span>
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </div>
             </button>
-          </motion.div>
-        </div>
+          </div>
+        </ScrollReveal>
 
-        {/* Rating Footer */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.45 }}
-          className="relative z-10 mt-12 flex flex-col items-center gap-1.5"
-        >
-          <span className="text-xs font-semibold text-neutral-300 tracking-wide">
-            4.9/5 em satisfação de clientes
-          </span>
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-4 w-4 fill-[#facc15] text-[#facc15]" />
+        {/* Trust Badges */}
+        <ScrollReveal delay={0.4} duration={0.6} once={true}>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs sm:text-sm font-medium text-neutral-400">
+            {content.hero.trustBadges.map((badge, idx) => (
+              <div key={idx} className="flex items-center gap-1.5">
+                <Check className="h-4 w-4 text-[#22c55e]" />
+                <span>{badge}</span>
+              </div>
             ))}
           </div>
-        </motion.div>
-      </TechHeroBackground>
+        </ScrollReveal>
+      </section>
 
 
       {/* ========================================================================= */}
-      {/* 2. LOGO MARQUEE / CLIENTS CAROUSEL (Infinite Seamless Flow)               */}
+      {/* 2. CLIENT TICKER MARQUEE SECTION */}
       {/* ========================================================================= */}
-      <ScrollReveal threshold={0.1} duration={0.8} yOffset={20}>
-        <section className="relative w-full border-y border-neutral-900/90 bg-[#050705]/90 py-7 sm:py-8 overflow-hidden select-none">
-          {/* Subtle edge gradient fade masks */}
-          <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-28 bg-gradient-to-r from-[#030303] via-[#030303]/90 to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-28 bg-gradient-to-l from-[#030303] via-[#030303]/90 to-transparent z-10 pointer-events-none" />
-
-          {/* Continuous Infinite Marquee Track */}
-          <div className="flex animate-marquee items-center gap-12 sm:gap-16 hover:[animation-play-state:paused]">
-            {[...clientLogos, ...clientLogos, ...clientLogos, ...clientLogos].map((logo, idx) => (
-              <div 
-                key={idx} 
-                className="flex items-center gap-3 text-neutral-400/80 hover:text-white transition-all duration-300 cursor-default select-none shrink-0 group"
-              >
-                <div className="h-2 w-2 rounded-full bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.8)] group-hover:scale-125 transition-transform" />
-                <span className="text-sm sm:text-base font-black tracking-[0.2em] uppercase font-display text-neutral-300 group-hover:text-white group-hover:text-glow-green transition-all">
-                  {logo.name}
-                </span>
-              </div>
+      <section className="relative w-full py-5 bg-[#050805] border-y border-neutral-900 overflow-hidden select-none">
+        <div className="flex items-center">
+          <div className="flex shrink-0 animate-marquee items-center gap-8 whitespace-nowrap">
+            {content.clientTicker.concat(content.clientTicker).map((brand, i) => (
+              <span key={i} className="flex items-center gap-6 text-xs sm:text-sm font-extrabold uppercase tracking-widest text-neutral-400 hover:text-[#4ade80] transition-colors">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
+                <span>{brand}</span>
+              </span>
             ))}
+          </div>
+        </div>
+      </section>
+
+
+      {/* ========================================================================= */}
+      {/* 3. COMPETITOR / GOOGLE BANNER SECTION (Clean Typography Matching Screenshot 1) */}
+      {/* ========================================================================= */}
+      <ScrollReveal threshold={0.15} yOffset={24} duration={0.6} once={true}>
+        <section className="relative mx-auto max-w-4xl px-4 py-20 sm:py-28 text-center">
+          
+          {/* Subtle Ambient Glow */}
+          <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.08),transparent_70%)] blur-[90px] -z-10" />
+
+          <div className="relative z-10 flex flex-col items-center">
+            
+            {/* Headlines matching screenshot 1 */}
+            <h2 className="font-display text-3xl sm:text-5xl md:text-6xl font-black text-white leading-tight tracking-tight">
+              Seu concorrente aparece no <br />
+              <span className="text-white">Google.</span> <br />
+              <span className="text-neutral-400">E o seu negócio?</span>
+            </h2>
+
+            {/* Description */}
+            <p className="mt-6 text-sm sm:text-base md:text-lg text-neutral-400 max-w-2xl font-normal leading-relaxed">
+              Se o cliente não encontra a sua empresa na internet, ele compra de quem ele encontra. A <strong className="text-white font-bold">Techify</strong> faz o site, o sistema de gestão e a estratégia que colocam o seu negócio na frente.
+            </p>
+
+            {/* CTA Button */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <button
+                onClick={() => handleStartConsultation('Aparecer Primeiro no Google')}
+                className="inline-flex items-center gap-2 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-8 py-3.5 text-xs sm:text-sm font-black text-black uppercase tracking-wider transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:shadow-[0_0_40px_rgba(34,197,94,0.6)] cursor-pointer select-none active:scale-[0.98]"
+              >
+                <span>{content.competitor.ctaText || "QUERO APARECER PRIMEIRO"}</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black/15 font-bold">
+                  ↗
+                </span>
+              </button>
+
+              {isEditMode && (
+                <button
+                  onClick={() => setTextModal({
+                    isOpen: true,
+                    title: 'Editar Seção Concorrente no Google',
+                    fieldKey: 'competitor',
+                    subKey: 'description',
+                    value: content.competitor.description,
+                    isMultiline: true
+                  })}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-2 text-xs font-bold text-neutral-300 hover:text-white"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span>Editar Texto</span>
+                </button>
+              )}
+            </div>
+
           </div>
         </section>
       </ScrollReveal>
 
-      {/* ========================================================================= */}
-      {/* 2. SEÇÃO DE CONSCIENTIZAÇÃO DA DOR                                        */}
-      {/* ========================================================================= */}
-      
-      {/* 2.1 Presença no Google & Conversão */}
-      <section className="relative w-full py-16 sm:py-24 bg-gradient-to-b from-black via-[#060f07]/60 to-black border-b border-neutral-900/80 overflow-hidden">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-          <ScrollReveal delay={0.08} yOffset={30} threshold={0.2}>
-            {/* Heading */}
-            <h2 className="font-display text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl">
-              Seu concorrente aparece no Google. <br />
-              <span className="text-neutral-400 font-bold">
-                E o seu negócio?
-              </span>
-            </h2>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.25} yOffset={25} threshold={0.2}>
-            {/* Text description */}
-            <p className="max-w-3xl text-base sm:text-lg text-neutral-300 leading-relaxed font-normal mt-6">
-              Se o cliente não encontra a sua empresa na internet, ele compra de quem ele encontra. A <strong className="text-white font-semibold">Techify</strong> faz o site, o sistema de gestão e a estratégia que colocam o seu negócio na frente.
-            </p>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.35} yOffset={20} threshold={0.2}>
-            {/* CTA */}
-            <div className="mt-8">
-              <button
-                onClick={onOpenConsultation}
-                className="group relative inline-flex items-center justify-center gap-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-8 py-4 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_25px_rgba(34,197,94,0.3)] cursor-pointer"
-              >
-                <span>QUERO APARECER PRIMEIRO</span>
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </div>
-              </button>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* 2.2 Diagnóstico Interativo (Está perdendo cliente por qual dessas três?) */}
-      <InteractiveDiagnosisSection onOpenConsultation={onOpenConsultation} />
-
 
       {/* ========================================================================= */}
-      {/* 3. SEÇÃO DE SOLUÇÃO & DIFERENCIAL                                         */}
+      {/* 4. CLIENTS SLIDER SHOWCASE (Laptop mockups of delivered websites) */}
       {/* ========================================================================= */}
-      
-      {/* 3.1 Especialidade / Cansado de contratar um profissional para cada coisa? (4 Cards com Animações Motion Avançadas) */}
-      <SpecialtyBentoSection onOpenConsultation={onOpenConsultation} />
-
-      {/* 3.2 Como Funciona Nossa Produção (Pipeline com 5 Etapas e Motion Interativo) */}
-      <ProductionProcessSection onOpenConsultation={onOpenConsultation} />
-
-      {/* 3.2 A empresa que resolve o que trava o seu negócio (Bento Stats Section) */}
-      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-neutral-900/80">
-        
-        {/* Section Header Tag */}
-        <ScrollReveal threshold={0.15} blur={16} yOffset={25}>
-          <div className="flex flex-col items-center text-center mb-16">
-            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-6 shadow-[0_0_15px_rgba(34,197,94,0.15)]">
-              <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e] animate-pulse" />
-              <span>Sobre nós</span>
-            </div>
-
-            <TextEmergence as="h2" blur={16} yOffset={24} className="font-display text-3xl sm:text-5xl md:text-6xl font-extrabold text-white max-w-3xl leading-[1.15] tracking-tight">
-              A empresa que resolve o que trava o seu negócio{' '}
-              <span className="text-neutral-400">com site, sistema e anúncios.</span>
-            </TextEmergence>
-          </div>
-        </ScrollReveal>
-
-        {/* 4-Card Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          
-          {/* Card 1: 120+ Deliveries (Large Dark Card) */}
-          <ScrollReveal delay={0.05} yOffset={35} className="md:col-span-2">
-            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-[#090b09] p-8 flex flex-col justify-between min-h-[300px] h-full hover:border-[#22c55e]/40 transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-800 bg-black p-1.5">
-                    <TechifyIcon className="h-full w-full" />
-                  </div>
-                  <span className="font-display text-base font-bold text-white">TECHIFY</span>
-                </div>
-                <div className="h-9 w-9 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-[#22c55e]">
-                  <BarChart3 className="h-5 w-5" />
-                </div>
-              </div>
-
-              <div className="mt-12">
-                <AnimatedCounter id="bento_stat_1" targetValue={120} suffix="+" label="Sites, sistemas e campanhas já entregues e no ar com alta conversão." />
-              </div>
-
-              <div className="absolute right-0 bottom-0 w-64 h-64 bg-[radial-gradient(circle_at_bottom_right,rgba(34,197,94,0.12),transparent_70%)] pointer-events-none" />
-            </div>
-          </ScrollReveal>
-
-          {/* Card 2: 100% Prazo Cumprido */}
-          <ScrollReveal delay={0.15} yOffset={35}>
-            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-950 p-8 flex flex-col justify-between h-full hover:border-[#22c55e]/40 transition-colors">
-              <div>
-                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
-                  <EditableText id="bento_card2_tag" defaultText="Prazo combinado é prazo cumprido" title="Tag Prazo" />
-                </p>
-                <div className="mt-3">
-                  <AnimatedCounter id="bento_stat_2" targetValue={100} suffix="%" label="" />
-                </div>
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-neutral-900">
-                <p className="text-xs italic text-neutral-400 leading-relaxed">
-                  <EditableText
-                    id="bento_card2_quote"
-                    defaultText="“O time da Techify entregou nosso produto com qualidade e no prazo. Comunicação clara do início ao fim.”"
-                    title="Depoimento Prazo"
-                    isMultiline={true}
-                  />
-                </p>
-              </div>
-            </div>
-          </ScrollReveal>
-
-          {/* Card 3: 40+ Sites e Sistemas no Ar (Green Accent Card) */}
-          <ScrollReveal delay={0.25} yOffset={35}>
-            <div className="relative overflow-hidden rounded-3xl border border-[#22c55e]/40 bg-[#06240d] p-8 flex flex-col justify-between text-white h-full shadow-[0_0_25px_rgba(34,197,94,0.15)]">
-              <div>
-                <p className="text-xs font-semibold text-[#86efac] uppercase tracking-wider">
-                  <EditableText id="bento_card3_tag" defaultText="Sites e sistemas no ar" title="Tag Sistemas" />
-                </p>
-                <div className="mt-3 text-4xl sm:text-5xl font-black text-white">
-                  <AnimatedCounter id="bento_stat_3" targetValue={40} suffix="+" label="" />
-                </div>
-              </div>
-
-              <p className="mt-8 text-xs font-medium text-[#bbf7d0] leading-relaxed">
-                <EditableText
-                  id="bento_card3_desc"
-                  defaultText="No ar, funcionando e com suporte técnico garantido depois da entrega."
-                  title="Descrição Sistemas no Ar"
-                />
-              </p>
-            </div>
-          </ScrollReveal>
-
-          {/* Card 4: 100+ Empresas Atendidas */}
-          <ScrollReveal delay={0.3} yOffset={35} className="md:col-span-3 lg:col-span-4">
-            <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-[#050505] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-[#22c55e]/40 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-[#0a1a0c] border border-[#22c55e]/30 flex items-center justify-center text-[#22c55e]">
-                  <Users className="h-6 w-6" />
-                </div>
-                <div>
-                  <h4 className="text-base font-bold text-white">
-                    <EditableText id="bento_card4_title" defaultText="Empresas e Empreendedores Atendidos" title="Título Empresas Atendidas" />
-                  </h4>
-                  <p className="text-xs text-neutral-400">
-                    <EditableText id="bento_card4_desc" defaultText="Atendimento em todo o Brasil com software de alta performance" title="Subtítulo Empresas Atendidas" />
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <AnimatedCounter id="bento_stat_4" targetValue={100} suffix="+" label="" />
-              </div>
-            </div>
-          </ScrollReveal>
-
-        </div>
-      </section>
-
-
-      {/* ========================================================================= */}
-      {/* 4. SEÇÃO DE PRODUTOS, PLANOS E ENTREGÁVEIS                                */}
-      {/* ========================================================================= */}
-      <PackagesSection onOpenConsultation={onOpenConsultation} />
-
-
-      {/* ========================================================================= */}
-      {/* 5. SEÇÃO DE PROVA SOCIAL E AUTORIDADE                                     */}
-      {/* ========================================================================= */}
-      
-      {/* 5.1 Clientes Atendidos Slider (Mockups Reais de Sites e Sistemas) */}
       <ClientsSliderSection 
-        onOpenConsultation={onOpenConsultation}
-        onNavigatePortfolio={() => onNavigate('portfolio')}
+        onOpenConsultation={() => handleStartConsultation('Quero um site no padrão')}
+        onNavigatePortfolio={() => onNavigate && onNavigate('apps')}
       />
 
-      {/* 5.2 Cases & Portfólio CTA */}
-      <section className="relative w-full py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ScrollReveal threshold={0.15}>
-          <div className="relative overflow-hidden rounded-3xl border border-neutral-800/80 bg-gradient-to-b from-[#080d08] via-neutral-950 to-black p-8 sm:p-14 text-center flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.6)]">
-            
-            {/* Ambient Radial Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[250px] bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.12),transparent_70%)] blur-[70px] pointer-events-none" />
-
-            <div className="relative z-10 inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-1.5 text-xs font-bold text-[#4ade80] mb-5 shadow-[0_0_15px_rgba(34,197,94,0.15)]">
-              <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
-              <span>Nossos Trabalhos & Projetos</span>
-            </div>
-
-            <h2 className="relative z-10 font-display text-3xl sm:text-5xl font-extrabold text-white max-w-3xl leading-tight">
-              Conheça nossos cases e entregas reais <br />
-              <span className="text-[#22c55e] drop-shadow-[0_0_25px_rgba(34,197,94,0.3)]">feitas sob medida para cada cliente.</span>
-            </h2>
-
-            <p className="relative z-10 mt-4 max-w-2xl text-sm sm:text-base text-neutral-400 leading-relaxed font-normal">
-              Explore nossa galeria completa com lojas virtuais, identidades visuais de luxo, plataformas web e sistemas desenvolvidos pela Techify.
-            </p>
-
-            <div className="relative z-10 mt-8">
-              <button
-                onClick={() => onNavigate('portfolio')}
-                className="group relative inline-flex items-center justify-center gap-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-8 py-4 text-xs sm:text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:shadow-[0_0_40px_rgba(34,197,94,0.6)] cursor-pointer"
-              >
-                <span>ACESSAR PORTFÓLIO COMPLETO</span>
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                  <ArrowUpRight className="h-4 w-4" />
-                </div>
-              </button>
-            </div>
-          </div>
-        </ScrollReveal>
-      </section>
-
-      {/* 5.3 Feedbacks & Depoimentos Reais de Clientes */}
-      <section className="relative w-full py-20 bg-neutral-950/60 border-y border-neutral-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <ScrollReveal threshold={0.2}>
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-black px-3.5 py-1 text-xs font-bold text-neutral-300 mb-4">
-                  <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
-                  <span>Depoimentos & Feedbacks Reais</span>
-                </div>
-                <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-white">
-                  Feedbacks Reais de Clientes
-                </h2>
-                <p className="text-sm text-neutral-400 mt-2 max-w-2xl">
-                  Prints autênticos de conversas no WhatsApp, avaliações e satisfação comprovada de quem contratou a Techify.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => handleOpenFeedbackModal()}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-4 sm:px-5 py-2 text-xs font-black text-black transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:scale-105"
-                >
-                  <Plus className="h-4 w-4 stroke-[2.5]" />
-                  <span>Adicionar Print de Feedback</span>
-                </button>
-
-                {feedbacks.length > 0 && (
-                  <span className="text-xs font-semibold text-neutral-400 border-l border-neutral-800 pl-3">
-                    {feedbacks.length} {feedbacks.length === 1 ? 'print salvo' : 'prints salvos'}
-                  </span>
-                )}
-              </div>
-            </div>
-          </ScrollReveal>
-
-          {feedbacks.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {feedbacks.map((fb, idx) => (
-                <ScrollReveal key={fb.id || idx} delay={idx * 0.1} yOffset={25}>
-                  <div 
-                    onClick={() => setSelectedFeedbackImage(fb)}
-                    className="group relative rounded-3xl border border-neutral-800/80 bg-[#0a0a0a] hover:border-[#22c55e]/50 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer shadow-lg hover:shadow-[0_0_25px_rgba(34,197,94,0.12)] hover:-translate-y-1"
-                  >
-                    {/* Feedback Print / Image Container */}
-                    <div className="relative w-full aspect-[4/3] bg-neutral-900 overflow-hidden">
-                      <img 
-                        src={fb.imageUrl} 
-                        alt={fb.clientName || 'Feedback Real Techify'} 
-                        className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 border border-[#22c55e]/60 text-xs font-bold text-[#a3e635] shadow-lg">
-                          <ZoomIn className="h-3.5 w-3.5" />
-                          <span>Ampliar</span>
-                        </div>
-                      </div>
-                      
-                      {/* Certified Stamp */}
-                      <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-[#22c55e]/40 text-[11px] font-bold text-emerald-400">
-                        <ShieldCheck className="h-3.5 w-3.5" />
-                        <span>Verificado</span>
-                      </div>
-
-                      {/* Admin Quick Action Controls */}
-                      <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenFeedbackModal(fb);
-                          }}
-                          className="h-7 w-7 rounded-lg bg-black/80 hover:bg-[#a3e635] text-white hover:text-black border border-neutral-700 flex items-center justify-center text-xs transition-colors"
-                          title="Editar Feedback"
-                        >
-                          <Edit3 className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteFeedbackItem(fb.id, e)}
-                          className="h-7 w-7 rounded-lg bg-black/80 hover:bg-red-500 text-white border border-neutral-700 flex items-center justify-center text-xs transition-colors"
-                          title="Excluir Feedback"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Card Content & Details */}
-                    <div className="p-5 flex flex-col justify-between flex-1">
-                      <div>
-                        {/* Rating Stars */}
-                        <div className="flex items-center gap-1 text-[#facc15] mb-2.5">
-                          {[...Array(fb.rating || 5)].map((_, i) => (
-                            <Star key={i} className="h-3.5 w-3.5 fill-current" />
-                          ))}
-                        </div>
-
-                        {fb.comment && (
-                          <p className="text-xs sm:text-sm text-neutral-300 line-clamp-3 italic mb-3">
-                            "{fb.comment}"
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="pt-3 border-t border-neutral-800/80 flex items-center justify-between">
-                        <div>
-                          <h4 className="text-xs sm:text-sm font-bold text-white">
-                            {fb.clientName || 'Cliente Techify'}
-                          </h4>
-                          {fb.projectName && (
-                            <p className="text-[11px] text-neutral-400">
-                              {fb.projectName}
-                            </p>
-                          )}
-                        </div>
-                        {fb.date && (
-                          <span className="text-[10px] text-neutral-500 font-mono">
-                            {fb.date}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
-          ) : (
-            <ScrollReveal threshold={0.2}>
-              <div className="rounded-3xl border border-neutral-800 bg-[#0c0e0c] p-8 sm:p-12 text-center flex flex-col items-center justify-center max-w-2xl mx-auto">
-                <div className="h-16 w-16 rounded-2xl bg-[#a3e635]/10 border border-[#a3e635]/20 flex items-center justify-center text-[#a3e635] mb-5">
-                  <ShieldCheck className="h-8 w-8" />
-                </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
-                  Feedbacks 100% Autênticos
-                </h3>
-                <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-lg mb-6">
-                  Aqui exibimos prints e capturas reais de conversas no WhatsApp com nossos clientes, garantindo transparência e resultados comprovados.
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    onClick={() => handleOpenFeedbackModal()}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-6 py-2.5 text-xs font-black text-black transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:scale-105"
-                  >
-                    <Plus className="h-4 w-4 stroke-[2.5]" />
-                    <span>Adicionar Print de Feedback</span>
-                  </button>
-                  <button
-                    onClick={onOpenConsultation}
-                    className="inline-flex items-center gap-2 rounded-full border border-neutral-700 hover:border-neutral-500 bg-neutral-900 px-6 py-2.5 text-xs font-bold text-neutral-200 transition-all cursor-pointer"
-                  >
-                    <span>Falar com a Equipe</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            </ScrollReveal>
-          )}
-
-        </div>
-      </section>
-
-      {/* 5.4 Apresentação da Equipe (Conheça nosso time) */}
-      <section className="relative w-full py-20 sm:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ScrollReveal threshold={0.2}>
-          <div className="mb-14">
-            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-4">
-              <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
-              <span>Nosso Time</span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-              <div>
-                <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-white">
-                  Conheça nosso time
-                </h2>
-                <p className="text-sm text-neutral-400 mt-2 max-w-2xl font-normal">
-                  Especialistas dedicados a transformar desafios técnicos em crescimento e receita para sua empresa.
-                </p>
-              </div>
-
-              <button
-                onClick={() => onOpenConsultation()}
-                className="group inline-flex items-center gap-2 rounded-full bg-black hover:bg-neutral-900 border border-neutral-700 px-6 py-3 text-xs font-bold text-white transition-all cursor-pointer w-fit"
-              >
-                <span>FALE CONOSCO</span>
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#22c55e] text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                  <ArrowUpRight className="h-3 w-3 stroke-[2.5]" />
-                </div>
-              </button>
-            </div>
-          </div>
-        </ScrollReveal>
-
-        {/* 4 Team Member Cards with Visual Photos & Inline Editing */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {teamMembers.map((member, idx) => (
-            <ScrollReveal key={member.id || idx} delay={idx * 0.1} yOffset={30}>
-              <div className="group relative rounded-3xl border border-neutral-800 bg-[#090b09] p-5 flex flex-col justify-between hover:border-[#22c55e]/50 hover:bg-[#0c120c] transition-all duration-300 shadow-xl h-full">
-                <div>
-                  {/* Large Portrait Image Container */}
-                  <div className="relative h-64 sm:h-72 w-full rounded-2xl bg-neutral-900 border border-neutral-800/80 overflow-hidden mb-4 shadow-lg group-hover:border-[#22c55e]/40 transition-all">
-                    <EditableImage
-                      id={`team_avatar_${member.id || idx}`}
-                      defaultSrc={member.avatar}
-                      alt={member.name}
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      title={`Foto de ${member.name}`}
-                    />
-                    
-                    {/* Subtle gradient vignette at bottom */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-
-                    {/* Corner Action Icon */}
-                    <div className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/80 border border-neutral-700 text-neutral-300 backdrop-blur-sm group-hover:text-[#4ade80] group-hover:border-[#22c55e]/50 transition-all">
-                      <ArrowUpRight className="h-4 w-4" />
-                    </div>
-                  </div>
-
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h3 className="font-display text-lg font-bold text-white group-hover:text-[#4ade80] transition-colors leading-snug">
-                        <EditableText
-                          id={`team_name_${member.id || idx}`}
-                          defaultText={member.name}
-                          title={`Nome: ${member.name}`}
-                        />
-                      </h3>
-                      <p className="mt-0.5 text-xs font-semibold text-[#a3e635]">
-                        <EditableText
-                          id={`team_role_${member.id || idx}`}
-                          defaultText={member.role}
-                          title={`Cargo: ${member.name}`}
-                        />
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-neutral-900/80">
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    <EditableText
-                      id={`team_desc_${member.id || idx}`}
-                      defaultText={member.description}
-                      title={`Bio: ${member.name}`}
-                      isMultiline={true}
-                    />
-                  </p>
-                </div>
-              </div>
-            </ScrollReveal>
-          ))}
-        </div>
-      </section>
-
 
       {/* ========================================================================= */}
-      {/* 6. SEÇÃO DE DÚVIDAS E FECHAMENTO                                          */}
+      {/* 5. SECTION: O QUE A TECHIFY FAZ (SERVIÇOS & ESPECIALIDADES) */}
       {/* ========================================================================= */}
-      
-      {/* 6.1 FAQ / Blog & Artigos (As dúvidas que todo dono de negócio tem) */}
-      <section className="relative w-full py-24 sm:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-neutral-900">
-        <ScrollReveal threshold={0.2}>
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-16 gap-6">
+      <section id="servicos" className="relative mx-auto max-w-6xl px-4 py-16 sm:py-24 border-t border-neutral-900/80">
+        
+        <ScrollReveal threshold={0.2} yOffset={20} once={true}>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between max-w-6xl mx-auto mb-12 sm:mb-16 gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950 px-3.5 py-1 text-xs font-bold text-neutral-300 mb-4">
-                <div className="h-1.5 w-1.5 rounded-sm bg-[#22c55e]" />
-                <span>Blog e artigos</span>
-              </div>
-              <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-white leading-tight">
-                As dúvidas que todo dono de negócio tem
+              <span className="text-xs font-extrabold uppercase tracking-widest text-[#22c55e]">
+                O QUE FAZEMOS
+              </span>
+              <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Engenharia e design para elevar o nível da sua empresa
               </h2>
-              <p className="text-sm sm:text-base text-neutral-400 mt-2">
-                Respostas diretas sobre site, sistema e anúncios, sem termos técnicos complicados.
+              <p className="mt-3 text-sm sm:text-base text-neutral-400 max-w-2xl">
+                Soluções completas integradas sob um mesmo teto para construir, acelerar e proteger a presença digital do seu negócio.
+              </p>
+            </div>
+
+            {isEditMode && (
+              <button
+                onClick={() => setServiceModal({
+                  isOpen: true,
+                  isNew: true,
+                  service: {
+                    id: `service_${Date.now()}`,
+                    name: '',
+                    subtitle: '',
+                    description: '',
+                    iconName: 'Globe',
+                    tag: 'Novo',
+                    highlight: false,
+                    deliverables: ['Recurso 1', 'Recurso 2']
+                  }
+                })}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#22c55e] px-4 py-2 text-xs font-bold text-black shadow-md cursor-pointer hover:bg-[#16a34a] shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Adicionar Serviço</span>
+              </button>
+            )}
+          </div>
+        </ScrollReveal>
+
+        {/* Grid of Techify Services with CMS Edit Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {content.services.map((service, index) => {
+            const IconComponent = ICON_LOOKUP[service.iconName] || Globe;
+            return (
+              <ScrollReveal key={service.id} delay={index * 0.08} duration={0.5} once={true}>
+                <div
+                  onMouseEnter={() => setSelectedServiceId(service.id)}
+                  onMouseLeave={() => setSelectedServiceId(null)}
+                  className={`relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl border transition-all duration-300 h-full ${
+                    service.highlight
+                      ? 'bg-[#06170a]/90 border-[#22c55e]/50 shadow-[0_0_25px_rgba(34,197,94,0.1)]'
+                      : 'bg-[#090a09] border-neutral-800/90 hover:border-neutral-700 hover:bg-[#0e100e]'
+                  }`}
+                >
+                  {/* Admin Fast Edit Bar */}
+                  {isEditMode && (
+                    <div className="absolute top-3 right-3 flex items-center gap-1 z-20">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setServiceModal({
+                            isOpen: true,
+                            isNew: false,
+                            service: { ...service }
+                          });
+                        }}
+                        className="p-1.5 rounded-lg bg-neutral-800 hover:bg-[#22c55e] text-white hover:text-black transition-colors"
+                        title="Editar Serviço"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteService(service.id, service.name);
+                        }}
+                        className="p-1.5 rounded-lg bg-neutral-800 hover:bg-red-600 text-white transition-colors"
+                        title="Excluir Serviço"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Header with Icon and Tag */}
+                  <div>
+                    <div className="flex items-center justify-between mb-5">
+                      <div className={`p-3 rounded-2xl border ${
+                        service.highlight
+                          ? 'bg-[#113819] border-[#22c55e]/40 text-[#4ade80]'
+                          : 'bg-neutral-900 border-neutral-800 text-[#22c55e]'
+                      }`}>
+                        <IconComponent className="h-6 w-6" />
+                      </div>
+
+                      <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-300">
+                        {service.tag}
+                      </span>
+                    </div>
+
+                    <span className="text-[11px] font-semibold text-[#22c55e] uppercase tracking-wider">
+                      {service.subtitle}
+                    </span>
+                    
+                    <h3 className="mt-1 text-xl font-bold text-white tracking-tight">
+                      {service.name}
+                    </h3>
+
+                    <p className="mt-3 text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                      {service.description}
+                    </p>
+
+                    {/* Bullet points of deliverables */}
+                    <div className="mt-5 pt-4 border-t border-neutral-800/80 space-y-2">
+                      {service.deliverables.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs text-neutral-300">
+                          <Check className="h-3.5 w-3.5 text-[#22c55e] shrink-0 stroke-[2.5]" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Footer Action */}
+                  <div className="mt-6 pt-4 border-t border-neutral-800/60">
+                    <button
+                      onClick={() => handleStartConsultation(`Serviço: ${service.name}`)}
+                      className="w-full flex items-center justify-between text-xs font-bold text-neutral-300 hover:text-[#4ade80] transition-colors group cursor-pointer"
+                    >
+                      <span>Quero esta solução</span>
+                      <ArrowRight className="h-4 w-4 text-neutral-500 group-hover:text-[#4ade80] group-hover:translate-x-1 transition-all" />
+                    </button>
+                  </div>
+                </div>
+              </ScrollReveal>
+            );
+          })}
+        </div>
+
+        {/* Interactive Consultation Banner */}
+        <ScrollReveal threshold={0.2} yOffset={20} once={true}>
+          <div className="mt-10 rounded-3xl border border-[#22c55e]/40 bg-gradient-to-r from-[#061c0a]/90 via-[#0a2612]/90 to-[#061c0a]/90 p-6 sm:p-8 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_0_35px_rgba(34,197,94,0.15)]">
+            <div className="text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-2 text-xs font-extrabold text-[#4ade80] uppercase tracking-wider mb-1">
+                <Sparkles className="h-4 w-4" />
+                <span>Precisa de um projeto sob medida?</span>
+              </div>
+              <h4 className="text-xl sm:text-2xl font-black text-white">
+                Agende um diagnóstico técnico gratuito com nossos engenheiros
+              </h4>
+              <p className="text-xs sm:text-sm text-neutral-300 mt-1 max-w-xl">
+                Analisamos a sua estrutura atual, desenhamos a arquitetura ideal e entregamos um plano claro de execução.
               </p>
             </div>
 
             <button
-              onClick={() => onNavigate('carreiras')}
-              className="w-fit rounded-full border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 px-6 py-3 text-xs font-bold text-white transition-colors cursor-pointer shrink-0"
+              onClick={() => handleStartConsultation('Diagnóstico Técnico Gratuito')}
+              className="shrink-0 px-8 py-4 rounded-full bg-[#22c55e] hover:bg-[#1eb354] text-black font-black text-xs uppercase tracking-wider shadow-[0_0_25px_rgba(34,197,94,0.35)] transition-all cursor-pointer select-none active:scale-[0.98]"
             >
-              VER TODOS OS ARTIGOS
+              Solicitar Diagnóstico
             </button>
           </div>
         </ScrollReveal>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {articles.map((art, idx) => (
-            <ScrollReveal key={art.id} delay={idx * 0.12} yOffset={35}>
-              <motion.div
-                whileHover={{ y: -6 }}
-                onClick={() => setSelectedArticle(art.id)}
-                className="group rounded-3xl border border-neutral-800 bg-[#080808] overflow-hidden flex flex-col justify-between cursor-pointer hover:border-neutral-700 transition-all shadow-lg h-full"
-              >
-                <div className="relative h-48 w-full overflow-hidden bg-neutral-900">
-                  <img src={art.image} alt={art.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <span className="absolute top-3 left-3 rounded-md bg-black/80 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-[#4ade80] border border-[#22c55e]/30">
-                    {art.category}
-                  </span>
-                </div>
-
-                <div className="p-6 flex flex-col justify-between flex-1">
-                  <div>
-                    <h3 className="font-display text-base sm:text-lg font-bold text-white group-hover:text-[#4ade80] transition-colors leading-snug mb-3">
-                      {art.title}
-                    </h3>
-                    <p className="text-xs text-neutral-400 leading-relaxed line-clamp-3">
-                      {art.summary}
-                    </p>
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-neutral-900 flex items-center justify-between text-xs text-neutral-500">
-                    <span>{art.readTime}</span>
-                    <span className="text-[#4ade80] font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                      Ler artigo <ChevronRight className="h-3 w-3" />
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            </ScrollReveal>
-          ))}
-        </div>
-
-        {/* Modal for Article Reading */}
-        {selectedArticle !== null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="relative w-full max-w-2xl rounded-3xl border border-neutral-800 bg-[#0a0a0a] p-6 sm:p-8 text-left shadow-2xl">
-              {(() => {
-                const article = articles.find(a => a.id === selectedArticle);
-                if (!article) return null;
-                return (
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="rounded-md bg-[#22c55e]/10 border border-[#22c55e]/30 px-2.5 py-1 text-xs font-bold text-[#4ade80]">
-                        {article.category}
-                      </span>
-                      <button 
-                        onClick={() => setSelectedArticle(null)}
-                        className="text-neutral-400 hover:text-white text-sm font-bold cursor-pointer"
-                      >
-                        Fechar ✕
-                      </button>
-                    </div>
-
-                    <h3 className="font-display text-2xl font-bold text-white mb-4">
-                      {article.title}
-                    </h3>
-
-                    <div className="h-48 w-full rounded-2xl overflow-hidden mb-6">
-                      <img src={article.image} alt={article.title} className="h-full w-full object-cover" />
-                    </div>
-
-                    <p className="text-sm text-neutral-300 leading-relaxed mb-6 font-normal">
-                      {article.content}
-                    </p>
-
-                    <div className="pt-4 border-t border-neutral-800 flex justify-end">
-                      <button
-                        onClick={() => {
-                          setSelectedArticle(null);
-                          onOpenConsultation();
-                        }}
-                        className="rounded-full bg-[#22c55e] px-6 py-2.5 text-xs font-bold text-black hover:bg-[#16a34a] transition-colors cursor-pointer"
-                      >
-                        Falar com Engenheiro Techify
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
-        )}
       </section>
 
 
       {/* ========================================================================= */}
-      {/* 8. HIGH-IMPACT FINAL CTA BANNER (Enquanto você decide...)                 */}
+      {/* 6. SECTION: COMPARAÇÃO (TRADICIONAL VS TECHIFY) */}
       {/* ========================================================================= */}
-      <section className="relative w-full py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <ScrollReveal threshold={0.2} duration={0.8} yOffset={35}>
-          <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-gradient-to-b from-[#08170c] via-[#040a06] to-black p-8 sm:p-16 text-center flex flex-col items-center">
-            
-            {/* Subtle Glow Background */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#22c55e]/15 blur-[120px] pointer-events-none" />
-
-            {/* Headline */}
-            <h2 className="relative z-10 font-display text-3xl sm:text-5xl md:text-6xl font-extrabold text-white max-w-3xl leading-[1.1] tracking-tight">
-              Enquanto você decide, <br />
-              <span className="text-[#4ade80]">o cliente compra do concorrente</span>
+      <ScrollReveal threshold={0.2} yOffset={20} once={true}>
+        <section className="relative mx-auto max-w-6xl px-4 py-16 sm:py-24 border-t border-neutral-900/80">
+          
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-[#22c55e]">
+              COMPARAÇÃO DIRETA
+            </span>
+            <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              {content.comparison.title}
             </h2>
-
-            <p className="relative z-10 mt-6 max-w-2xl text-sm sm:text-base text-neutral-300 leading-relaxed font-normal">
-              Cada dia sem site e sem anúncio é venda indo para outro. A gente coloca o seu negócio na frente, com preço fechado antes de começar e prazo combinado por escrito.
+            <p className="mt-3 text-sm sm:text-base text-neutral-400">
+              {content.comparison.subtitle}
             </p>
+          </div>
 
-            <div className="relative z-10 mt-10">
-              <button
-                onClick={onOpenConsultation}
-                className="group inline-flex items-center gap-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-8 py-4 text-sm font-bold tracking-wide text-black transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] cursor-pointer"
-              >
-                <span>QUERO APARECER PRIMEIRO</span>
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/20 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                  <ArrowUpRight className="h-4 w-4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Card Left: Agências Tradicionais / Freelancers */}
+            <div className="rounded-3xl border border-red-950/60 bg-[#0d0707] p-6 sm:p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2.5 text-red-400 font-bold text-base mb-6">
+                  <div className="h-7 w-7 rounded-full bg-red-950/80 border border-red-800/60 flex items-center justify-center">
+                    <X className="h-4 w-4 text-red-400" />
+                  </div>
+                  <span>Agências Tradicionais &amp; Amadores</span>
                 </div>
-              </button>
+
+                <div className="space-y-4 text-sm text-neutral-400">
+                  {content.comparison.badPoints.map((pt, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <span className="text-red-500 font-bold">✕</span>
+                      <span>{pt}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Card Right: Com a Techify */}
+            <div className="rounded-3xl border border-[#22c55e]/50 bg-[#06170a] p-6 sm:p-8 flex flex-col justify-between shadow-[0_0_30px_rgba(34,197,94,0.1)]">
+              <div>
+                <div className="flex items-center gap-2.5 text-[#4ade80] font-bold text-base mb-6">
+                  <div className="h-7 w-7 rounded-full bg-[#113819] border border-[#22c55e]/60 flex items-center justify-center">
+                    <Check className="h-4 w-4 text-[#22c55e] stroke-[3]" />
+                  </div>
+                  <span>Com a Techify Software &amp; Design Lab</span>
+                </div>
+
+                <div className="space-y-4 text-sm text-neutral-200">
+                  {content.comparison.goodPoints.map((pt, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <Check className="h-4 w-4 text-[#22c55e] shrink-0 mt-0.5" />
+                      <span>{pt}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+      </ScrollReveal>
+
+
+      {/* ========================================================================= */}
+      {/* 8. SECTION: PLANOS & PREÇOS (NEW DESIGN WITH NUMBERFLOW & FULL CMS EDITING) */}
+      {/* ========================================================================= */}
+      <section id="planos" className="relative mx-auto max-w-6xl px-4 py-16 sm:py-28 border-t border-neutral-900/80">
+        
+        <ScrollReveal threshold={0.2} yOffset={20} once={true}>
+          <div className="flex flex-col md:flex-row md:items-end justify-between max-w-6xl mx-auto mb-10 gap-6">
+            <div>
+              <span className="text-xs font-extrabold uppercase tracking-widest text-[#22c55e]">
+                INVESTIMENTO TRANSPARENTE
+              </span>
+              <h2 className="mt-2 text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
+                Planos flexíveis para cada estágio do seu negócio
+              </h2>
+              <p className="mt-3 text-sm sm:text-base text-neutral-400 max-w-2xl">
+                Escolha o plano ideal para estruturar, acelerar ou escalar suas operações digitais com engenheiros e designers dedicados.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <PricingSwitch
+                isYearly={billingCycle === 'annual'}
+                onToggle={(yearly) => setBillingCycle(yearly ? 'annual' : 'monthly')}
+              />
+
+              {isEditMode && (
+                <button
+                  onClick={() => setPlanModal({
+                    isOpen: true,
+                    isNew: true,
+                    plan: {
+                      id: `plan_${Date.now()}`,
+                      name: 'Novo Plano',
+                      badge: 'ESPECIAL',
+                      popular: false,
+                      monthlyPrice: 'R$ 297',
+                      annualPrice: 'R$ 247',
+                      periodText: 'mês',
+                      description: 'Descrição do novo plano com alta performance.',
+                      includesHeader: 'Incluso no plano:',
+                      buttonVariant: 'outline',
+                      features: [
+                        'Landing Page de Alta Conversão',
+                        'Design Responsivo adaptado para Smartphones e Desktops',
+                        'Suporte Especializado e Rápido'
+                      ],
+                      ctaText: 'CONTRATAR PLANO',
+                      whatsappMessage: 'Olá Techify! Gostaria de contratar este plano.'
+                    }
+                  })}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#22c55e] px-4 py-2.5 text-xs font-black text-black shadow-md cursor-pointer hover:bg-[#16a34a] shrink-0"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Adicionar Plano</span>
+                </button>
+              )}
             </div>
           </div>
         </ScrollReveal>
+
+        {/* Plans Cards Grid Container */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch mx-auto bg-gradient-to-b from-neutral-900/60 via-neutral-900/30 to-black/80 sm:p-5 p-3 rounded-3xl border border-neutral-800/80">
+          {content.plans.map((plan, index) => {
+            const isPopular = plan.popular;
+            const priceData = parsePriceData(billingCycle === 'annual' ? plan.annualPrice : plan.monthlyPrice);
+
+            return (
+              <ScrollReveal key={plan.id || index} delay={index * 0.1} duration={0.5} once={true} className="h-full">
+                <div 
+                  className={cn(
+                    "rounded-2xl sm:rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative transition-all duration-300 h-full",
+                    isPopular
+                      ? "scale-100 md:scale-105 z-10 ring-2 ring-[#22c55e] bg-gradient-to-t from-black via-neutral-950 to-[#07170c] text-white shadow-[0_0_50px_rgba(34,197,94,0.25)]"
+                      : "bg-[#090b09]/95 border border-neutral-800 hover:border-neutral-700 text-white"
+                  )}
+                >
+                  {/* Admin Edit Controls on Card */}
+                  {isAdmin && (
+                    <div className={cn(
+                      "absolute top-3 right-3 flex items-center gap-1.5 z-30 transition-opacity",
+                      isEditMode ? "opacity-100" : "opacity-0 group-hover:opacity-100 hover:opacity-100"
+                    )}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPlanModal({
+                            isOpen: true,
+                            isNew: false,
+                            plan: { ...plan }
+                          });
+                        }}
+                        className="p-1.5 rounded-lg bg-neutral-800/90 hover:bg-[#22c55e] text-white hover:text-black transition-colors cursor-pointer shadow-lg border border-neutral-700"
+                        title="Editar o que está escrito neste plano"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePlan(plan.id, plan.name);
+                        }}
+                        className="p-1.5 rounded-lg bg-neutral-800/90 hover:bg-red-600 text-white transition-colors cursor-pointer shadow-lg border border-neutral-700"
+                        title="Excluir Plano"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+
+                  <div>
+                    {/* Header: Title and Badge */}
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                        {plan.name}
+                      </h3>
+                      {(isPopular || plan.badge) && (
+                        <span className={cn(
+                          "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md shrink-0",
+                          isPopular 
+                            ? "bg-[#22c55e] text-black shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+                            : "bg-neutral-800 text-neutral-300 border border-neutral-700"
+                        )}>
+                          {plan.badge || "Popular"}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    <p className={cn(
+                      "text-xs sm:text-sm mb-6 leading-relaxed min-h-[42px]",
+                      isPopular ? "text-neutral-300" : "text-neutral-400"
+                    )}>
+                      {plan.description}
+                    </p>
+
+                    {/* Pricing with NumberFlow */}
+                    <div className="flex items-baseline mb-6 pb-6 border-b border-neutral-800/80">
+                      {priceData.hasNumber ? (
+                        <div className="flex items-baseline">
+                          <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+                            {priceData.symbol}
+                          </span>
+                          <NumberFlow
+                            value={priceData.amount}
+                            className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight"
+                          />
+                          {priceData.suffix && (
+                            <span className="text-lg sm:text-xl font-bold text-white ml-1">
+                              {priceData.suffix}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+                          {priceData.raw}
+                        </span>
+                      )}
+                      <span className={cn(
+                        "ml-2 text-xs sm:text-sm font-medium",
+                        isPopular ? "text-neutral-300" : "text-neutral-400"
+                      )}>
+                        /{billingCycle === 'annual' ? 'ano' : (plan.periodText || 'mês')}
+                      </span>
+                    </div>
+
+                    {/* Features List */}
+                    <div className="space-y-3">
+                      <h4 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-neutral-200">
+                        {plan.includesHeader || (isPopular ? "Tudo do Starter, mais:" : "O que está incluso:")}
+                      </h4>
+                      <ul className="space-y-3 pt-1">
+                        {plan.features.map((feature, fIdx) => (
+                          <li key={fIdx} className="flex items-start">
+                            <span
+                              className={cn(
+                                "h-6 w-6 rounded-full grid place-content-center mt-0.5 mr-3 shrink-0",
+                                isPopular
+                                  ? "bg-[#22c55e] text-black shadow-[0_0_12px_rgba(34,197,94,0.4)]"
+                                  : "bg-white/10 text-white border border-neutral-700"
+                              )}
+                            >
+                              <CheckCheck className="h-3.5 w-3.5 stroke-[2.5]" />
+                            </span>
+                            <span className={cn(
+                              "text-xs sm:text-sm leading-snug font-medium",
+                              isPopular ? "text-neutral-100" : "text-neutral-300"
+                            )}>
+                              {feature}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* CTA Button */}
+                  <div className="mt-8 pt-4">
+                    <button
+                      onClick={() => {
+                        if (onOpenConsultation) {
+                          onOpenConsultation(plan.name);
+                        } else {
+                          const url = `https://wa.me/5596984180424?text=${encodeURIComponent(plan.whatsappMessage || `Olá, gostaria de saber mais sobre o plano ${plan.name}!`)}`;
+                          window.open(url, '_blank');
+                        }
+                      }}
+                      className={cn(
+                        "w-full py-4 px-5 text-xs sm:text-sm rounded-xl font-extrabold uppercase tracking-wider transition-all duration-200 active:scale-[0.98] cursor-pointer",
+                        isPopular
+                          ? "bg-[#22c55e] hover:bg-[#16a34a] text-black shadow-[0_0_30px_rgba(34,197,94,0.35)] border border-[#22c55e]"
+                          : plan.buttonVariant === 'default'
+                            ? "bg-[#22c55e] hover:bg-[#16a34a] text-black font-extrabold border border-[#22c55e]"
+                            : "bg-gradient-to-t from-neutral-900 to-neutral-800 hover:from-neutral-800 hover:to-neutral-700 text-white border border-neutral-700 shadow-md"
+                      )}
+                    >
+                      {plan.ctaText || "Começar Agora"}
+                    </button>
+                  </div>
+
+                </div>
+              </ScrollReveal>
+            );
+          })}
+        </div>
+
       </section>
 
-      {/* Floating Instant WhatsApp Button in bottom corner */}
-      <a
-        href="https://wa.me/5581995498590?text=Ol%C3%A1,%20gostaria%20de%20um%20or%C3%A7amento%20com%20a%20Techify!"
-        target="_blank"
-        rel="noreferrer"
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#22c55e] text-black shadow-[0_0_25px_rgba(34,197,94,0.5)] hover:scale-110 transition-all cursor-pointer"
-        aria-label="Falar no WhatsApp"
-      >
-        <MessageCircle className="h-7 w-7" />
-      </a>
 
-      {/* Lightbox Modal for Feedback Prints */}
-      <AnimatePresence>
-        {selectedFeedbackImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelectedFeedbackImage(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-md"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-w-4xl max-h-[90vh] w-full rounded-3xl border border-neutral-800 bg-[#0c0e0c] shadow-2xl overflow-hidden flex flex-col"
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 bg-[#121412]">
-                <div className="flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
-                  <div>
-                    <h3 className="text-sm font-bold text-white">
-                      {selectedFeedbackImage.clientName || 'Feedback de Cliente Autêntico'}
-                    </h3>
-                    {selectedFeedbackImage.projectName && (
-                      <p className="text-xs text-neutral-400">
-                        {selectedFeedbackImage.projectName}
-                      </p>
+      {/* ========================================================================= */}
+      {/* 9. SECTION: PERGUNTAS FREQUENTES (FAQ COM CMS EDIT) */}
+      {/* ========================================================================= */}
+      <section id="faq" className="relative mx-auto max-w-4xl px-4 py-16 sm:py-24 border-t border-neutral-900/80">
+        
+        <ScrollReveal threshold={0.2} yOffset={20} once={true}>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
+            <div>
+              <span className="text-xs font-extrabold uppercase tracking-widest text-[#22c55e]">
+                DÚVIDAS FREQUENTES
+              </span>
+              <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Perguntas Frequentes sobre a Techify
+              </h2>
+            </div>
+
+            {isEditMode && (
+              <button
+                onClick={() => setFaqModal({
+                  isOpen: true,
+                  isNew: true,
+                  faq: {
+                    id: `faq_${Date.now()}`,
+                    question: '',
+                    answer: ''
+                  }
+                })}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#22c55e] px-4 py-2 text-xs font-bold text-black shadow-md cursor-pointer hover:bg-[#16a34a] shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Adicionar Pergunta</span>
+              </button>
+            )}
+          </div>
+        </ScrollReveal>
+
+        <div className="space-y-3">
+          {content.faqs.map((faq, idx) => {
+            const isOpen = openFaqIndex === idx;
+            return (
+              <ScrollReveal key={faq.id} delay={idx * 0.05} duration={0.4} once={true}>
+                <div 
+                  className="relative rounded-2xl border border-neutral-800/90 bg-[#090a09] overflow-hidden transition-colors hover:border-neutral-700"
+                >
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                      className="w-full p-5 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-white cursor-pointer select-none"
+                    >
+                      <span>{faq.question}</span>
+                      <ChevronDown className={`h-4 w-4 text-neutral-400 shrink-0 transition-transform duration-200 ${
+                        isOpen ? 'rotate-180 text-[#22c55e]' : ''
+                      }`} />
+                    </button>
+
+                    {/* Admin Edit / Delete Actions */}
+                    {isEditMode && (
+                      <div className="flex items-center gap-1 pr-4">
+                        <button
+                          onClick={() => setFaqModal({
+                            isOpen: true,
+                            isNew: false,
+                            faq: { ...faq }
+                          })}
+                          className="p-1.5 rounded-lg bg-neutral-800 hover:bg-[#22c55e] text-white hover:text-black transition-colors"
+                          title="Editar Pergunta"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteFaq(faq.id)}
+                          className="p-1.5 rounded-lg bg-neutral-800 hover:bg-red-600 text-white transition-colors"
+                          title="Excluir Pergunta"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
                     )}
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      const itemToEdit = selectedFeedbackImage;
-                      setSelectedFeedbackImage(null);
-                      handleOpenFeedbackModal(itemToEdit);
-                    }}
-                    className="h-8 px-3 rounded-full border border-neutral-700 bg-neutral-800 flex items-center gap-1.5 text-xs text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors cursor-pointer"
-                  >
-                    <Edit3 className="h-3.5 w-3.5" />
-                    <span>Editar</span>
-                  </button>
-                  <button
-                    onClick={() => setSelectedFeedbackImage(null)}
-                    className="h-8 w-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors cursor-pointer"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="px-5 pb-5 pt-1 text-xs sm:text-sm text-neutral-400 leading-relaxed border-t border-neutral-800/50"
+                      >
+                        {faq.answer}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
+              </ScrollReveal>
+            );
+          })}
+        </div>
+
+      </section>
+
+
+      {/* ========================================================================= */}
+      {/* 10. SECTION: BOTTOM CTA */}
+      {/* ========================================================================= */}
+      <ScrollReveal threshold={0.2} yOffset={20} once={true}>
+        <section className="relative mx-auto max-w-4xl px-4 py-16 sm:py-24 text-center border-t border-neutral-900/80">
+          
+          {/* Glowing Green Hexagon / Icon */}
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0b2812] border border-[#22c55e]/50 text-[#22c55e] shadow-[0_0_30px_rgba(34,197,94,0.3)] mb-6">
+            <Zap className="h-7 w-7 fill-[#22c55e] text-[#22c55e]" />
+          </div>
+
+          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+            {content.bottomCta.headline}
+          </h2>
+
+          <p className="mt-4 text-sm sm:text-base text-neutral-400 max-w-xl mx-auto">
+            {content.bottomCta.description}
+          </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => handleStartConsultation('CTA Final - Falar com Engenheiro')}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-full bg-[#a3e635] hover:bg-[#84cc16] text-black font-black text-xs uppercase tracking-wider px-9 py-4 shadow-[0_0_35px_rgba(163,230,53,0.4)] transition-all cursor-pointer select-none active:scale-[0.98]"
+            >
+              <span>{content.bottomCta.ctaPrimary}</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black/10 font-bold">
+                ↗
+              </span>
+            </button>
+
+            <button
+              onClick={() => onNavigate && onNavigate('apps')}
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-neutral-700/80 bg-neutral-900/90 hover:bg-neutral-800 text-white font-black text-xs uppercase tracking-wider px-8 py-4 transition-all cursor-pointer select-none"
+            >
+              <span>{content.bottomCta.ctaSecondary}</span>
+            </button>
+          </div>
+
+        </section>
+      </ScrollReveal>
+
+
+      {/* ========================================================================= */}
+      {/* MODAL 1: GENERIC TEXT EDITOR */}
+      {/* ========================================================================= */}
+      {textModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-neutral-800 bg-[#0c0f0c] p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-800 mb-4">
+              <h3 className="font-display font-bold text-white text-base">
+                {textModal.title}
+              </h3>
+              <button
+                onClick={() => setTextModal(prev => ({ ...prev, isOpen: false }))}
+                className="p-1 rounded-lg text-neutral-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTextModal}>
+              {textModal.isMultiline ? (
+                <textarea
+                  rows={4}
+                  value={textModal.value}
+                  onChange={(e) => setTextModal(prev => ({ ...prev, value: e.target.value }))}
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={textModal.value}
+                  onChange={(e) => setTextModal(prev => ({ ...prev, value: e.target.value }))}
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                />
+              )}
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTextModal(prev => ({ ...prev, isOpen: false }))}
+                  className="px-4 py-2 rounded-xl bg-neutral-800 text-xs font-bold text-neutral-300 hover:bg-neutral-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#22c55e] text-xs font-extrabold text-black hover:bg-[#16a34a]"
+                >
+                  Aplicar Mudança
+                </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-              {/* High-res Image Preview */}
-              <div className="p-4 sm:p-6 overflow-y-auto max-h-[70vh] flex items-center justify-center bg-black/40">
-                <img
-                  src={selectedFeedbackImage.imageUrl}
-                  alt={selectedFeedbackImage.clientName || 'Print de feedback real'}
-                  className="max-h-[65vh] w-auto max-w-full object-contain rounded-xl border border-neutral-800 shadow-xl"
+
+      {/* ========================================================================= */}
+      {/* MODAL 2: SERVICE EDITOR (ADD / EDIT) */}
+      {/* ========================================================================= */}
+      {serviceModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-xl rounded-2xl border border-neutral-800 bg-[#0c0f0c] p-6 shadow-2xl my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-800 mb-4">
+              <h3 className="font-display font-bold text-white text-base">
+                {serviceModal.isNew ? 'Adicionar Novo Serviço' : 'Editar Serviço'}
+              </h3>
+              <button
+                onClick={() => setServiceModal(prev => ({ ...prev, isOpen: false }))}
+                className="p-1 rounded-lg text-neutral-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveService} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">Nome do Serviço</label>
+                <input
+                  type="text"
+                  value={serviceModal.service.name}
+                  onChange={(e) => setServiceModal(prev => ({
+                    ...prev,
+                    service: { ...prev.service, name: e.target.value }
+                  }))}
+                  placeholder="Ex: Sites & Sistemas Web"
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                  required
                 />
               </div>
 
-              {/* Modal Footer with details & CTA */}
-              <div className="px-6 py-4 border-t border-neutral-800 bg-[#0d100d] flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 text-[#facc15]">
-                    {[...Array(selectedFeedbackImage.rating || 5)].map((_, i) => (
-                      <Star key={i} className="h-3.5 w-3.5 fill-current" />
-                    ))}
-                  </div>
-                  {selectedFeedbackImage.date && (
-                    <span className="text-xs text-neutral-400 font-mono">
-                      • {selectedFeedbackImage.date}
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => {
-                    setSelectedFeedbackImage(null);
-                    onOpenConsultation();
-                  }}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[#22c55e] hover:bg-[#16a34a] px-6 py-2 text-xs font-bold text-black transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                >
-                  <span>Quero um projeto de sucesso</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Direct Add / Edit Feedback Print Modal */}
-      <AnimatePresence>
-        {isFeedbackModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsFeedbackModalOpen(false)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-w-xl w-full rounded-3xl border border-neutral-800 bg-[#0d0f0d] p-6 sm:p-8 shadow-2xl overflow-hidden my-8"
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#22c55e]/10 text-[#22c55e]">
-                    <Upload className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white">
-                      {editingFeedbackId ? 'Editar Print de Feedback' : 'Adicionar Print de Feedback'}
-                    </h3>
-                    <p className="text-xs text-neutral-400">
-                      Faça upload do print do WhatsApp ou insira a URL da imagem.
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setIsFeedbackModalOpen(false)}
-                  className="h-7 w-7 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Form Content */}
-              <form onSubmit={handleSaveFeedbackSubmit} className="mt-6 space-y-4">
-                {/* Upload Zone / URL */}
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-neutral-300 mb-2">
-                    Print / Imagem do Feedback *
-                  </label>
-                  
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Subtítulo / Chamada</label>
                   <input
-                    type="file"
-                    ref={feedbackFileInputRef}
-                    onChange={handleFeedbackFileUpload}
-                    accept="image/*"
-                    className="hidden"
+                    type="text"
+                    value={serviceModal.service.subtitle}
+                    onChange={(e) => setServiceModal(prev => ({
+                      ...prev,
+                      service: { ...prev.service, subtitle: e.target.value }
+                    }))}
+                    placeholder="Ex: Engenharia de alta velocidade"
+                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
                   />
-
-                  {feedbackImageUrl ? (
-                    <div className="relative rounded-2xl border border-neutral-700 bg-neutral-900 p-2 overflow-hidden flex flex-col items-center">
-                      <img
-                        src={feedbackImageUrl}
-                        alt="Preview Feedback"
-                        className="max-h-48 w-full object-contain rounded-xl"
-                      />
-                      <div className="mt-2 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => feedbackFileInputRef.current?.click()}
-                          className="px-3 py-1 text-xs rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200"
-                        >
-                          Trocar Imagem
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFeedbackImageUrl('')}
-                          className="px-3 py-1 text-xs rounded-lg bg-red-950/60 hover:bg-red-900/80 text-red-300"
-                        >
-                          Remover
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => feedbackFileInputRef.current?.click()}
-                      className="border-2 border-dashed border-neutral-700 hover:border-[#22c55e]/60 rounded-2xl p-6 text-center cursor-pointer bg-neutral-900/50 hover:bg-neutral-900 transition-colors flex flex-col items-center justify-center gap-2"
-                    >
-                      {isUploadingFeedback ? (
-                        <div className="flex flex-col items-center gap-2 text-xs text-neutral-400">
-                          <Loader2 className="h-6 w-6 animate-spin text-[#22c55e]" />
-                          <span>Comprimindo e carregando print...</span>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="h-10 w-10 rounded-full bg-[#22c55e]/10 text-[#22c55e] flex items-center justify-center">
-                            <Upload className="h-5 w-5" />
-                          </div>
-                          <span className="text-xs font-bold text-white">
-                            Clique para escolher a imagem do computador/celular
-                          </span>
-                          <span className="text-[11px] text-neutral-400">
-                            Formatos PNG, JPG, WEBP (será otimizada automaticamente)
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Or Manual URL */}
-                  <div className="mt-2">
-                    <span className="text-[11px] text-neutral-500 block mb-1">Ou cole o link direto da imagem:</span>
-                    <input
-                      type="url"
-                      value={feedbackImageUrl}
-                      onChange={(e) => setFeedbackImageUrl(e.target.value)}
-                      placeholder="https://exemplo.com/print-feedback.png"
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-white placeholder-neutral-500 focus:border-[#22c55e] focus:outline-none"
-                    />
-                  </div>
                 </div>
-
-                {/* Client Name & Project */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-300 mb-1">
-                      Nome do Cliente
-                    </label>
-                    <input
-                      type="text"
-                      value={feedbackClientName}
-                      onChange={(e) => setFeedbackClientName(e.target.value)}
-                      placeholder="Ex: Rodrigo Mendes"
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-white placeholder-neutral-500 focus:border-[#22c55e] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-300 mb-1">
-                      Projeto / Empresa
-                    </label>
-                    <input
-                      type="text"
-                      value={feedbackProjectName}
-                      onChange={(e) => setFeedbackProjectName(e.target.value)}
-                      placeholder="Ex: E-commerce & Tráfego"
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-white placeholder-neutral-500 focus:border-[#22c55e] focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Rating & Date */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-300 mb-1">
-                      Avaliação (Estrelas)
-                    </label>
-                    <div className="flex items-center gap-1.5 py-1.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setFeedbackRating(star)}
-                          className="text-neutral-600 hover:scale-110 transition-transform"
-                        >
-                          <Star
-                            className={`h-5 w-5 ${
-                              star <= feedbackRating
-                                ? 'text-[#facc15] fill-current'
-                                : 'text-neutral-600'
-                            }`}
-                          />
-                        </button>
-                      ))}
-                      <span className="ml-2 text-xs text-neutral-400 font-mono">
-                        {feedbackRating} / 5
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-300 mb-1">
-                      Data do Feedback
-                    </label>
-                    <input
-                      type="text"
-                      value={feedbackDate}
-                      onChange={(e) => setFeedbackDate(e.target.value)}
-                      placeholder="Ex: 14/02/2025"
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-white placeholder-neutral-500 focus:border-[#22c55e] focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Comment / Quote */}
                 <div>
-                  <label className="block text-xs font-bold text-neutral-300 mb-1">
-                    Depoimento / Destaque (Opcional)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={feedbackComment}
-                    onChange={(e) => setFeedbackComment(e.target.value)}
-                    placeholder="Ex: Excelente suporte e entrega impecável antes do prazo combinado."
-                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-white placeholder-neutral-500 focus:border-[#22c55e] focus:outline-none resize-none"
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Etiqueta (Tag)</label>
+                  <input
+                    type="text"
+                    value={serviceModal.service.tag}
+                    onChange={(e) => setServiceModal(prev => ({
+                      ...prev,
+                      service: { ...prev.service, tag: e.target.value }
+                    }))}
+                    placeholder="Ex: Core Tech"
+                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
                   />
                 </div>
+              </div>
 
-                {/* Submit Actions */}
-                <div className="pt-3 flex items-center justify-end gap-3 border-t border-neutral-800">
-                  <button
-                    type="button"
-                    onClick={() => setIsFeedbackModalOpen(false)}
-                    className="px-4 py-2 text-xs font-bold text-neutral-400 hover:text-white rounded-xl transition-colors cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">Descrição Detalhada</label>
+                <textarea
+                  rows={3}
+                  value={serviceModal.service.description}
+                  onChange={(e) => setServiceModal(prev => ({
+                    ...prev,
+                    service: { ...prev.service, description: e.target.value }
+                  }))}
+                  placeholder="Explique o que este serviço entrega para o cliente..."
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                />
+              </div>
 
-                  <button
-                    type="submit"
-                    disabled={isSavingFeedback || !feedbackImageUrl.trim()}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#22c55e] hover:bg-[#16a34a] disabled:opacity-50 px-6 py-2.5 text-xs font-black text-black transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                  >
-                    {isSavingFeedback ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Salvando no Banco...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 stroke-[3]" />
-                        <span>Salvar Feedback</span>
-                      </>
-                    )}
-                  </button>
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">Ícone</label>
+                <select
+                  value={serviceModal.service.iconName}
+                  onChange={(e) => setServiceModal(prev => ({
+                    ...prev,
+                    service: { ...prev.service, iconName: e.target.value }
+                  }))}
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                >
+                  <option value="Globe">Globo (Web / Sites)</option>
+                  <option value="Palette">Paleta (Design / UI)</option>
+                  <option value="BarChart3">Gráfico (Marketing / Vendas)</option>
+                  <option value="Bot">Robô (IA / Automações)</option>
+                  <option value="Smartphone">Celular (Apps Mobile)</option>
+                  <option value="Zap">Raio (Performance / SEO)</option>
+                  <option value="Code2">Código (Engenharia)</option>
+                  <option value="Cpu">Processador (Cloud / Back-end)</option>
+                  <option value="Shield">Escudo (Segurança)</option>
+                  <option value="Flame">Fogo (Destaque)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">Entregáveis (1 por linha)</label>
+                <textarea
+                  rows={3}
+                  value={serviceModal.service.deliverables.join('\n')}
+                  onChange={(e) => setServiceModal(prev => ({
+                    ...prev,
+                    service: {
+                      ...prev.service,
+                      deliverables: e.target.value.split('\n').filter(Boolean)
+                    }
+                  }))}
+                  placeholder="Item 1&#10;Item 2&#10;Item 3"
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="service-highlight"
+                  checked={serviceModal.service.highlight || false}
+                  onChange={(e) => setServiceModal(prev => ({
+                    ...prev,
+                    service: { ...prev.service, highlight: e.target.checked }
+                  }))}
+                  className="h-4 w-4 rounded border-neutral-700 accent-[#22c55e]"
+                />
+                <label htmlFor="service-highlight" className="text-xs text-neutral-300 font-medium">
+                  Destacar este card com borda verde brilhante
+                </label>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2 pt-4 border-t border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setServiceModal(prev => ({ ...prev, isOpen: false }))}
+                  className="px-4 py-2 rounded-xl bg-neutral-800 text-xs font-bold text-neutral-300 hover:bg-neutral-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#22c55e] text-xs font-extrabold text-black hover:bg-[#16a34a]"
+                >
+                  {serviceModal.isNew ? 'Criar Serviço' : 'Salvar Alterações'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+
+      {/* ========================================================================= */}
+      {/* MODAL 3: PLAN EDITOR (ADD / EDIT) */}
+      {/* ========================================================================= */}
+      {planModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-xl rounded-2xl border border-neutral-800 bg-[#0c0f0c] p-6 shadow-2xl my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-800 mb-4">
+              <h3 className="font-display font-bold text-white text-base">
+                {planModal.isNew ? 'Adicionar Novo Plano' : 'Editar Plano'}
+              </h3>
+              <button
+                onClick={() => setPlanModal(prev => ({ ...prev, isOpen: false }))}
+                className="p-1 rounded-lg text-neutral-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePlan} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">Nome do Plano</label>
+                <input
+                  type="text"
+                  value={planModal.plan.name}
+                  onChange={(e) => setPlanModal(prev => ({
+                    ...prev,
+                    plan: { ...prev.plan, name: e.target.value }
+                  }))}
+                  placeholder="Ex: Pro • Full Growth 360°"
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Preço Mensal</label>
+                  <input
+                    type="text"
+                    value={planModal.plan.monthlyPrice}
+                    onChange={(e) => setPlanModal(prev => ({
+                      ...prev,
+                      plan: { ...prev.plan, monthlyPrice: e.target.value }
+                    }))}
+                    placeholder="Ex: R$ 497 ou 48"
+                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                  />
                 </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Preço Anual (c/ desconto)</label>
+                  <input
+                    type="text"
+                    value={planModal.plan.annualPrice}
+                    onChange={(e) => setPlanModal(prev => ({
+                      ...prev,
+                      plan: { ...prev.plan, annualPrice: e.target.value }
+                    }))}
+                    placeholder="Ex: R$ 397 ou 399"
+                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Período / Sufixo</label>
+                  <input
+                    type="text"
+                    value={planModal.plan.periodText || 'mês'}
+                    onChange={(e) => setPlanModal(prev => ({
+                      ...prev,
+                      plan: { ...prev.plan, periodText: e.target.value }
+                    }))}
+                    placeholder="Ex: mês, ano, sob medida"
+                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Etiqueta Superior (Badge)</label>
+                  <input
+                    type="text"
+                    value={planModal.plan.badge || ''}
+                    onChange={(e) => setPlanModal(prev => ({
+                      ...prev,
+                      plan: { ...prev.plan, badge: e.target.value }
+                    }))}
+                    placeholder="Ex: MAIS POPULAR, ENTRADA RÁPIDA"
+                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Título dos Inclusos</label>
+                  <input
+                    type="text"
+                    value={planModal.plan.includesHeader || ''}
+                    onChange={(e) => setPlanModal(prev => ({
+                      ...prev,
+                      plan: { ...prev.plan, includesHeader: e.target.value }
+                    }))}
+                    placeholder="Ex: Tudo do Starter, mais: ou Inclusos:"
+                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Texto do Botão CTA</label>
+                  <input
+                    type="text"
+                    value={planModal.plan.ctaText}
+                    onChange={(e) => setPlanModal(prev => ({
+                      ...prev,
+                      plan: { ...prev.plan, ctaText: e.target.value }
+                    }))}
+                    placeholder="Ex: GARANTIR PLANO PRO"
+                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">Estilo do Botão</label>
+                  <select
+                    value={planModal.plan.buttonVariant || (planModal.plan.popular ? 'default' : 'outline')}
+                    onChange={(e) => setPlanModal(prev => ({
+                      ...prev,
+                      plan: { ...prev.plan, buttonVariant: e.target.value as 'default' | 'outline' }
+                    }))}
+                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                  >
+                    <option value="outline">Escuro com Borda (Outline / Standard)</option>
+                    <option value="default">Verde Techify Vibrante (Destaque)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">Mensagem do WhatsApp (ao clicar no botão)</label>
+                <input
+                  type="text"
+                  value={planModal.plan.whatsappMessage || ''}
+                  onChange={(e) => setPlanModal(prev => ({
+                    ...prev,
+                    plan: { ...prev.plan, whatsappMessage: e.target.value }
+                  }))}
+                  placeholder="Ex: Olá! Tenho interesse no plano Pro e gostaria de uma proposta."
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">Descrição</label>
+                <textarea
+                  rows={2}
+                  value={planModal.plan.description}
+                  onChange={(e) => setPlanModal(prev => ({
+                    ...prev,
+                    plan: { ...prev.plan, description: e.target.value }
+                  }))}
+                  placeholder="Resumo das vantagens..."
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">Recursos Inclusos (1 por linha)</label>
+                <textarea
+                  rows={4}
+                  value={planModal.plan.features.join('\n')}
+                  onChange={(e) => setPlanModal(prev => ({
+                    ...prev,
+                    plan: {
+                      ...prev.plan,
+                      features: e.target.value.split('\n').filter(Boolean)
+                    }
+                  }))}
+                  placeholder="Recurso 1&#10;Recurso 2&#10;Recurso 3"
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="plan-popular"
+                  checked={planModal.plan.popular || false}
+                  onChange={(e) => setPlanModal(prev => ({
+                    ...prev,
+                    plan: { ...prev.plan, popular: e.target.checked }
+                  }))}
+                  className="h-4 w-4 rounded border-neutral-700 accent-[#22c55e]"
+                />
+                <label htmlFor="plan-popular" className="text-xs text-neutral-300 font-medium">
+                  Marcar como "Mais Popular / Destaque Central"
+                </label>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2 pt-4 border-t border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setPlanModal(prev => ({ ...prev, isOpen: false }))}
+                  className="px-4 py-2 rounded-xl bg-neutral-800 text-xs font-bold text-neutral-300 hover:bg-neutral-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#22c55e] text-xs font-extrabold text-black hover:bg-[#16a34a]"
+                >
+                  {planModal.isNew ? 'Criar Plano' : 'Salvar Alterações'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+
+      {/* ========================================================================= */}
+      {/* MODAL 4: FAQ EDITOR (ADD / EDIT) */}
+      {/* ========================================================================= */}
+      {faqModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-neutral-800 bg-[#0c0f0c] p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-800 mb-4">
+              <h3 className="font-display font-bold text-white text-base">
+                {faqModal.isNew ? 'Adicionar Pergunta ao FAQ' : 'Editar Pergunta'}
+              </h3>
+              <button
+                onClick={() => setFaqModal(prev => ({ ...prev, isOpen: false }))}
+                className="p-1 rounded-lg text-neutral-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFaq} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">Pergunta</label>
+                <input
+                  type="text"
+                  value={faqModal.faq.question}
+                  onChange={(e) => setFaqModal(prev => ({
+                    ...prev,
+                    faq: { ...prev.faq, question: e.target.value }
+                  }))}
+                  placeholder="Ex: Quanto tempo leva para desenvolver um projeto?"
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">Resposta</label>
+                <textarea
+                  rows={4}
+                  value={faqModal.faq.answer}
+                  onChange={(e) => setFaqModal(prev => ({
+                    ...prev,
+                    faq: { ...prev.faq, answer: e.target.value }
+                  }))}
+                  placeholder="Digite a resposta explicativa..."
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2.5 text-sm text-white focus:border-[#22c55e] focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2 pt-4 border-t border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setFaqModal(prev => ({ ...prev, isOpen: false }))}
+                  className="px-4 py-2 rounded-xl bg-neutral-800 text-xs font-bold text-neutral-300 hover:bg-neutral-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#22c55e] text-xs font-extrabold text-black hover:bg-[#16a34a]"
+                >
+                  {faqModal.isNew ? 'Adicionar Pergunta' : 'Salvar Alterações'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

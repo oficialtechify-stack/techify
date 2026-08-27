@@ -114,7 +114,7 @@ export default function AdminPanel() {
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'andamento' | 'historico' | 'candidaturas' | 'contratados' | 'vagas' | 'leads' | 'parceiros' | 'newsletter' | 'portfolio' | 'site_editor'>('andamento');
+  const [activeTab, setActiveTab] = useState<'andamento' | 'historico' | 'candidaturas' | 'contratados' | 'vagas' | 'leads' | 'parceiros' | 'newsletter' | 'apps' | 'site_editor'>('andamento');
 
   const [consultas, setConsultas] = useState<ConsultaItem[]>([]);
   const [candidaturas, setCandidaturas] = useState<CandidaturaItem[]>([]);
@@ -1179,18 +1179,6 @@ export default function AdminPanel() {
           >
             <Mail className="h-4 w-4" />
             <span>Newsletter ({newsletterEmails.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('portfolio')}
-            className={`px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'portfolio'
-                ? 'bg-[#a3e635] text-black shadow-[0_0_12px_rgba(163,230,53,0.3)]'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
-            }`}
-          >
-            <ImageIcon className="h-4 w-4" />
-            <span>Portfólio & Imagens ({portfolioProjects.length})</span>
           </button>
 
           <button
@@ -2576,12 +2564,7 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* 8. PORTFOLIO & IMAGES TAB */}
-        {activeTab === 'portfolio' && (
-          <AdminPortfolioTab portfolioProjects={portfolioProjects} />
-        )}
-
-        {/* 9. APPS MANAGEMENT TAB */}
+        {/* 8. APPS MANAGEMENT TAB */}
         {activeTab === 'apps' && (
           <AdminAppsTab apps={appsList} />
         )}
